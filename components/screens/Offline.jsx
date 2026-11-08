@@ -10,11 +10,15 @@ import { useDemoState } from "@/lib/demo/store";
 import { useSesion, logEvento, CHIP_ON } from "@/lib/demo/shared";
 import { usePublicaciones } from "@/lib/demo/publicaciones";
 import { useIncidentes } from "@/lib/demo/incidentes";
-import { precacheZona } from "@/lib/demo/offline-cache";
+import { precacheZona, estimarEspacio } from "@/lib/demo/offline-cache";
+import { useSinConexion } from "@/lib/demo/conexion";
+import { useCola, procesarCola, descartarOp, pendientesCola } from "@/lib/demo/cola";
+import { useEstadoAlmacen } from "@/lib/demo/store";
+import { usePwa, instalarApp } from "@/lib/pwa";
 
 const CHIP_OFF = "min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip";
 const CHIP_INK_ON = "min-h-11 rounded-full border-[1.5px] border-(--color-ink) bg-(--color-ink) px-3.5 py-0 font-bold text-[15px] whitespace-nowrap text-white chip";
-const OFF_INICIAL = { zonas: { campoy: { estado: "Descargada", sync: "hoy 7:50 a. m.", mb: 48 }, calca: { estado: "No descargada", sync: "", mb: 0 } }, consultas: [], actual: null };
+const OFF_INICIAL = { zonas: { campoy: { estado: "No descargada", sync: "", mb: 0 }, calca: { estado: "No descargada", sync: "", mb: 0 } }, consultas: [], actual: null };
 const SMS_KINDS = ["Necesito orientación", "Busco suministros", "Necesito ayuda", "Consultar mi solicitud"];
 const SMS_ME = "self-end max-w-[85%] rounded-[18px] rounded-br-[6px] bg-(--color-ink) text-white px-3.5 py-2 flex flex-col gap-0.5 [&_b]:text-[13px] [&_b]:opacity-80";
 const SMS_CENTRAL = "self-start max-w-[85%] rounded-[18px] rounded-bl-[6px] bg-[#f1ece6] px-3.5 py-2 flex flex-col gap-0.5 [&_b]:text-[13px] [&_b]:text-(--color-muted)";
@@ -41,16 +45,12 @@ export default function Offline() {
   const zone = useTextInput("");
   const reply = useTextInput("");
   const failMode = useCheckbox(false);
-  const [navOnline, setNavOnline] = useState(true);
-  useEffect(() => {
-    const upd = () => setNavOnline(navigator.onLine);
-    upd();
-    window.addEventListener("online", upd);
-    window.addEventListener("offline", upd);
-    return () => { window.removeEventListener("online", upd); window.removeEventListener("offline", upd); };
-  }, []);
-
-  const offline = sesion.senal === "Sin datos" || !navOnline;
+  const [cola] = useCola();
+  const almacen = useEstadoAlmacen();
+  const pwa = usePwa();
+  const [espacio, setEspacio] = useState(null);
+  useEffect(() => { estimarEspacio().then(setEspacio); }, [of, cola.items.length]);
+  const offline = useSinConexion();
   const cOn = offline ? CHIP_OFF : CHIP_ON;
   const cOff = offline ? CHIP_ON : CHIP_OFF;
   const goOnline = () => setSesion({ senal: "Normal" });
@@ -60,7 +60,7 @@ export default function Offline() {
   const [dl, setDl] = useState({ zona: null, pct: 0, fail: false });
   const z = of.zonas.campoy;
   const zoneTag = z.estado;
-  const zoneInfo = z.estado === "Descargada" ? `${z.mb} MB · Última sincronización COMPLETA: ${z.sync}` : "Sin datos guardados en este dispositivo";
+  const zoneInfo = z.estado === "Descargada" ? `Guardada en este dispositivo: ${z.sync}` : "Sin datos guardados en este dispositivo";
   const dlRun = dl.zona === "campoy" && dl.pct < 100 && !dl.fail;
   const dlFail = dl.zona === "campoy" && dl.fail;
   const pct = dl.pct;
@@ -101,7 +101,8 @@ export default function Offline() {
   const [msg, setMsg] = useState(null);
   const pubsPend = pubs.items.filter((p) => p.estado === "pendiente");
   const repsPend = incs.items.flatMap((i) => i.reportes.filter((r) => r.estado === "pendiente").map((r) => ({ ...r, incId: i.id, incTitulo: i.titulo })));
-  const pendCount = pubsPend.length + repsPend.length;
+  const opsCola = pendientesCola(cola.items);
+  const pendCount = pubsPend.length + repsPend.length + opsCola.length;
   const resolverReporte = (r, vigente) => {
     setIncs((p) => ({
       items: p.items
@@ -112,6 +113,12 @@ export default function Offline() {
     logEvento(vigente ? `Reporte pendiente enviado tras confirmar vigencia (${r.incId})` : "Reporte pendiente descartado: ya no estaba vigente");
   };
   const queue = [
+    ...opsCola.map((o) => ({
+      title: o.tipo === "solicitud" ? `Solicitud: «${o.titulo}»` : `${o.titulo}: «${(o.datos.texto ?? "").slice(0, 60)}»`, kind: "Coordinación",
+      stateLbl: o.estado === "error" ? "Con error" : "Guardada, no enviada", tagCls: o.estado === "error" ? screenStyles.badgeAlert : screenStyles.badgeDemo,
+      detalle: o.estado === "error" ? `No se pudo aplicar: ${o.error}` : "", ask: false, canCancel: true, canRetry: o.estado === "error" && !offline,
+      retry: () => procesarCola(o.id), yes: () => {}, no: () => {}, cancel: () => descartarOp(o.id),
+    })),
     ...pubsPend.map((p) => ({
       title: `${p.tipo === "cachuelo" ? "Cachuelo" : p.tipo === "campana" ? "Campaña" : "Favor"}: «${p.titulo}»`, kind: "Ordinaria", stateLbl: "Pendiente de enviar", tagCls: screenStyles.badgeDemo, ask: false, canCancel: true,
       yes: () => {}, no: () => {}, cancel: () => setPubs((x) => ({ items: x.items.filter((y) => y.clientActionId !== p.clientActionId) })),
@@ -123,14 +130,15 @@ export default function Offline() {
     })),
   ];
   const sync = () => {
-    if (offline) { setMsg({ ok: false, t: "Sin conexión: no se envió nada. Tus pendientes siguen guardados." }); return; }
+    if (offline) { setMsg({ ok: false, t: "Sin conexión: no se aplicó nada. Tus pendientes siguen guardados en este dispositivo." }); return; }
+    const r = procesarCola();
     const n = pubsPend.length;
     if (n) {
       setPubs((x) => ({ items: x.items.map((y) => (y.estado === "pendiente" ? { ...y, estado: "publicado" } : y)) }));
-      logEvento(`Sincronización: ${n} publicación(es) enviadas sin duplicar`);
+      logEvento(`Pendientes: ${n} publicación(es) publicadas en este dispositivo sin duplicar`);
     }
     setAskIds(repsPend.map((r) => r.clientActionId));
-    setMsg({ ok: true, t: n ? `✓ ${n} envío(s) ordinarios confirmados por el servidor demo.${repsPend.length ? " Confirma la vigencia de las emergencias." : ""}` : repsPend.length ? "Confirma si las emergencias pendientes siguen vigentes." : "✓ No hay nada pendiente." });
+    setMsg({ ok: true, t: (n || r.total) ? `✓ ${n + r.aplicadas} operación(es) aplicadas en este dispositivo${r.errores ? ` y ${r.errores} con error` : ""}. No hay servidor: nada se envió fuera de la app.${repsPend.length ? " Confirma la vigencia de las emergencias." : ""}` : repsPend.length ? "Confirma si las emergencias pendientes siguen vigentes." : "✓ No hay nada pendiente." });
   };
   const msgCls = msg?.ok === false ? screenStyles.error : screenStyles.success;
   const msgTxt = msg?.t ?? "";
@@ -198,9 +206,10 @@ export default function Offline() {
           <div className={`${screenStyles.row} flex-wrap!`}><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 flex-1! min-h-12!" onClick={startDl}>{dlLbl}</button><button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 flex-1! min-h-12!" onClick={delZone}>Eliminar</button></div>
           <div className={screenStyles.checkboxRow}><input id="fl" type="checkbox" {...failMode.props} /><label htmlFor="fl"><span className={screenStyles.muted}>Simular que la descarga falla</span></label></div>
           {delWarn && (<><p className={screenStyles.error} role="alert">Tienes {pendCount} envíos pendientes. Eliminar la zona no los borra; se enviarán cuando haya conexión.</p></>)}
-          <p className={screenStyles.muted}>Incluye mapa de demostración, incidencias con hora, calor de instantánea, contactos oficiales y orientación. Se guarda en el dispositivo (IndexedDB y caché), no solo en memoria.</p></div>
-        <div className={screenStyles.card}><div className={screenStyles.row}><b className={screenStyles.grow}>Calca Centro</b><span className={screenStyles.badge}>{calca.estado}</span></div><p className={screenStyles.muted}>{calca.estado === "Descargada" ? `${calca.mb} MB · Última sincronización COMPLETA: ${calca.sync}` : "Área no descargada: sin conexión verías un aviso y la lista de reportes como alternativa."}</p>{dl.zona === "calca" && dl.pct < 100 && !dl.fail && (<p className={screenStyles.muted} role="status">Descargando… {dl.pct} %</p>)}{dl.zona === "calca" && dl.fail && (<p className={screenStyles.error} role="alert">No se pudo descargar. No se marcó como disponible.</p>)}<button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 min-h-12!" onClick={() => descargar("calca")}>{calca.estado === "Descargada" ? "Actualizar" : "Guardar zona"}</button></div>
-        <div className={screenStyles.card}><p className={screenStyles.label}>Espacio</p><div className="h-3 rounded-[6px] bg-(--color-line) overflow-hidden [&_i]:block [&_i]:h-full [&_i]:bg-[#2f5a2d]" aria-hidden="true"><i className="w-[18%]!"></i></div><p className={screenStyles.muted}>Usado por BarrioConecta: 48 MB · Espacio libre suficiente</p></div>
+          <p className={screenStyles.muted}>Incluye mapa de demostración, incidencias con hora, calor de instantánea, contactos oficiales y orientación. La interfaz y tus datos se guardan en el navegador (IndexedDB y caché). Las teselas del mapa y el cálculo de rutas necesitan Internet: sin conexión solo verás las teselas ya vistas.</p></div>
+        <div className={screenStyles.card}><div className={screenStyles.row}><b className={screenStyles.grow}>Calca Centro</b><span className={screenStyles.badge}>{calca.estado}</span></div><p className={screenStyles.muted}>{calca.estado === "Descargada" ? `Guardada en este dispositivo: ${calca.sync}` : "Área no descargada: sin conexión verías un aviso y la lista de reportes como alternativa."}</p>{dl.zona === "calca" && dl.pct < 100 && !dl.fail && (<p className={screenStyles.muted} role="status">Descargando… {dl.pct} %</p>)}{dl.zona === "calca" && dl.fail && (<p className={screenStyles.error} role="alert">No se pudo descargar. No se marcó como disponible.</p>)}<button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 min-h-12!" onClick={() => descargar("calca")}>{calca.estado === "Descargada" ? "Actualizar" : "Guardar zona"}</button></div>
+        <div className={screenStyles.card}><p className={screenStyles.label}>Espacio</p><div className="h-3 rounded-[6px] bg-(--color-line) overflow-hidden [&_i]:block [&_i]:h-full [&_i]:bg-[#2f5a2d]" aria-hidden="true"><i className="w-[18%]!"></i></div><p className={screenStyles.muted}>{espacio ? `Usado por BarrioConecta: ${espacio.usadoMb} MB · Libre aprox.: ${espacio.libreMb} MB` : "El navegador no informa el espacio usado."}</p><p className={screenStyles.muted}>Almacén de datos: {almacen.motor === "indexeddb" ? "IndexedDB" : almacen.motor === "localstorage" ? "localStorage (IndexedDB no disponible)" : "iniciando…"}{almacen.migrados ? ` · ${almacen.migrados} dato(s) migrados desde la versión anterior` : ""}{almacen.error ? ` · ${almacen.error}` : ""}</p></div>
+        <div className={screenStyles.card}><p className={screenStyles.label}>Instalar como app</p><p className={screenStyles.muted}>{pwa.instalada ? "BarrioConecta ya está instalada en este dispositivo." : pwa.sw === "desarrollo" ? "El modo sin conexión de la interfaz solo se activa en la versión de producción." : pwa.puedeInstalar ? "Puedes instalarla para abrirla como una app." : "Si tu navegador lo permite, usa «Instalar» del menú. En iPhone: Compartir › Añadir a pantalla de inicio."}</p>{pwa.puedeInstalar && !pwa.instalada && (<button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full min-h-11!" onClick={instalarApp}>Instalar BarrioConecta</button>)}</div>
         <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => nav.go("pend")}>Pendientes de envío ({pendCount})</button>
         <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => nav.go("sms")}>Consulta por SMS</button>
       </div>
@@ -210,8 +219,9 @@ export default function Offline() {
       <div className={screenStyles.content}>
         {queue.length === 0 && (<div className={screenStyles.card} role="status"><p className="font-bold!">No tienes envíos pendientes</p><p className={screenStyles.muted}>Lo que publiques o reportes sin conexión aparecerá aquí.</p></div>)}
         {(queue ?? []).map((q, __i1) => (<Fragment key={__i1}>
-          <div className={screenStyles.card}><div className={screenStyles.row}><span className={q.tagCls}>{q.stateLbl}</span><span className="flex-1 min-w-0 text-(--color-muted) text-[15px] text-right!">{q.kind}</span></div><b>{q.title}</b>
+          <div className={screenStyles.card}><div className={screenStyles.row}><span className={q.tagCls}>{q.stateLbl}</span><span className="flex-1 min-w-0 text-(--color-muted) text-[15px] text-right!">{q.kind}</span></div><b>{q.title}</b>{q.detalle && (<p className={screenStyles.error} role="alert">{q.detalle}</p>)}
             {q.ask && (<><p className={screenStyles.muted}>Antes de enviar: ¿esta emergencia sigue vigente?</p><div className="grid-cols-2 grid! gap-2!"><button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 min-h-12!" onClick={q.no}>Ya no</button><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 min-h-12!" onClick={q.yes}>Sigue vigente</button></div></>)}
+            {q.canRetry && (<button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full min-h-11!" onClick={q.retry}>Reintentar</button>)}
             {q.canCancel && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 min-h-11!" onClick={q.cancel}>Cancelar envío</button></>)}</div>
         </Fragment>))}
         {msg && (<><p className={msgCls} role="status">{msgTxt}</p></>)}

@@ -23,6 +23,7 @@ const KINDS = ["Inundación", "Corte de agua", "Árbol caído", "Sismo", "Incend
 const UBICACIONES = [{ id: "campoy", nombre: "Campoy", lngLat: CAMPOY }, { id: "zarate", nombre: "Zárate", lngLat: [-77.0039, -12.0177] }, { id: "bayovar", nombre: "Estación Bayóvar", lngLat: [-76.98762, -11.95979] }, { id: "anexo22", nombre: "Anexo 22 (Jicamarca)", lngLat: ANEXO_22 }, { id: "cercado", nombre: "Cercado de Lima", lngLat: [-77.03057, -12.04594] }];
 const DTABS = ["Qué ocurre", "Qué hacer", "Cómo ayudar"];
 const CFILTERS = ["Todos", "Alertas", "Puntos de reunión", "Suministros", "Apoyo institucional"];
+import { useSinConexion } from "@/lib/demo/conexion";
 import { screenStyles } from "./screen-styles";
 
 /**
@@ -42,6 +43,7 @@ export default function Emergencias() {
   const [camMsg, setCamMsg] = useState("Vista de la cámara");
   const [kind, setKind] = useState("Inundación");
   const [join, setJoin] = useState(true);
+  const sinCon = useSinConexion();
   const [sent, setSent] = useState(null); // null | { pendiente, incId, msg }
   const [dtab, setDtab] = useState(0);
   const [cfilter, setCfilter] = useState("Todos");
@@ -120,7 +122,7 @@ export default function Emergencias() {
   const jOff = join ? screenStyles.chip : screenStyles.chipActive;
   const joinYes = () => setJoin(true);
   const joinNo = () => setJoin(false);
-  const pendFlag = sinRed.checked || sesion.senal === "Sin datos";
+  const pendFlag = sinRed.checked || sinCon;
   const sendLbl = pendFlag ? "Guardar como pendiente" : "Enviar reporte";
   const noSent = !sent;
   const sendRep = () => {
@@ -136,7 +138,7 @@ export default function Emergencias() {
     const repetido = target && inc.reportes.some((x) => x.autor === sesion.userId && x.estado === "enviado" && x.id !== rep.id);
     setSent({
       pendiente: pendFlag,
-      msg: pendFlag ? "Reporte guardado como pendiente. No se ha enviado." : r.unido ? (repetido ? "✓ Reporte unido a la incidencia. Ya habías reportado: no suma otro testigo." : "✓ Reporte enviado y agrupado con una incidencia cercana.") : "✓ Reporte enviado como incidencia nueva.",
+      msg: pendFlag ? "Reporte guardado en este dispositivo, pero no enviado. No se avisó a ninguna autoridad ni a otros vecinos." : r.unido ? (repetido ? "✓ Reporte unido a la incidencia. Ya habías reportado: no suma otro testigo." : "✓ Reporte enviado y agrupado con una incidencia cercana.") : "✓ Reporte enviado como incidencia nueva.",
     });
     logEvento(pendFlag ? `Reporte de ${kind} en cola sin conexión` : `Reporte de ${kind} ${r.unido ? "agrupado en " + r.id : "creó la incidencia " + r.id} (simulado)`);
     if (!pendFlag) avisar({ categoria: "emergencia", titulo: `Nuevo reporte: ${kind}`, texto: "Reportado cerca de tu zona. Fuente: vecinos (demostración).", href: "/emergencias" });
@@ -230,7 +232,7 @@ export default function Emergencias() {
           {cand ? (<><p>«{cand.inc.titulo}» · a {Math.round(cand.dist)} m · mismo tipo · hace {Math.max(1, Math.round(cand.minutos))} min</p><div className={screenStyles.wrap}><button className={jOn} onClick={joinYes}>Agrupar con esta incidencia</button><button className={jOff} onClick={joinNo}>Es otra</button></div></>)
             : (<p className={screenStyles.muted}>No hay incidencias del mismo tipo a menos de {RADIO_AGRUPAR_M} m en las últimas {VENTANA_AGRUPAR_MIN / 60} h: se creará una nueva.</p>)}
           <p className={screenStyles.muted}>Se agrupa por ubicación, tipo y tiempo. Se cuentan personas distintas y se conservan los reportes originales.</p></div>
-        {pendFlag && (<><p className={screenStyles.muted}>Sin conexión: se guardará pendiente y se pedirá confirmar vigencia al reconectar.</p></>)}
+        {pendFlag && (<><p className={screenStyles.muted}>Sin conexión: se guardará en este dispositivo («guardado, no enviado») y se pedirá confirmar que sigue vigente al reconectar. Para una urgencia real, llama al 105, 106 o 116: esta app no avisa a las autoridades.</p></>)}
         <div className={screenStyles.checkboxRow}><input id="off" type="checkbox" {...sinRed.props} /><label htmlFor="off"><b>Simular que no tengo conexión</b></label></div>
         {noSent && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={sendRep}>{sendLbl}</button></>)}
         {sent && (<><div className={screenStyles.card} role="status"><p className={screenStyles.success}>{sentMsg}</p><p className={screenStyles.muted}>Estado: {estadoReporte} · {autores} vecinos distintos.</p><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => nav.go("detalle")}>Ver incidente</button></div></>)}

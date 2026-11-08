@@ -14,6 +14,7 @@ import RutaJuntosPanel from "@/components/map/RutaJuntosPanel";
 import { FichaCalor, FichaPersona, LeyendaCalor, RadarTira } from "@/components/map/FichasMapa";
 import FichaRuta from "@/components/map/FichaRuta";
 import { useRutaJuntos } from "@/components/map/use-rutajuntos";
+import { useSinConexion } from "@/lib/demo/conexion";
 import { screenStyles } from "./screen-styles";
 
 const MAPA_UI = { fav: true, cac: true, eme: true, heat: false, zoom: 1 };
@@ -52,7 +53,7 @@ const tipoSim = (t) => (/inund/i.test(t) ? "inundacion" : /agua/i.test(t) ? "agu
  * Geografía y calles: datos reales. Personas, incidentes, vehículos y pasajeros: simulaciones locales.
  */
 export default function Mapa() {
-  const [sesion, setSesion] = useSesion();
+  const [, setSesion] = useSesion();
   const [incsAll] = useIncidentes();
   const [pubs] = usePublicaciones();
   const [ui, setUi] = useDemoState("mapa-ui", MAPA_UI);
@@ -65,7 +66,7 @@ export default function Mapa() {
   const apiRef = useRef(null);
   const rj = useRutaJuntos({ activo: modoRuta, apiRef });
   const { fav, cac, eme, heat } = ui;
-  const offline = sesion.senal === "Sin datos";
+  const offline = useSinConexion();
 
   // Solo incidentes con al menos un reporte enviado (los pendientes no se publican)
   const incs = useMemo(() => incsAll.items.filter((i) => i.reportes.some((r) => r.estado === "enviado")), [incsAll.items]);
@@ -191,7 +192,7 @@ export default function Mapa() {
         <MapaBase puntos={puntosMapa} extras={extras} calor={calor} linea={modoRuta ? rj.ruta.linea?.geometria ?? null : null} radar={radarGeo} grupoCls={MK_GRUPO} vehiculoCls={MK_VEH}
           seleccionando={(modoRuta && !!rj.objetivo) || (radar.activo && radar.eligiendo)} onMapClick={alClic} onPick={alPick} onCalor={alCalor} apiRef={apiRef} />
         {vacio && (<div className={`${screenStyles.card} absolute! left-4! right-4! top-4! z-2!`} role="status"><p className="font-bold!">No hay puntos con estos filtros</p><p className={screenStyles.muted}>Activa otro filtro o publica algo en tu zona.</p></div>)}
-        {offline && (<div className="absolute left-3 right-18 top-3 z-2 bg-[#fff4d6] text-[#5c3d00] rounded-[14px] px-3 py-2 text-[14px] font-bold border border-[#e6c77a]" role="status">Sin conexión · datos de la zona descargada con su hora. No es información en vivo.</div>)}
+        {offline && (<div className="absolute left-3 right-18 top-3 z-2 bg-[#fff4d6] text-[#5c3d00] rounded-[14px] px-3 py-2 text-[14px] font-bold border border-[#e6c77a]" role="status">Sin conexión · se muestra lo último guardado, no información en vivo. Las teselas nuevas del mapa y el cálculo de rutas necesitan Internet; no hay mapas ni rutas sin conexión.</div>)}
         <div className="absolute right-3 top-3 z-2 flex flex-col gap-2 [&_button]:w-11 [&_button]:h-11 [&_button]:rounded-[14px] [&_button]:border [&_button]:border-(--color-line) [&_button]:bg-white [&_button]:text-[22px] [&_button]:font-bold [&_button]:shadow-[0_2px_6px_rgba(0,0,0,.15)]"><button aria-label="Acercar" onClick={() => apiRef.current?.zoomIn()}>+</button><button aria-label="Alejar" onClick={() => apiRef.current?.zoomOut()}>−</button></div>
 
         {/* Un solo elemento a la vez sobre el mapa, siempre por encima de la barra inferior */}

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { screenStyles } from "@/components/screens/screen-styles";
 import { setDemo } from "@/lib/demo/store";
+import { sinConexionAhora, useSinConexion } from "@/lib/demo/conexion";
+import { useCola, encolarSolicitud } from "@/lib/demo/cola";
 import { VECINOS, useSesion, useSellos, sellosDe, chip, logEvento } from "@/lib/demo/shared";
 import { usePublicaciones } from "@/lib/demo/publicaciones";
 import { relacionadas, ESTADOS_CAT, TIPOS_CAT } from "@/lib/demo/catalogo";
@@ -32,7 +34,10 @@ export default function PublicacionDetalle({ vm }) {
   const [co] = useCoordinaciones();
   const [sellos] = useSellos();
   const [, setPubs] = usePublicaciones();
+  const sinCon = useSinConexion();
+  const [cola] = useCola();
   const [err, setErr] = useState("");
+  const [aviso, setAviso] = useState("");
   const [confirmar, setConfirmar] = useState("");
   const [motivo, setMotivo] = useState("");
   const [editando, setEditando] = useState(false);
@@ -45,7 +50,8 @@ export default function PublicacionDetalle({ vm }) {
   const miActiva = rel.find((c) => c.solicitante === uid && esActiva(c));
   const refs = sellosDe(sellos.items, vm.vecino).length;
   const cancelado = vm.estado === "cancelado";
-  const puedeSolicitar = !soyDueno && !miActiva && vm.estado !== "completado" && !cancelado;
+  const enCola = cola.items.some((o) => o.tipo === "solicitud" && o.estado !== "aplicada" && o.usuario === uid && o.datos.pub?.id === vm.id);
+  const puedeSolicitar = !soyDueno && !enCola && !miActiva && vm.estado !== "completado" && !cancelado;
   const editable = soyDueno && vm.origen === "pub" && !cancelado;
   const usuarios = soyDueno || PRUEBA.includes(vm.vecino) ? PRUEBA : [...PRUEBA, vm.vecino];
 
@@ -92,11 +98,15 @@ export default function PublicacionDetalle({ vm }) {
 
       <div className={`${screenStyles.card} flex-row! items-center!`}>
         <span className={AVATAR} aria-hidden="true">{dueno?.ini ?? "V"}</span>
-        <div className={screenStyles.grow}><b>{dueno?.name ?? "Vecino"}</b>{soyDueno ? " (tú)" : ""}<p className={screenStyles.muted}>{refs > 0 ? `Recomendado por ${refs} ${refs === 1 ? "vecino" : "vecinos"}` : "Vecino nuevo · sin referencias aún"}</p><p className={screenStyles.muted}>{vm.modo === "ofrezco" ? "Ofrece" : "Necesita"} · {TIPOS_CAT[vm.tipo].toLowerCase()}</p></div>
+        <div className={screenStyles.grow}><b>{dueno?.name ?? "Vecino"}</b>{soyDueno ? " (tú)" : ""}<p className={screenStyles.muted}>{refs > 0 ? `Recomendado por ${refs} ${refs === 1 ? "vecino" : "vecinos"}` : "Vecino nuevo · sin referencias aún"}</p><p className={screenStyles.muted}>{vm.modo === "ofrezco" ? "Ofrece" : "Necesita"} · {TIPOS_CAT[vm.tipo].toLowerCase()}</p><button className="text-[14px] font-bold text-(--color-brand) underline" onClick={() => { setDemo("perfil-foco", { id: "" }, { id: vm.vecino }); router.push("/perfil"); }}>Ver perfil</button></div>
       </div>
 
       {soyDueno && (<div className={screenStyles.card} role="note"><p className={screenStyles.muted}>Publicaste esto: no puedes solicitarlo. Aquí respondes las solicitudes de otros vecinos.</p></div>)}
-      {puedeSolicitar && (<button className={screenStyles.button} onClick={() => run(solicitar(vm.pubLike, uid))}>{etiquetaAccion(vm)}</button>)}
+      {puedeSolicitar && (<button className={screenStyles.button} onClick={() => {
+        if (sinConexionAhora()) { const q = run(encolarSolicitud(vm.pubLike, uid)); if (q.ok) setAviso("Solicitud guardada en este dispositivo, pendiente de enviar. Se aplicará al volver la conexión; todavía no se avisó a nadie."); return; }
+        run(solicitar(vm.pubLike, uid));
+      }}>{etiquetaAccion(vm)}{sinCon ? " (se guardará sin conexión)" : ""}</button>)}
+      {enCola && (<div className={screenStyles.card} role="status"><p className="font-bold!">Solicitud guardada, pendiente de enviar</p><p className={screenStyles.muted}>{aviso || "Está en la cola de este dispositivo y se aplicará al recuperar la conexión. Puedes verla o descartarla en Pendientes."}</p></div>)}
       {!soyDueno && vm.estado === "completado" && !miActiva && (<div className={screenStyles.card} role="status"><p className="font-bold!">{vm.recurso ? "Este recurso ya no tiene unidades disponibles" : "Esta publicación ya se completó"}</p></div>)}
       {cancelado && (<div className={screenStyles.card} role="status"><p className="font-bold!">Publicación cancelada</p><p className={screenStyles.muted}>Ya no recibe solicitudes. Sus coordinaciones previas se conservan.</p></div>)}
 

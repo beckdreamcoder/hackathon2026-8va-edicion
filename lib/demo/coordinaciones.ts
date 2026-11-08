@@ -134,6 +134,8 @@ export function tipoDePublicacion(p: Pick<PublicacionDemo, "tipo" | "categoria">
   return null;
 }
 
+export type Parameters_Solicitar = Pick<PublicacionDemo, "id" | "tipo" | "modo" | "autor" | "titulo" | "categoria" | "estado">;
+
 /** Una persona solicita (o se ofrece en) una publicación de otra persona. */
 export function solicitar(p: PublicacionDemo, solicitante: VecinoId): Resultado {
   const tipo = tipoDePublicacion(p);
@@ -298,11 +300,11 @@ export function confirmarCierre(id: string, actor: VecinoId): Resultado {
   return { ok: true, id };
 }
 
-export function darSello(id: string, actor: VecinoId): Resultado {
+export function darSello(id: string, actor: VecinoId, comentario = ""): Resultado {
   const c = obtener(id);
   if (!c || c.legado) return fallo("Coordinación no encontrada.");
   if (!participa(c, actor)) return fallo("No participas en esta coordinación.");
-  const r = emitirSello({ coordId: c.id, from: actor, to: otroDe(c, actor), tipo: c.tipo }, c.estado === "completada");
+  const r = emitirSello({ coordId: c.id, from: actor, to: otroDe(c, actor), tipo: c.tipo, comentario: comentario.trim().slice(0, 140) || undefined }, c.estado === "completada");
   if (r === "autosello") return fallo("No puedes darte un sello a ti mismo.");
   if (r === "no_completada") return fallo("El sello se habilita al completarse la coordinación.");
   if (!c.sellos.includes(actor)) actualizar(id, (x) => ({ ...x, sellos: [...x.sellos, actor] }));

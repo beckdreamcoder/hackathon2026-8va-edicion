@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useViewStack } from "@/lib/hooks/use-view-stack";
-import { useDemoState } from "@/lib/demo/store";
+import { useRouter } from "next/navigation";
+import { useDemoState, setDemo } from "@/lib/demo/store";
 import { useTextInput } from "@/lib/hooks/use-text-input";
 import { VECINOS, useSesion, chip } from "@/lib/demo/shared";
 import { useCatalogo } from "@/lib/demo/catalogo";
@@ -12,6 +13,8 @@ import {
   ETIQUETA_TIPO, cambiarUsuarioDemo, responder, cancelar, enviarMensaje, marcarLeido, respuestaSimulada,
   proponerAcuerdo, confirmarAcuerdo, confirmarCierre, darSello, bloquear, desbloquear,
 } from "@/lib/demo/coordinaciones";
+import { sinConexionAhora } from "@/lib/demo/conexion";
+import { useCola, encolarMensaje } from "@/lib/demo/cola";
 import { screenStyles } from "./screen-styles";
 
 const USUARIOS = ["maria", "luis", "pedro", "carlos"];
@@ -43,9 +46,11 @@ const back = (<svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden
 /** Pantalla «Mis coordinaciones»: solicitudes enviadas y recibidas, con detalle, chat, acuerdo, cierre y sello. */
 export default function Coordinaciones() {
   const nav = useViewStack("lista");
+  const router = useRouter();
   const [sesion] = useSesion();
   const [co] = useCoordinaciones();
   const [bloqueos] = useBloqueos();
+  const [cola] = useCola();
   const catalogo = useCatalogo();
   const uid = sesion.userId;
   const yo = VECINOS[uid];
@@ -62,7 +67,9 @@ export default function Coordinaciones() {
   const [motivoRep, setMotivoRep] = useState("");
   const [repHecho, setRepHecho] = useState(false);
   const [escribiendo, setEscribiendo] = useState(false);
-  const [foco, setFoco] = useDemoState("coord-foco", { id: "" });
+  const [foco, setFoco] = useDemoState("coord-foco", { id: "", tab: "" });
+  const [filtroFoco, setFiltroFoco] = useDemoState("coord-filtro", { id: "" });
+  const [comentarioSello, setComentarioSello] = useState("");
   const [editAg, setEditAg] = useState(false);
   const draft = useTextInput("");
   const lugar = useTextInput("");
@@ -97,12 +104,19 @@ export default function Coordinaciones() {
     if (!foco.id) return undefined;
     const t = setTimeout(() => {
       const c = co.items.find((x) => x.id === foco.id);
-      if (c && participa(c, uid)) { setSelId(c.id); setTab("resumen"); setErr(""); setEditAg(false); setConfirmando(false); nav.go("detalle"); }
-      setFoco({ id: "" });
+      if (c && participa(c, uid)) { setSelId(c.id); setTab(foco.tab || "resumen"); setErr(""); setEditAg(false); setConfirmando(false); nav.go("detalle"); }
+      setFoco({ id: "", tab: "" });
     }, 0);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [foco.id]);
+
+  // Si se llegó desde el perfil con un filtro (pendientes, activas, finalizadas, canceladas)
+  useEffect(() => {
+    if (!filtroFoco.id) return undefined;
+    const t = setTimeout(() => { setFiltro(filtroFoco.id); setFiltroFoco({ id: "" }); }, 0);
+    return () => clearTimeout(t);
+  }, [filtroFoco.id, setFiltroFoco]);
 
   const run = (r) => { setErr(r.ok ? "" : r.error); return r; };
   const abrir = (c) => { setSelId(c.id); setTab("resumen"); setErr(""); setEditAg(false); setEscribiendo(false); nav.go("detalle"); };
@@ -111,6 +125,12 @@ export default function Coordinaciones() {
   const enviar = () => {
     if (!sel) return;
     const id = sel.id;
+    if (sinConexionAhora()) {
+      // Sin conexión: el mensaje se guarda en este dispositivo y se aplica al volver la conexión (no hay respuesta simulada)
+      const q = run(encolarMensaje(id, uid, draft.value, `Mensaje a ${otroN}`));
+      if (q.ok) draft.setValue("");
+      return;
+    }
     const r = run(enviarMensaje(id, uid, draft.value));
     if (!r.ok) return;
     draft.setValue("");
@@ -219,6 +239,7 @@ export default function Coordinaciones() {
                   <b>{sel.titulo}</b>
                   <p className={screenStyles.muted}>{categoriaDe(sel)} · {ETIQUETA_TIPO[sel.tipo]} · con {otroN}</p>
                   <p className={screenStyles.muted}>Creada el {dia(sel.creada)} · {sel.solicitante === uid ? "Solicitud enviada por ti" : "Solicitud recibida"}</p>
+                  <button className="text-[14px] font-bold text-(--color-brand) underline self-start" onClick={() => { setDemo("perfil-foco", { id: "" }, { id: otro }); router.push("/perfil"); }}>Ver perfil de {otroN}</button>
                   {sel.acuerdo && (<p className="text-[14px]"><b>Acuerdo:</b> {sel.acuerdo.lugar} · {sel.acuerdo.fecha} · {sel.acuerdo.hora} ({sel.estado === "aceptada" ? "por confirmar" : "confirmado"})</p>)}
                   {(sel.estado === "cancelada" || sel.estado === "rechazada") && (<p className="font-bold!">{sel.estado === "rechazada" ? "Rechazada" : "Cancelada"}{sel.cerradaPor ? ` por ${VECINOS[sel.cerradaPor].name}` : ""}{sel.motivo ? ` · Motivo: ${sel.motivo}` : ""}</p>)}
                 </div>
@@ -239,6 +260,8 @@ export default function Coordinaciones() {
                   {sel.msgs.map((m) => m.from === "sistema"
                     ? (<p key={m.id} className="self-center text-center text-[13px] text-(--color-muted) bg-[#f1ece6] rounded-full px-3 py-1">{m.text}</p>)
                     : (<div key={m.id} className={m.from === uid ? BUBBLE_ME : BUBBLE_OTHER}><b>{VECINOS[m.from].name} · {hora(m.at)}{m.sim ? " · respuesta simulada" : ""}</b>{m.text}</div>))}
+                  {cola.items.filter((o) => o.tipo === "mensaje" && o.datos.coordId === sel.id && o.usuario === uid && o.estado !== "aplicada").map((o) => (
+                    <div key={o.id} className={`${BUBBLE_ME} opacity-70 border border-dashed border-white`}><b>Tú · guardado, no enviado{o.estado === "error" ? " · con error" : ""}</b>{o.datos.texto}</div>))}
                   {escribiendo && (<p className="self-start text-[13px] text-(--color-muted)" role="status">{otroN} está escribiendo… (respuesta simulada)</p>)}
                   <div ref={fin} />
                 </div>
@@ -297,7 +320,7 @@ export default function Coordinaciones() {
                   {sel.estado === "completada" && (<>
                     <p className={screenStyles.success} role="status">✓ Finalizada por ambas personas</p>
                     <p className={screenStyles.muted}>Puedes agradecer con un sello de Visto Bueno Vecinal. Es opcional y se emite una sola vez.</p>
-                    {!sel.sellos.includes(uid) ? (<button className={screenStyles.button} onClick={() => run(darSello(sel.id, uid))}>Dar sello a {otroN}</button>) : (<><p className={screenStyles.success} role="status">✓ Sello emitido. No se puede repetir.</p><Link className={screenStyles.buttonOutline} href="/noticias">Ver Vecino del mes</Link></>)}
+                    {!sel.sellos.includes(uid) ? (<><div className={screenStyles.field}><label htmlFor="com-s">Referencia para {otroN} (opcional)</label><input id="com-s" className={screenStyles.input} maxLength={140} value={comentarioSello} onChange={(e) => setComentarioSello(e.target.value)} placeholder="Ej.: llegó puntual y explicó todo" /></div><button className={screenStyles.button} onClick={() => { run(darSello(sel.id, uid, comentarioSello)); setComentarioSello(""); }}>Dar sello a {otroN}</button></>) : (<><p className={screenStyles.success} role="status">✓ Sello emitido. No se puede repetir.</p><Link className={screenStyles.buttonOutline} href="/noticias">Ver Vecino del mes</Link></>)}
                   </>)}
                   {(sel.estado === "rechazada" || sel.estado === "cancelada") && (<p className="font-bold!">{faseTxt(sel)}{sel.cerradaPor ? ` por ${VECINOS[sel.cerradaPor].name}` : ""}{sel.motivo ? ` · Motivo: ${sel.motivo}` : ""}. No se emiten sellos.</p>)}
                 </div>
