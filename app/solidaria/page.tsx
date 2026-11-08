@@ -4,7 +4,7 @@ export default function Pagina() {
   return (
     <div className="flex flex-col gap-4">
       <SectionHeader title="Red solidaria" backHref="/" />
-      <p className="text-muted">En construcción · Fase 1.</p>
+      <p className="text-(--color-muted)">En construcción · Fase 1.</p>
     </div>
   );
 }
