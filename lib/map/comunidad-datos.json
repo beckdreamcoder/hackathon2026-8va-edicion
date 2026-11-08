@@ -1,0 +1,920 @@
+[
+ {
+  "key": "c-01",
+  "vecino": "diego",
+  "distrito": "San Juan de Lurigancho",
+  "tipo": "cachuelo",
+  "estado": "disponible",
+  "categoria": "Reparación de computadoras",
+  "titulo": "Reparo laptops y PC a domicilio",
+  "descripcion": "Formateo, limpieza y cambio de piezas. Llevo mis herramientas.",
+  "pago": "S/ 50 referencial",
+  "msg": "Reparo computadoras, escríbeme",
+  "origen": "Avenida Los Cisnes, San Juan de Lurigancho (zona aproximada)",
+  "lngLat": [
+   -77.00073,
+   -12.01537
+  ]
+ },
+ {
+  "key": "c-02",
+  "vecino": "valeria",
+  "distrito": "San Juan de Lurigancho",
+  "tipo": "favor",
+  "estado": "solicita",
+  "categoria": "Prestar una escalera",
+  "titulo": "Busco una escalera de 3 metros",
+  "descripcion": "La necesito para pintar el frente de mi casa. La devuelvo el mismo día.",
+  "pago": null,
+  "msg": "¿Alguien presta una escalera?",
+  "origen": "Las Cidras, San Juan de Lurigancho (zona aproximada)",
+  "lngLat": [
+   -77.00808,
+   -12.02036
+  ]
+ },
+ {
+  "key": "c-03",
+  "vecino": "miguel",
+  "distrito": "San Juan de Lurigancho",
+  "tipo": "movilidad",
+  "estado": "disponible",
+  "categoria": "Asientos disponibles",
+  "titulo": "Salgo hacia Estación Bayóvar, 2 asientos",
+  "descripcion": "Salgo en 20 minutos. Puedo recoger en el camino.",
+  "pago": null,
+  "msg": "Voy a Bayóvar · 2 asientos",
+  "origen": "Río Moche, San Juan de Lurigancho (zona aproximada)",
+  "lngLat": [
+   -77.00129,
+   -11.96795
+  ],
+  "destino": "Estación Bayóvar",
+  "destinoLngLat": [
+   -76.98762,
+   -11.95979
+  ]
+ },
+ {
+  "key": "c-04",
+  "vecino": "rocio",
+  "distrito": "San Juan de Lurigancho",
+  "tipo": "cachuelo",
+  "estado": "solicita",
+  "categoria": "Pintura de viviendas",
+  "titulo": "Necesito pintar dos cuartos",
+  "descripcion": "Dos habitaciones pequeñas. Yo pongo la pintura.",
+  "pago": "S/ 180 referencial",
+  "msg": "Busco quien pinte dos cuartos",
+  "origen": "Lyon, San Juan de Lurigancho (zona aproximada)",
+  "lngLat": [
+   -76.99232,
+   -11.96534
+  ]
+ },
+ {
+  "key": "c-05",
+  "vecino": "hugo",
+  "distrito": "San Juan de Lurigancho",
+  "tipo": "favor",
+  "estado": "disponible",
+  "categoria": "Ayudar con compras",
+  "titulo": "Hago las compras del mercado por ti",
+  "descripcion": "Voy al mercado cada mañana y puedo traerte lo que necesites.",
+  "pago": null,
+  "msg": "Hago tus compras del mercado",
+  "origen": "Avenida Héroes del Cenepa, San Juan de Lurigancho (zona aproximada)",
+  "lngLat": [
+   -76.99041,
+   -11.9567
+  ]
+ },
+ {
+  "key": "c-06",
+  "vecino": "elena",
+  "distrito": "San Juan de Lurigancho",
+  "tipo": "emergencia",
+  "estado": "emergencia",
+  "categoria": "SOS de demostración",
+  "titulo": "SOS: humo en una vivienda (demostración)",
+  "descripcion": "Emergencia de demostración. No avisa a servicios reales.",
+  "pago": null,
+  "msg": "¡Hay humo en mi casa! ¿Alguien cerca?",
+  "origen": "Avenida Pirámide del Sol, San Juan de Lurigancho (zona aproximada)",
+  "lngLat": [
+   -77.0017,
+   -12.02218
+  ],
+  "sos": true
+ },
+ {
+  "key": "c-07",
+  "vecino": "raul",
+  "distrito": "Jicamarca Anexo 22",
+  "tipo": "cachuelo",
+  "estado": "disponible",
+  "categoria": "Gasfitería",
+  "titulo": "Gasfitero para fugas y caños",
+  "descripcion": "Arreglo fugas, cambio de griferías y destapo desagües.",
+  "pago": "S/ 60 referencial",
+  "msg": "Gasfitero en Anexo 22",
+  "origen": "Jicamarca Anexo 22 (zona aproximada)",
+  "lngLat": [
+   -76.9572,
+   -11.92383
+  ]
+ },
+ {
+  "key": "c-08",
+  "vecino": "patricia",
+  "distrito": "Jicamarca Anexo 22",
+  "tipo": "cachuelo",
+  "estado": "solicita",
+  "categoria": "Instalación eléctrica",
+  "titulo": "Necesito instalar tomacorrientes",
+  "descripcion": "Cuatro tomacorrientes y un interruptor en vivienda nueva.",
+  "pago": "S/ 120 referencial",
+  "msg": "Necesito un electricista",
+  "origen": "Jicamarca Anexo 22 (zona aproximada)",
+  "lngLat": [
+   -76.96339,
+   -11.92437
+  ]
+ },
+ {
+  "key": "c-09",
+  "vecino": "victor",
+  "distrito": "Jicamarca Anexo 22",
+  "tipo": "favor",
+  "estado": "disponible",
+  "categoria": "Prestar herramientas",
+  "titulo": "Presto taladro y herramientas",
+  "descripcion": "Prestamos por el día, con devolución el mismo día.",
+  "pago": null,
+  "msg": "Presto taladro y herramientas",
+  "origen": "Yahuar Huaca, Jicamarca Anexo 22 (zona aproximada)",
+  "lngLat": [
+   -76.95947,
+   -11.92915
+  ]
+ },
+ {
+  "key": "c-10",
+  "vecino": "gladys",
+  "distrito": "Jicamarca Anexo 22",
+  "tipo": "favor",
+  "estado": "solicita",
+  "categoria": "Apoyo a adultos mayores",
+  "titulo": "Busco apoyo para mi abuela",
+  "descripcion": "Acompañarla a su control médico el sábado por la mañana.",
+  "pago": null,
+  "msg": "Busco apoyo para mi abuela",
+  "origen": "Jicamarca Anexo 22 (zona aproximada)",
+  "lngLat": [
+   -76.96269,
+   -11.92824
+  ]
+ },
+ {
+  "key": "c-11",
+  "vecino": "marco",
+  "distrito": "Jicamarca Anexo 22",
+  "tipo": "movilidad",
+  "estado": "disponible",
+  "categoria": "Asientos disponibles",
+  "titulo": "Voy a Estación Bayóvar, 3 asientos",
+  "descripcion": "Salgo temprano desde el Anexo 22 y puedo recoger en la ruta.",
+  "pago": null,
+  "msg": "Voy a Bayóvar · 3 asientos",
+  "origen": "Huayna Cápac, Jicamarca Anexo 22 (zona aproximada)",
+  "lngLat": [
+   -76.95589,
+   -11.92606
+  ],
+  "destino": "Estación Bayóvar",
+  "destinoLngLat": [
+   -76.98762,
+   -11.95979
+  ]
+ },
+ {
+  "key": "c-12",
+  "vecino": "nelly",
+  "distrito": "Jicamarca Anexo 22",
+  "tipo": "emergencia",
+  "estado": "emergencia",
+  "categoria": "SOS de demostración",
+  "titulo": "SOS: caída de un adulto mayor (demostración)",
+  "descripcion": "Emergencia de demostración. No avisa a servicios reales.",
+  "pago": null,
+  "msg": "¡Mi abuelo se cayó! ¿Hay un vecino cerca?",
+  "origen": "Avenida Lloque Yupanqui, Jicamarca Anexo 22 (zona aproximada)",
+  "lngLat": [
+   -76.96523,
+   -11.92698
+  ],
+  "sos": true
+ },
+ {
+  "key": "c-13",
+  "vecino": "ivan",
+  "distrito": "Jicamarca Anexo 22",
+  "tipo": "cachuelo",
+  "estado": "solicita",
+  "categoria": "Apoyo con entregas",
+  "titulo": "Busco apoyo con entregas locales",
+  "descripcion": "Entregar pedidos en moto o a pie, por la tarde.",
+  "pago": "S/ 40 referencial",
+  "msg": "Busco apoyo con entregas",
+  "origen": "El Sol, Jicamarca Anexo 22 (zona aproximada)",
+  "lngLat": [
+   -76.95949,
+   -11.9211
+  ]
+ },
+ {
+  "key": "c-14",
+  "vecino": "silvia",
+  "distrito": "El Agustino",
+  "tipo": "cachuelo",
+  "estado": "disponible",
+  "categoria": "Mudanzas pequeñas",
+  "titulo": "Hago mudanzas pequeñas",
+  "descripcion": "Camioneta pequeña para muebles y cajas, dentro de Lima.",
+  "pago": "S/ 90 referencial",
+  "msg": "Mudanzas pequeñas disponibles",
+  "origen": "Avenida César Vallejo, El Agustino (zona aproximada)",
+  "lngLat": [
+   -76.99296,
+   -12.03975
+  ]
+ },
+ {
+  "key": "c-15",
+  "vecino": "andres",
+  "distrito": "El Agustino",
+  "tipo": "favor",
+  "estado": "solicita",
+  "categoria": "Transportar objetos",
+  "titulo": "Necesito llevar un mueble",
+  "descripcion": "Un ropero desarmado, a dos cuadras de mi casa.",
+  "pago": null,
+  "msg": "¿Alguien me ayuda a mover un ropero?",
+  "origen": "Las Lilas, El Agustino (zona aproximada)",
+  "lngLat": [
+   -76.99948,
+   -12.04377
+  ]
+ },
+ {
+  "key": "c-16",
+  "vecino": "teresa",
+  "distrito": "El Agustino",
+  "tipo": "movilidad",
+  "estado": "solicita",
+  "categoria": "Necesito que me acerquen",
+  "titulo": "Necesito llegar a Plaza Mayor",
+  "descripcion": "Cita a las 10 a. m. Puedo compartir el costo de combustible.",
+  "pago": null,
+  "msg": "Voy a Plaza Mayor, ¿me acercan?",
+  "origen": "La Libertad, El Agustino (zona aproximada)",
+  "lngLat": [
+   -76.99706,
+   -12.04417
+  ],
+  "destino": "Plaza Mayor de Lima",
+  "destinoLngLat": [
+   -77.03057,
+   -12.04594
+  ]
+ },
+ {
+  "key": "c-17",
+  "vecino": "julio",
+  "distrito": "El Agustino",
+  "tipo": "cachuelo",
+  "estado": "solicita",
+  "categoria": "Limpieza",
+  "titulo": "Busco limpieza de departamento",
+  "descripcion": "Limpieza general de un departamento de dos cuartos.",
+  "pago": "S/ 70 referencial",
+  "msg": "Busco limpieza de departamento",
+  "origen": "Calle De La Palmera, El Agustino (zona aproximada)",
+  "lngLat": [
+   -76.99793,
+   -12.03846
+  ]
+ },
+ {
+  "key": "c-18",
+  "vecino": "karina",
+  "distrito": "Cercado de Lima",
+  "tipo": "cachuelo",
+  "estado": "disponible",
+  "categoria": "Reparación de electrodomésticos",
+  "titulo": "Reparo refrigeradoras y lavadoras",
+  "descripcion": "Diagnóstico a domicilio. Repuestos aparte.",
+  "pago": "S/ 80 referencial",
+  "msg": "Reparo electrodomésticos",
+  "origen": "Cercado de Lima (zona aproximada)",
+  "lngLat": [
+   -77.02779,
+   -12.04425
+  ]
+ },
+ {
+  "key": "c-19",
+  "vecino": "omar",
+  "distrito": "Cercado de Lima",
+  "tipo": "favor",
+  "estado": "disponible",
+  "categoria": "Acompañar a un vecino",
+  "titulo": "Acompaño a vecinos a sus trámites",
+  "descripcion": "Voy contigo a trámites y citas en el centro.",
+  "pago": null,
+  "msg": "Acompaño a vecinos a trámites",
+  "origen": "Jirón Ocoña, Cercado de Lima (zona aproximada)",
+  "lngLat": [
+   -77.03717,
+   -12.04949
+  ]
+ },
+ {
+  "key": "c-20",
+  "vecino": "paola",
+  "distrito": "Cercado de Lima",
+  "tipo": "movilidad",
+  "estado": "solicita",
+  "categoria": "Necesito que me acerquen",
+  "titulo": "Voy a Gamarra",
+  "descripcion": "Necesito llegar a Gamarra antes de mediodía.",
+  "pago": null,
+  "msg": "Voy a Gamarra, ¿alguien me lleva?",
+  "origen": "Jirón Apurímac, Cercado de Lima (zona aproximada)",
+  "lngLat": [
+   -77.03206,
+   -12.05253
+  ],
+  "destino": "Gamarra",
+  "destinoLngLat": [
+   -77.01238,
+   -12.06528
+  ]
+ },
+ {
+  "key": "c-21",
+  "vecino": "wilson",
+  "distrito": "Cercado de Lima",
+  "tipo": "emergencia",
+  "estado": "emergencia",
+  "categoria": "SOS de demostración",
+  "titulo": "SOS: corte de luz con un vecino en oxígeno (demostración)",
+  "descripcion": "Emergencia de demostración. No avisa a servicios reales.",
+  "pago": null,
+  "msg": "¡Sin luz y mi vecino usa oxígeno!",
+  "origen": "Avenida Emancipación, Cercado de Lima (zona aproximada)",
+  "lngLat": [
+   -77.03406,
+   -12.04837
+  ],
+  "sos": true
+ },
+ {
+  "key": "c-22",
+  "vecino": "yesenia",
+  "distrito": "San Borja",
+  "tipo": "cachuelo",
+  "estado": "disponible",
+  "categoria": "Pintura de viviendas",
+  "titulo": "Pinto fachadas y interiores",
+  "descripcion": "Trabajo limpio, con materiales a coordinar.",
+  "pago": "S/ 200 referencial",
+  "msg": "Pinto casas y departamentos",
+  "origen": "Jirón Henri Rousseau, San Borja (zona aproximada)",
+  "lngLat": [
+   -76.99286,
+   -12.09425
+  ]
+ },
+ {
+  "key": "c-23",
+  "vecino": "cesar",
+  "distrito": "San Borja",
+  "tipo": "favor",
+  "estado": "solicita",
+  "categoria": "Ayudar con compras",
+  "titulo": "Necesito ayuda con mis compras",
+  "descripcion": "Compras semanales para una persona mayor.",
+  "pago": null,
+  "msg": "¿Me ayudan con las compras?",
+  "origen": "Enrique Granados, San Borja (zona aproximada)",
+  "lngLat": [
+   -76.9994,
+   -12.09827
+  ]
+ },
+ {
+  "key": "c-24",
+  "vecino": "doris",
+  "distrito": "San Borja",
+  "tipo": "movilidad",
+  "estado": "disponible",
+  "categoria": "Asientos disponibles",
+  "titulo": "Voy hacia Miraflores, 2 asientos",
+  "descripcion": "Salgo por la mañana, sin desvío.",
+  "pago": null,
+  "msg": "Voy a Miraflores · 2 asientos",
+  "origen": "Avenida San Luis, San Borja (zona aproximada)",
+  "lngLat": [
+   -76.99471,
+   -12.10049
+  ],
+  "destino": "Miraflores",
+  "destinoLngLat": [
+   -77.02591,
+   -12.1215
+  ]
+ },
+ {
+  "key": "c-25",
+  "vecino": "alex",
+  "distrito": "Ate",
+  "tipo": "cachuelo",
+  "estado": "solicita",
+  "categoria": "Gasfitería",
+  "titulo": "Necesito un gasfitero",
+  "descripcion": "Fuga en el baño. Trabajo para hoy.",
+  "pago": "S/ 70 referencial",
+  "msg": "Necesito un gasfitero urgente",
+  "origen": "Calle 6 de Enero, Ate (zona aproximada)",
+  "lngLat": [
+   -76.89373,
+   -12.03642
+  ]
+ },
+ {
+  "key": "c-26",
+  "vecino": "brenda",
+  "distrito": "Ate",
+  "tipo": "favor",
+  "estado": "disponible",
+  "categoria": "Prestar una escalera",
+  "titulo": "Presto escalera de 4 metros",
+  "descripcion": "Disponible fines de semana.",
+  "pago": null,
+  "msg": "Presto escalera de 4 metros",
+  "origen": "Ate (zona aproximada)",
+  "lngLat": [
+   -76.89229,
+   -12.03965
+  ]
+ },
+ {
+  "key": "c-27",
+  "vecino": "fabian",
+  "distrito": "Ate",
+  "tipo": "movilidad",
+  "estado": "solicita",
+  "categoria": "Necesito que me acerquen",
+  "titulo": "Voy a Santa Anita",
+  "descripcion": "Salgo a las 7 a. m. al mercado.",
+  "pago": null,
+  "msg": "Voy a Mercado Santa Anita, ¿me llevan?",
+  "origen": "Avenida San Juan Bautista, Ate (zona aproximada)",
+  "lngLat": [
+   -76.90009,
+   -12.04143
+  ],
+  "destino": "Mercado Santa Anita",
+  "destinoLngLat": [
+   -76.93871,
+   -12.04413
+  ]
+ },
+ {
+  "key": "c-28",
+  "vecino": "giovanna",
+  "distrito": "Santa Anita",
+  "tipo": "cachuelo",
+  "estado": "disponible",
+  "categoria": "Limpieza",
+  "titulo": "Limpieza de casas y oficinas",
+  "descripcion": "Experiencia de 5 años. Llevo mis productos.",
+  "pago": "S/ 60 referencial",
+  "msg": "Limpieza de casas y oficinas",
+  "origen": "Calle 53, Santa Anita (zona aproximada)",
+  "lngLat": [
+   -76.95914,
+   -12.04159
+  ]
+ },
+ {
+  "key": "c-29",
+  "vecino": "henry",
+  "distrito": "Santa Anita",
+  "tipo": "favor",
+  "estado": "solicita",
+  "categoria": "Apoyo a adultos mayores",
+  "titulo": "Busco compañía para mi mamá",
+  "descripcion": "Dos horas por la tarde.",
+  "pago": null,
+  "msg": "Busco compañía para mi mamá",
+  "origen": "Calle Los Milanos, Santa Anita (zona aproximada)",
+  "lngLat": [
+   -76.96471,
+   -12.0455
+  ]
+ },
+ {
+  "key": "c-30",
+  "vecino": "irma",
+  "distrito": "Santa Anita",
+  "tipo": "emergencia",
+  "estado": "emergencia",
+  "categoria": "SOS de demostración",
+  "titulo": "SOS: fuga de gas (demostración)",
+  "descripcion": "Emergencia de demostración. No avisa a servicios reales.",
+  "pago": null,
+  "msg": "¡Huele a gas! ¿Hay un vecino cerca?",
+  "origen": "Avenida Colectora Industrial, Santa Anita (zona aproximada)",
+  "lngLat": [
+   -76.95836,
+   -12.046
+  ],
+  "sos": true
+ },
+ {
+  "key": "c-31",
+  "vecino": "joel",
+  "distrito": "La Victoria",
+  "tipo": "cachuelo",
+  "estado": "solicita",
+  "categoria": "Apoyo con entregas",
+  "titulo": "Busco apoyo con entregas",
+  "descripcion": "Entregas de ropa en la zona comercial.",
+  "pago": "S/ 50 referencial",
+  "msg": "Necesito apoyo con entregas",
+  "origen": "Prolongación Avenida San Pablo, La Victoria (zona aproximada)",
+  "lngLat": [
+   -77.01,
+   -12.06302
+  ]
+ },
+ {
+  "key": "c-32",
+  "vecino": "kelly",
+  "distrito": "La Victoria",
+  "tipo": "favor",
+  "estado": "disponible",
+  "categoria": "Transportar objetos",
+  "titulo": "Llevo objetos en mi camioneta",
+  "descripcion": "Pequeñas cargas dentro de Lima.",
+  "pago": null,
+  "msg": "Llevo objetos en mi camioneta",
+  "origen": "Jirón Manuel Cisneros, La Victoria (zona aproximada)",
+  "lngLat": [
+   -77.02073,
+   -12.07216
+  ]
+ },
+ {
+  "key": "c-33",
+  "vecino": "luz",
+  "distrito": "La Victoria",
+  "tipo": "movilidad",
+  "estado": "solicita",
+  "categoria": "Necesito que me acerquen",
+  "titulo": "Voy a Cercado de Lima",
+  "descripcion": "Necesito llegar a Plaza San Martín.",
+  "pago": null,
+  "msg": "Voy a Plaza San Martín, ¿me acercan?",
+  "origen": "Avenida de Las Américas, La Victoria (zona aproximada)",
+  "lngLat": [
+   -77.01539,
+   -12.07658
+  ],
+  "destino": "Plaza San Martín",
+  "destinoLngLat": [
+   -77.03482,
+   -12.05074
+  ]
+ },
+ {
+  "key": "c-34",
+  "vecino": "mario",
+  "distrito": "Rímac",
+  "tipo": "cachuelo",
+  "estado": "disponible",
+  "categoria": "Instalación eléctrica",
+  "titulo": "Electricista certificado",
+  "descripcion": "Instalaciones y reparaciones eléctricas del hogar.",
+  "pago": "S/ 90 referencial",
+  "msg": "Electricista en el Rímac",
+  "origen": "Rímac (zona aproximada)",
+  "lngLat": [
+   -77.02434,
+   -12.03284
+  ]
+ },
+ {
+  "key": "c-35",
+  "vecino": "noemi",
+  "distrito": "Rímac",
+  "tipo": "favor",
+  "estado": "solicita",
+  "categoria": "Acompañar a un vecino",
+  "titulo": "Necesito compañía para un trámite",
+  "descripcion": "Una mañana en una oficina pública.",
+  "pago": null,
+  "msg": "Necesito compañía para un trámite",
+  "origen": "Avenida B, Rímac (zona aproximada)",
+  "lngLat": [
+   -77.03793,
+   -12.01769
+  ]
+ },
+ {
+  "key": "c-36",
+  "vecino": "oscar",
+  "distrito": "Rímac",
+  "tipo": "movilidad",
+  "estado": "disponible",
+  "categoria": "Asientos disponibles",
+  "titulo": "Voy al centro de Lima, 3 asientos",
+  "descripcion": "Salgo a las 8 a. m.",
+  "pago": null,
+  "msg": "Voy a Plaza Mayor · 3 asientos",
+  "origen": "Calle 12, Rímac (zona aproximada)",
+  "lngLat": [
+   -77.03251,
+   -12.02271
+  ],
+  "destino": "Plaza Mayor de Lima",
+  "destinoLngLat": [
+   -77.03057,
+   -12.04594
+  ]
+ },
+ {
+  "key": "c-37",
+  "vecino": "pilar",
+  "distrito": "Miraflores",
+  "tipo": "cachuelo",
+  "estado": "solicita",
+  "categoria": "Reparación de computadoras",
+  "titulo": "Necesito reparar mi computadora",
+  "descripcion": "No enciende. Puedo llevarla.",
+  "pago": "S/ 60 referencial",
+  "msg": "Mi computadora no enciende",
+  "origen": "Avenida Diagonal, Miraflores (zona aproximada)",
+  "lngLat": [
+   -77.02972,
+   -12.12023
+  ]
+ },
+ {
+  "key": "c-38",
+  "vecino": "rodrigo",
+  "distrito": "Santiago de Surco",
+  "tipo": "favor",
+  "estado": "disponible",
+  "categoria": "Prestar herramientas",
+  "titulo": "Presto herramientas de jardinería",
+  "descripcion": "Podadora, tijeras y mangueras.",
+  "pago": null,
+  "msg": "Presto herramientas de jardín",
+  "origen": "Jirón Batalla de San Juan, Santiago de Surco (zona aproximada)",
+  "lngLat": [
+   -76.98461,
+   -12.12301
+  ]
+ },
+ {
+  "key": "c-39",
+  "vecino": "sandra",
+  "distrito": "San Miguel",
+  "tipo": "movilidad",
+  "estado": "solicita",
+  "categoria": "Necesito que me acerquen",
+  "titulo": "Voy hacia el centro de Lima",
+  "descripcion": "Salgo a las 9 a. m.",
+  "pago": null,
+  "msg": "Voy al centro, ¿me acercan?",
+  "origen": "Jose Domingo Choquehuanca, San Miguel (zona aproximada)",
+  "lngLat": [
+   -77.09269,
+   -12.08086
+  ],
+  "destino": "Plaza Mayor de Lima",
+  "destinoLngLat": [
+   -77.03057,
+   -12.04594
+  ]
+ },
+ {
+  "key": "c-40",
+  "vecino": "tomas",
+  "distrito": "Comas",
+  "tipo": "cachuelo",
+  "estado": "disponible",
+  "categoria": "Mudanzas pequeñas",
+  "titulo": "Mudanzas pequeñas en Comas",
+  "descripcion": "Flete pequeño para cajas y muebles.",
+  "pago": "S/ 80 referencial",
+  "msg": "Hago mudanzas pequeñas",
+  "origen": "Comas (zona aproximada)",
+  "lngLat": [
+   -77.04315,
+   -11.93055
+  ]
+ },
+ {
+  "key": "c-41",
+  "vecino": "ursula",
+  "distrito": "Los Olivos",
+  "tipo": "emergencia",
+  "estado": "emergencia",
+  "categoria": "SOS de demostración",
+  "titulo": "SOS: aniego en una vivienda (demostración)",
+  "descripcion": "Emergencia de demostración. No avisa a servicios reales.",
+  "pago": null,
+  "msg": "¡Se inunda mi casa! ¿Hay alguien cerca?",
+  "origen": "Jirón José Sato, Los Olivos (zona aproximada)",
+  "lngLat": [
+   -77.07069,
+   -11.96414
+  ],
+  "sos": true
+ },
+ {
+  "key": "c-42",
+  "vecino": "vanesa",
+  "distrito": "Independencia",
+  "tipo": "favor",
+  "estado": "solicita",
+  "categoria": "Ayudar con compras",
+  "titulo": "Necesito ayuda con compras",
+  "descripcion": "Compras de la semana.",
+  "pago": null,
+  "msg": "¿Alguien me ayuda con las compras?",
+  "origen": "José Olaya, Independencia (zona aproximada)",
+  "lngLat": [
+   -77.04923,
+   -11.99138
+  ]
+ },
+ {
+  "key": "c-43",
+  "vecino": "walter",
+  "distrito": "Villa El Salvador",
+  "tipo": "cachuelo",
+  "estado": "solicita",
+  "categoria": "Pintura de viviendas",
+  "titulo": "Necesito pintar mi casa",
+  "descripcion": "Una casa de dos pisos.",
+  "pago": "S/ 250 referencial",
+  "msg": "Necesito quien pinte mi casa",
+  "origen": "Calle 8, Villa El Salvador (zona aproximada)",
+  "lngLat": [
+   -76.94679,
+   -12.21519
+  ]
+ },
+ {
+  "key": "c-44",
+  "vecino": "ximena",
+  "distrito": "San Martín de Porres",
+  "tipo": "movilidad",
+  "estado": "disponible",
+  "categoria": "Asientos disponibles",
+  "titulo": "Voy a Plaza Norte, 2 asientos",
+  "descripcion": "Salgo a las 7 a. m.",
+  "pago": null,
+  "msg": "Voy a Plaza Norte · 2 asientos",
+  "origen": "San Martín de Porres (zona aproximada)",
+  "lngLat": [
+   -77.10063,
+   -11.98569
+  ],
+  "destino": "OLIVOS",
+  "destinoLngLat": [
+   -77.07307,
+   -11.96599
+  ]
+ },
+ {
+  "key": "c-45",
+  "vecino": "yolanda",
+  "distrito": "Jicamarca Anexo 22",
+  "tipo": "movilidad",
+  "estado": "solicita",
+  "categoria": "Necesito que me acerquen",
+  "titulo": "Necesita que lo acerquen a Estación Bayóvar",
+  "descripcion": "Pasajero simulado para probar RutaJuntos cerca de Anexo 22.",
+  "pago": null,
+  "msg": "Voy a Bayóvar, ¿alguien me lleva?",
+  "origen": "Avenida Inca Pachacútec, Jicamarca Anexo 22 (zona aproximada)",
+  "destino": "Estación Bayóvar",
+  "lngLat": [
+   -76.96808,
+   -11.93187
+  ],
+  "destinoLngLat": [
+   -76.98765,
+   -11.95977
+  ],
+  "anexo22": true
+ },
+ {
+  "key": "c-46",
+  "vecino": "zoila",
+  "distrito": "Jicamarca Anexo 22",
+  "tipo": "movilidad",
+  "estado": "solicita",
+  "categoria": "Necesito que me acerquen",
+  "titulo": "Necesita que lo acerquen a Av. Fernando Wiesse",
+  "descripcion": "Pasajero simulado para probar RutaJuntos cerca de Anexo 22.",
+  "pago": null,
+  "msg": "Bajo por la avenida, ¿me acercan?",
+  "origen": "Avenida Fernando Wiesse, Jicamarca Anexo 22 (zona aproximada)",
+  "destino": "Av. Fernando Wiesse",
+  "lngLat": [
+   -76.97288,
+   -11.93871
+  ],
+  "destinoLngLat": [
+   -76.98657,
+   -11.94958
+  ],
+  "anexo22": true
+ },
+ {
+  "key": "c-47",
+  "vecino": "bruno",
+  "distrito": "Jicamarca Anexo 22",
+  "tipo": "movilidad",
+  "estado": "solicita",
+  "categoria": "Necesito que me acerquen",
+  "titulo": "Necesita que lo acerquen a Mercado de Anexo 22 (sentido contrario)",
+  "descripcion": "Pasajero simulado para probar RutaJuntos cerca de Anexo 22.",
+  "pago": null,
+  "msg": "Voy al mercado de Anexo 22, ¿me llevan?",
+  "origen": "Avenida Fernando Wiesse, Jicamarca Anexo 22 (zona aproximada)",
+  "destino": "Mercado de Anexo 22 (sentido contrario)",
+  "lngLat": [
+   -76.97874,
+   -11.93933
+  ],
+  "destinoLngLat": [
+   -76.95932,
+   -11.92564
+  ],
+  "anexo22": true
+ },
+ {
+  "key": "c-48",
+  "vecino": "aurora",
+  "distrito": "Jicamarca Anexo 22",
+  "tipo": "movilidad",
+  "estado": "solicita",
+  "categoria": "Necesito que me acerquen",
+  "titulo": "Necesita que lo acerquen a Estación Bayóvar",
+  "descripcion": "Pasajero simulado para probar RutaJuntos cerca de Anexo 22.",
+  "pago": null,
+  "msg": "Necesito llegar a Bayóvar hoy",
+  "origen": "Avenida Fernando Wiesse, Jicamarca Anexo 22 (zona aproximada)",
+  "destino": "Estación Bayóvar",
+  "lngLat": [
+   -76.98727,
+   -11.95056
+  ],
+  "destinoLngLat": [
+   -76.98765,
+   -11.95977
+  ],
+  "anexo22": true
+ },
+ {
+  "key": "c-49",
+  "vecino": "benito",
+  "distrito": "Jicamarca Anexo 22",
+  "tipo": "movilidad",
+  "estado": "solicita",
+  "categoria": "Necesito que me acerquen",
+  "titulo": "Necesita que lo acerquen a Estación Bayóvar",
+  "descripcion": "Pasajero simulado para probar RutaJuntos cerca de Anexo 22.",
+  "pago": null,
+  "msg": "Voy a Bayóvar, ¿me acercan?",
+  "origen": "Avenida Fernando Wiesse, Jicamarca Anexo 22 (zona aproximada)",
+  "destino": "Estación Bayóvar",
+  "lngLat": [
+   -76.98753,
+   -11.9596
+  ],
+  "destinoLngLat": [
+   -76.98765,
+   -11.95977
+  ],
+  "anexo22": true
+ }
+]

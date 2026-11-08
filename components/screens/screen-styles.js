@@ -16,7 +16,7 @@ export const screenStyles = {
   content: "flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-28 flex flex-col gap-3.5",
   error: "text-[#9e0c24] font-bold text-[15px]",
   field: "flex flex-col gap-1.5 [&_label]:font-bold [&_label]:text-[15px]",
-  frame: "w-97.5 h-211 flex flex-col bg-white overflow-hidden relative",
+  frame: "w-full md:max-w-[46rem] mx-auto h-dvh md:border-x md:border-(--color-line) flex flex-col bg-white overflow-hidden relative",
   grow: "flex-1 min-w-0",
   header: "flex items-center gap-1 p-2 min-h-16 flex-none [&_h1]:text-[22px] [&_h1]:flex-1",
   icon: "w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none",

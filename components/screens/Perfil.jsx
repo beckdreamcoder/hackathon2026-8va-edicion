@@ -5,14 +5,15 @@ import { useViewStack } from "@/lib/hooks/use-view-stack";
 import { useTextInput } from "@/lib/hooks/use-text-input";
 
 import { Fragment, useEffect, useState } from "react";
-import { setDemo, useDemoState } from "@/lib/demo/store";
+import { useDemoState } from "@/lib/demo/store";
+import { useBloqueos, bloquear, desbloquear, cambiarUsuarioDemo, useCoordinaciones } from "@/lib/demo/coordinaciones";
 import { useSesion, useAvisos, useSellos, sellosDe, logEvento, VECINOS } from "@/lib/demo/shared";
 
 const NOTES_BASE = [{id: "nb1", kind: "Mensaje", title: "Luis te escribió sobre la escalera", time: "hace 5 min", href: "/favores"}, {id: "nb2", kind: "Solicitud", title: "Carlos puede llevarte al hospital", time: "hace 20 min", href: "/movilidad"}, {id: "nb3", kind: "Campaña", title: "Abrigo para familias de Calca: nueva actualización", time: "hace 1 h", href: "/campanas"}, {id: "nb4", kind: "Emergencia", title: "Calles anegadas en Campoy (reportado por varios vecinos)", time: "hace 25 min", href: "/emergencias"}, {id: "nb5", kind: "Acuerdo", title: "Pedro propuso un acuerdo para la fuga", time: "ayer", href: "Cachuelos"}];
 const PERMS = [{id: "pm_ubic", name: "Ubicación", help: "Para mostrar vecinos y alertas cerca. Si la deniegas, eliges tu zona a mano."}, {id: "pm_cam", name: "Cámara", help: "Solo para reportes de emergencia. La foto no se sube desde la galería."}, {id: "pm_noti", name: "Notificaciones", help: "Avisos de mensajes, solicitudes y alertas de tu zona."}, {id: "pm_sms", name: "Canal SMS", help: "Consultar por mensaje sin datos móviles. Requiere celular verificado."}, {id: "pm_datos", name: "Uso de mis datos", help: "Necesario para tener cuenta. Tu DNI nunca es público."}];
 const CHIP_ON = "min-h-11 rounded-full border-[1.5px] border-(--color-brand) bg-(--color-brand) px-3.5 py-0 font-bold text-[15px] whitespace-nowrap text-white on";
 const PERFIL_INICIAL = { nombres: {}, phone: "idle", numero: "", perms: {pm_ubic: true, pm_cam: true, pm_noti: true, pm_sms: false, pm_datos: true}, leidos: [], cats: ["Mensaje", "Solicitud", "Campaña"], bloqueados: [] };
-const SESIONES = [{ id: "maria", name: "María", role: "Solicitante" }, { id: "luis", name: "Luis", role: "Oferente" }, { id: "carlos", name: "Carlos", role: "Coordinador de junta" }];
+const SESIONES = [{ id: "maria", name: "María", role: "Solicitante" }, { id: "luis", name: "Luis", role: "Oferente" }, { id: "pedro", name: "Pedro", role: "Gasfitero" }, { id: "carlos", name: "Carlos", role: "Coordinador de junta" }];
 const KIND = { favor: "Mensaje", cachuelo: "Solicitud", junta: "Solicitud", solidaridad: "Campaña", emergencia: "Emergencia" };
 import { screenStyles } from "./screen-styles";
 
@@ -64,12 +65,7 @@ export default function Perfil() {
     ...s,
     cls: s.id === sesion.userId ? CHIP_ON : screenStyles.chip,
     lbl: s.id === sesion.userId ? "Activa" : "Cambiar",
-    pick: () => {
-      setSesion({ userId: s.id });
-      if (s.id === "maria" || s.id === "luis") setDemo("favor-escalera", {}, { actor: s.id });
-      if (s.id === "maria" || s.id === "carlos") setDemo("movilidad-hospital", {}, { actor: s.id });
-      logEvento(`Sesión demo cambiada a ${s.name}`);
-    },
+    pick: () => cambiarUsuarioDemo(s.id),
   }));
   const cerrarSesion = () => { setSesion({ registrada: false }); logEvento("Sesión cerrada"); };
 
@@ -86,16 +82,24 @@ export default function Perfil() {
 
   const [sheetRep, setSheetRep] = useState(false);
   const [repDone, setRepDone] = useState(false);
-  const [target, setTarget] = useState("Luis");
+  const [bloqueos] = useBloqueos();
+  const [co] = useCoordinaciones();
+  const pendRec = co.items.filter((x) => x.estado === "solicitada" && x.receptor === sesion.userId).length;
+  const [target, setTarget] = useState("luis");
   const [motivo, setMotivo] = useState("Mensajes molestos");
   const repForm = !repDone;
-  const targets = ["Luis", "Carlos"].map((name) => ({ name, cls: name === target ? CHIP_ON : screenStyles.chip, pick: () => setTarget(name) }));
+  const posibles = Object.values(VECINOS).filter((v) => v.id !== sesion.userId && !v.sim);
+  const targetId = posibles.some((v) => v.id === target) ? target : posibles[0].id;
+  const targets = posibles.map((v) => ({ name: v.name, cls: v.id === targetId ? CHIP_ON : screenStyles.chip, pick: () => setTarget(v.id) }));
+  const misBloqueos = bloqueos.items.filter((x) => x.by === sesion.userId);
   const openRep = () => { setRepDone(false); setSheetRep(true); };
   const closeRep = () => setSheetRep(false);
   const confirmRep = () => {
-    setPf((p) => ({ bloqueados: [...new Set([...p.bloqueados, target])] }));
+    const nombre = VECINOS[targetId].name;
+    bloquear(sesion.userId, targetId);
+    setPf((p) => ({ bloqueados: [...new Set([...p.bloqueados, nombre])] }));
     setRepDone(true);
-    logEvento(`Reporte demo y bloqueo de ${target} · motivo: ${motivo}${note.value ? " · nota" : ""}`);
+    logEvento(`Reporte demo y bloqueo de ${nombre} · motivo: ${motivo}${note.value ? " · nota" : ""}`);
   };
   return (
     <div className={screenStyles.screen}>
@@ -107,7 +111,7 @@ export default function Perfil() {
         <div className={`${screenStyles.card} flex-row! items-center!`}><span className="w-16 h-16 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[26px] flex-none bg-[#f4d9c6] text-[#8a2b07]" aria-hidden="true">{ini}</span><div className={screenStyles.grow}><h2 className="text-[24px]!">{user.value}</h2><p className={screenStyles.muted}>{sesion.localidad} · {sesion.departamento}</p><span className={screenStyles.badge}>{refLbl}</span></div></div>
         <p className={screenStyles.muted}>Tu DNI y tu celular son privados. Solo se muestran tu nombre público y tu zona aproximada.</p>
         <a className="flex items-center gap-3.5 min-h-15 px-3.5 py-2 bg-white border border-(--color-line) rounded-[18px] w-full text-left [&_.ic]:text-(--color-brand)" href="/movilidad"><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3" /><circle cx="5" cy="10" r="2.2" /><circle cx="19" cy="10" r="2.2" /><path d="M6 20a6 6 0 0 1 12 0" /></svg><b className={screenStyles.grow}>Mi junta vecinal</b><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic text-(--color-ink)!" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></a>
-        <a className="flex items-center gap-3.5 min-h-15 px-3.5 py-2 bg-white border border-(--color-line) rounded-[18px] w-full text-left [&_.ic]:text-(--color-brand)" href="/favores"><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z" /></svg><b className={screenStyles.grow}>Mis coordinaciones</b><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic text-(--color-ink)!" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></a>
+        <a className="flex items-center gap-3.5 min-h-15 px-3.5 py-2 bg-white border border-(--color-line) rounded-[18px] w-full text-left [&_.ic]:text-(--color-brand)" href="/coordinaciones"><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z" /></svg><b className={screenStyles.grow}>Mis coordinaciones</b>{pendRec > 0 && (<span className={screenStyles.badgeAlert}>{pendRec} {pendRec === 1 ? "pendiente" : "pendientes"}</span>)}<svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic text-(--color-ink)!" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></a>
         <a className="flex items-center gap-3.5 min-h-15 px-3.5 py-2 bg-white border border-(--color-line) rounded-[18px] w-full text-left [&_.ic]:text-(--color-brand)" href="/publicar"><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg><b className={screenStyles.grow}>Mis publicaciones</b><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic text-(--color-ink)!" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></a>
         <a className="flex items-center gap-3.5 min-h-15 px-3.5 py-2 bg-white border border-(--color-line) rounded-[18px] w-full text-left [&_.ic]:text-(--color-brand)" href="/campanas"><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z" /></svg><b className={screenStyles.grow}>Mis apoyos</b><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic text-(--color-ink)!" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></a>
         <button className="flex items-center gap-3.5 min-h-15 px-3.5 py-2 bg-white border border-(--color-line) rounded-[18px] w-full text-left [&_.ic]:text-(--color-brand)" onClick={() => nav.go("avisos")}><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4" /></svg><b className={screenStyles.grow}>Avisos</b>{hasUnread && (<><span className={screenStyles.badgeAlert}>{unreadN} nuevos</span></>)}<svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic text-(--color-ink)!" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></button>
@@ -135,6 +139,9 @@ export default function Perfil() {
           {phoneCode && (<><p className={screenStyles.muted}>Código de demostración: 000000 · escríbelo abajo</p><label htmlFor="cd" className="absolute left-[-9999px]!">Código</label><input id="cd" className={screenStyles.input} inputMode="numeric" maxLength="6" {...code.props} /><button className={screenStyles.button} onClick={verify}>Verificar</button>{codeErr && (<><p className={screenStyles.error} role="alert">Código incorrecto. Prueba con 000000.</p></>)}</>)}
           {phoneOk && (<><p className={screenStyles.success} role="status">✓ Celular vinculado solo para el canal SMS</p><p className={screenStyles.muted}>No reemplaza el acceso por DNI ni verifica tu identidad.</p><button className={screenStyles.buttonSecondary} onClick={unlink}>Desvincular</button></>)}</div>
         <div className={screenStyles.card}><p className={screenStyles.label}>Sesiones de demostración</p>{(sessions ?? []).map((s, __i1) => (<Fragment key={__i1}><div className={screenStyles.row}><span className={screenStyles.grow}><b>{s.name}</b><br /><span className={screenStyles.muted}>{s.role}</span></span><button className={s.cls} onClick={s.pick}>{s.lbl}</button></div></Fragment>))}<p className={screenStyles.muted}>Cambiar de sesión no mezcla datos privados de otros perfiles.</p></div>
+        <div className={screenStyles.card}><p className={screenStyles.label}>Vecinos bloqueados</p>
+          {misBloqueos.length === 0 && (<p className={screenStyles.muted}>No has bloqueado a nadie.</p>)}
+          {misBloqueos.map((b) => (<div key={b.target} className={screenStyles.row}><span className={screenStyles.grow}><b>{VECINOS[b.target].name}</b></span><button className={screenStyles.chip} onClick={() => desbloquear(sesion.userId, b.target)}>Desbloquear</button></div>))}</div>
         <a className={screenStyles.buttonSecondary} href="/" onClick={cerrarSesion}>Cerrar sesión</a>
         <p className={screenStyles.muted}>Recuperación segura de cuenta y cambio de DNI: evolución futura, no incluida en esta demostración.</p>
       </div>

@@ -171,7 +171,7 @@ export default function Acceso() {
   };
   return (
     <div className={screenStyles.screen}>
-      <div className="w-97.5 h-211 flex flex-col bg-white overflow-hidden">
+      <div className="w-full md:max-w-[46rem] mx-auto h-dvh md:border-x md:border-(--color-line) flex flex-col bg-white overflow-hidden">
       
       {nav.is("acceso") && (<>
       <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-3.5 pt-7! items-stretch!">

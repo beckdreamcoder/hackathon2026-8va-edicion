@@ -8,6 +8,8 @@ import { Fragment, useEffect, useState } from "react";
 import { useDemoState } from "@/lib/demo/store";
 import { VECINOS, chip, avisar, logEvento, emitirSello } from "@/lib/demo/shared";
 import { usePublicaciones } from "@/lib/demo/publicaciones";
+import { useBloqueos, registrarLegado, cambiarUsuarioDemo } from "@/lib/demo/coordinaciones";
+import Link from "next/link";
 import { PostCard } from "./post-card";
 
 const FAVOR_INICIAL = { actor: "maria", tab: "nec", stage: "open", coordId: "", conf: [], sellos: [], msgs: [], read: {} };
@@ -32,8 +34,15 @@ export default function Favores() {
   const otherIni = VECINOS[other].ini;
   const otherAv = AVATAR;
 
-  const asM = () => setF({ actor: "maria" });
-  const asL = () => setF({ actor: "luis" });
+  const [bl] = useBloqueos();
+  const bloq = bl.items.some((x) => (x.by === "maria" && x.target === "luis") || (x.by === "luis" && x.target === "maria"));
+  const asM = () => cambiarUsuarioDemo("maria");
+  const asL = () => cambiarUsuarioDemo("luis");
+  useEffect(() => {
+    if (!f.coordId) return;
+    registrarLegado({ id: f.coordId, tipo: "favor", titulo: "Escalera de 3 metros", solicitante: "luis", receptor: "maria", href: "/favores",
+      estado: f.stage === "completed" ? "completada" : f.stage === "cancelled" ? "cancelada" : "aceptada" });
+  }, [f.coordId, f.stage]);
   const chipM = chip(actor === "maria");
   const chipL = chip(actor === "luis");
   const tabIsNec = f.tab === "nec";
@@ -92,13 +101,13 @@ export default function Favores() {
   }, [nav.current, f.msgs.length, f.read, actor, setF]);
 
   const offer = () => {
-    if (f.stage !== "open") return;
+    if (f.stage !== "open" || bloq) return;
     setF({ stage: "offered" });
     avisar({ categoria: "favor", titulo: "Luis quiere ayudarte", texto: "Se ofreció para la escalera de 3 metros.", href: "/favores" });
     logEvento("Luis ofreció ayuda en «Escalera de 3 metros»");
   };
   const accept = () => {
-    if (f.stage !== "offered") return; // evita aceptar dos veces por reintento
+    if (f.stage !== "offered" || bloq) return; // evita aceptar dos veces por reintento
     setF({ stage: "accepted", coordId: `fav-${Date.now()}`, conf: [], sellos: [], msgs: [{ from: "maria", text: "¡Gracias por ofrecerte! ¿Puedes traerla el sábado temprano?" }] });
     avisar({ categoria: "favor", titulo: "María aceptó tu ayuda", texto: "Ya pueden coordinar por chat.", href: "/favores" });
     logEvento("María aceptó a Luis · se abrió chat temporal");
@@ -110,7 +119,7 @@ export default function Favores() {
   };
   const send = () => {
     const text = draft.value.trim();
-    if (!text || !chatOpen) return;
+    if (!text || !chatOpen || bloq) return;
     setF((p) => ({ msgs: [...p.msgs, { from: actor, text }], read: { ...p.read, [actor]: p.msgs.length + 1 } }));
     draft.setValue("");
   };
@@ -153,10 +162,10 @@ export default function Favores() {
   const doRep = () => { setRepDone(true); logEvento(`Reporte demo sobre ${otherName} (no se avisa a autoridades)`); };
   return (
     <div className={screenStyles.screen}>
-      <div className="w-97.5 h-211 flex flex-col bg-white overflow-hidden relative!">
+      <div className="w-full md:max-w-[46rem] mx-auto h-dvh md:border-x md:border-(--color-line) flex flex-col bg-white overflow-hidden relative!">
       
       {nav.is("muro") && (<>
-      <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Favores</h1><button className={screenStyles.iconButton} aria-label="Mis coordinaciones" onClick={() => nav.go("coords")}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z" /></svg>{hasUnread && (<><span className="min-w-5.5 h-5.5 rounded-[11px] bg-(--color-brand) text-white text-[13px] font-bold grid place-items-center px-1.5 py-0 absolute! mt-[-26px]! mr-[-28px]! mb-0! ml-0!">{unreadN}</span></>)}</button></div>
+      <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Favores</h1><Link className={`${screenStyles.iconButton} relative`} aria-label="Mis coordinaciones" href="/coordinaciones"><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z" /></svg>{hasUnread && (<><span className="min-w-5.5 h-5.5 rounded-[11px] bg-(--color-brand) text-white text-[13px] font-bold grid place-items-center px-1.5 py-0 absolute! top-0.5! right-0.5!">{unreadN}</span></>)}</Link></div>
       </>)}
       {nav.is("detalle") && (<>
       <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Detalle del favor</h1></div>
@@ -171,14 +180,15 @@ export default function Favores() {
       <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><span className={otherAv} aria-hidden="true">{otherIni}</span><div className={screenStyles.grow}><h1 className="text-[19px]!">{otherName}</h1><p className={screenStyles.muted}>Escalera de 3 metros</p></div><button className={screenStyles.iconButton} aria-label="M\u00e1s opciones" onClick={openRep}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" /></svg></button></div>
       </>)}
       
-      <div className="flex gap-2 pt-0 px-4 pb-2 items-center flex-none [&_span]:text-[14px] [&_span]:text-(--color-muted) [&_span]:font-bold [&_span]:whitespace-nowrap [&_.chip]:min-h-10 [&_.chip]:px-3 [&_.chip]:py-0" role="group" aria-label="Probar como">
+      <div className="flex gap-2 pt-0 px-4 pb-2 items-center flex-wrap flex-none [&_span]:text-[14px] [&_span]:text-(--color-muted) [&_span]:font-bold [&_span]:whitespace-nowrap [&_.chip]:min-h-10 [&_.chip]:px-3 [&_.chip]:py-0" role="group" aria-label="Probar como">
         <span>Probar como:</span><button className={chipM} onClick={asM}>María (solicita)</button><button className={chipL} onClick={asL}>Luis (ofrece)</button>
       </div>
+      {bloq && (<p className="px-4 pb-2 text-[#9e0c24] font-bold text-[14px]" role="alert">Hay un bloqueo entre María y Luis: no pueden enviarse mensajes ni solicitudes.</p>)}
       
       {nav.is("muro") && (<>
       <div className={screenStyles.content}>
         <div className={screenStyles.wrap}><button className={tabNec} onClick={setNec}>Necesito ayuda</button><button className={tabOfr} onClick={setOfr}>Ofrezco ayuda</button></div>
-        <div className="flex gap-2 overflow-x-auto pb-0.5" role="group" aria-label="Categor\u00eda"><button className="min-h-11 rounded-full border-[1.5px] border-(--color-brand) bg-(--color-brand) px-3.5 py-0 font-bold text-[15px] whitespace-nowrap text-white chip">Todos</button><button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip">Herramientas</button><button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip">Habilidades</button><button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip">Ayuda temporal</button><button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip">Movilidad</button></div>
+        <div className="flex gap-2 overflow-x-auto pb-0.5 shrink-0 [&>*]:shrink-0" role="group" aria-label="Categor\u00eda"><button className="min-h-11 rounded-full border-[1.5px] border-(--color-brand) bg-(--color-brand) px-3.5 py-0 font-bold text-[15px] whitespace-nowrap text-white chip">Todos</button><button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip">Herramientas</button><button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip">Habilidades</button><button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip">Ayuda temporal</button><button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip">Movilidad</button></div>
         {tabIsNec && (<>
           {pubs.items.filter((p) => p.tipo === "favor" && p.modo === "pido").map((p) => (<PostCard key={p.id} p={p} />))}
           <button className={screenStyles.card} onClick={() => nav.go("detalle")}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span><span className={screenStyles.badge}>{statusTxt}</span><span className="flex-1 min-w-0 text-(--color-muted) text-[15px] text-right!">a 300 m</span></div><h3 className="text-[19px]!">Necesito una escalera de 3 metros prestada</h3><p className={screenStyles.muted}>Herramientas · Campoy Sector 2 · Disponible hoy por la tarde</p><div className={screenStyles.row}><span className="w-8 h-8 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[18px] flex-none bg-[#f4d9c6] text-[#8a2b07] text-[14px]!" aria-hidden="true">M</span><span className={screenStyles.muted}>María</span></div></button>
@@ -214,7 +224,7 @@ export default function Favores() {
           <p className={screenStyles.muted}>Otras personas que se postulen se guardan sin abrir chat privado.</p>
         </>)}
         {solNone && (<><div className={screenStyles.card} role="status"><p className="font-bold!">{solNoneTxt}</p><p className={screenStyles.muted}>Cuando alguien ofrezca ayuda, aparecerá aquí.</p></div></>)}
-        {solDone && (<><div className={screenStyles.card} role="status"><p className={screenStyles.success}>{solDoneTxt}</p></div><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("coords")}>Ir a mis coordinaciones</button></>)}
+        {solDone && (<><div className={screenStyles.card} role="status"><p className={screenStyles.success}>{solDoneTxt}</p></div><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("coords")}>Ver el chat de este favor</button><Link className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full" href="/coordinaciones">Ir a mis coordinaciones</Link></>)}
       </div>
       </>)}
       

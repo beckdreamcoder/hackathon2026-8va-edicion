@@ -23,7 +23,16 @@ export type PublicacionDemo = {
   formas: string[];
   alcance: "junta" | "comunidad";
   zona: string;
-  estado: "publicado" | "pendiente";
+  estado: "publicado" | "pendiente" | "cancelada";
+  /** Distrito donde se publica (búsqueda y filtros). */
+  distrito?: string;
+  /** Recurso comunitario (agua, alimentos…): cantidad disponible o solicitada. */
+  recurso?: { clase: string; cantidad: number; unidad: string };
+  /** Campañas: meta, inicio, imagen (data URL reducida) y cierre manual. */
+  meta?: number;
+  inicio?: string;
+  imagen?: string;
+  cerrada?: boolean;
 };
 
 export const PUBLICACIONES_INICIAL = { items: [] as PublicacionDemo[] };

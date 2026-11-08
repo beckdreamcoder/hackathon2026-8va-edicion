@@ -87,6 +87,16 @@ export function setDemo<T extends object>(key: string, initial: T, patch: Partia
   write(key, { ...read(key, initial), ...patch });
 }
 
+/** Indica si una clave ya tiene estado completo (en memoria o guardado). */
+export function hayDemo(key: string): boolean {
+  if (cache.has(key)) return true;
+  try {
+    return window.localStorage.getItem(PREFIX + key) != null;
+  } catch {
+    return false;
+  }
+}
+
 /** Borra todos los datos de la demostración y vuelve a la semilla. */
 export function resetDemo() {
   try {

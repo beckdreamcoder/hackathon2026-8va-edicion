@@ -4,15 +4,23 @@ import { useViewStack } from "@/lib/hooks/use-view-stack";
 
 import { useCheckbox } from "@/lib/hooks/use-checkbox";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
+import { useTextInput } from "@/lib/hooks/use-text-input";
+import { enLima, CAMPOY } from "@/lib/map/geo";
+import { ANEXO_22 } from "@/lib/map/comunidad";
+import { FichaPersona } from "@/components/map/FichasMapa";
 import { useDemoState } from "@/lib/demo/store";
 import { useSesion, avisar, logEvento } from "@/lib/demo/shared";
-import { useIncidentes, autoresDistintos, estadoCorroboracion, registrarReporte, ESTADOS_INST } from "@/lib/demo/incidentes";
+import { useIncidentes, autoresDistintos, estadoCorroboracion, registrarReporteAgrupado, candidatoIncidente, cambiarEstadoIncidente, estadoOpDe, ESTADOS_OP, PRIORIDADES, entidadDeIncidente, ESTADOS_INST, RADIO_AGRUPAR_M, VENTANA_AGRUPAR_MIN } from "@/lib/demo/incidentes";
 
 const EME_UI = { tab: "n", incId: "INC-0007", needs: [{name: "Alimentos", note: "Comida lista y agua embotellada", ofrecido: false}, {name: "Abrigo", note: "Frazadas y ropa seca", ofrecido: false}, {name: "Materiales", note: "Bolsas, palas y botas", ofrecido: false}, {name: "Logística", note: "Transporte seguro de donaciones", ofrecido: false}] };
 const CMSGS = [{kind: "Alertas", title: "Evita el pasaje Los Olivos por agua acumulada", time: "09:20", zone: "Campoy Sector 2", src: "Vecinos (ejemplo)", until: "12:00"}, {kind: "Puntos de reunión", title: "Punto de reunión: local comunal", time: "09:05", zone: "Campoy", src: "Junta de demostración", until: "18:00"}, {kind: "Suministros", title: "Acopio de agua embotellada en el parque", time: "08:50", zone: "Campoy Sector 1", src: "Junta de demostración", until: "20:00"}, {kind: "Apoyo institucional", title: "Mensaje institucional de ejemplo", time: "08:30", zone: "Distrito", src: "Simulación", until: "—"}];
 const KIND_ON = "min-h-11 rounded-full border-[1.5px] border-[#9a3412] bg-[#9a3412] px-3.5 py-0 font-bold text-[15px] whitespace-nowrap text-white";
-const KINDS = ["Inundación", "Corte de agua", "Árbol caído", "Otro"];
+/** Marca de tiempo actual (se llama solo desde manejadores de eventos). */
+const marcaDeTiempo = () => Date.now();
+const KINDS = ["Inundación", "Corte de agua", "Árbol caído", "Sismo", "Incendio", "Otro"];
+/** Lugares de referencia para ubicar un reporte (zona aproximada, sin dirección exacta). */
+const UBICACIONES = [{ id: "campoy", nombre: "Campoy", lngLat: CAMPOY }, { id: "zarate", nombre: "Zárate", lngLat: [-77.0039, -12.0177] }, { id: "bayovar", nombre: "Estación Bayóvar", lngLat: [-76.98762, -11.95979] }, { id: "anexo22", nombre: "Anexo 22 (Jicamarca)", lngLat: ANEXO_22 }, { id: "cercado", nombre: "Cercado de Lima", lngLat: [-77.03057, -12.04594] }];
 const DTABS = ["Qué ocurre", "Qué hacer", "Cómo ayudar"];
 const CFILTERS = ["Todos", "Alertas", "Puntos de reunión", "Suministros", "Apoyo institucional"];
 import { screenStyles } from "./screen-styles";
@@ -37,8 +45,36 @@ export default function Emergencias() {
   const [sent, setSent] = useState(null); // null | { pendiente, incId, msg }
   const [dtab, setDtab] = useState(0);
   const [cfilter, setCfilter] = useState("Todos");
+  const [ahora, setAhora] = useState(0);
+  // La hora actual se toma después del montaje (no durante el prerenderizado) y se refresca al cambiar de vista
+  const vistaActual = nav.current;
+  useEffect(() => { const t = setTimeout(() => setAhora(marcaDeTiempo()), 0); return () => clearTimeout(t); }, [vistaActual]);
+  const desc = useTextInput("");
+  const [prioridad, setPrioridad] = useState("Media");
+  const [ubicId, setUbicId] = useState("campoy");
+  const [gps, setGps] = useState(null);
+  const [gpsMsg, setGpsMsg] = useState("");
+  const [foco, setFoco] = useDemoState("inc-foco", { id: "" });
 
   const inc = incs.items.find((i) => i.id === ui.incId) ?? incs.items[0];
+  const ubic = ubicId === "gps" && gps ? { id: "gps", nombre: "Mi ubicación", lngLat: gps } : UBICACIONES.find((u) => u.id === ubicId) ?? UBICACIONES[0];
+  const cand = ahora ? candidatoIncidente(incs.items, { tipo: kind, lngLat: ubic.lngLat, ahora }) : null;
+  const usarGps = () => {
+    if (!navigator.geolocation) { setGpsMsg("Tu navegador no ofrece ubicación. Elige un lugar de la lista."); return; }
+    setGpsMsg("Buscando tu ubicación…");
+    navigator.geolocation.getCurrentPosition(
+      (p) => { const ll = [p.coords.longitude, p.coords.latitude]; if (enLima(ll)) { setGps(ll); setUbicId("gps"); setGpsMsg("Usando tu ubicación actual."); } else setGpsMsg("Tu ubicación está fuera de Lima: elige un lugar de la lista."); },
+      () => setGpsMsg("Sin permiso de ubicación: elige un lugar de la lista."),
+      { timeout: 8000, maximumAge: 60000 },
+    );
+  };
+  // Si se llegó desde Buscar o desde el mapa, se abre exactamente esa incidencia
+  useEffect(() => {
+    if (!foco.id) return undefined;
+    const t = setTimeout(() => { setUi({ incId: foco.id }); setDtab(0); nav.go("detalle"); setFoco({ id: "" }); }, 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [foco.id]);
   const autores = autoresDistintos(inc);
   const estadoReporte = estadoCorroboracion(inc);
   const instState = ESTADOS_INST[inc.inst];
@@ -89,17 +125,20 @@ export default function Emergencias() {
   const noSent = !sent;
   const sendRep = () => {
     if (sent) return; // bloquea doble envío
-    const now = Date.now();
-    const rep = { id: `rep-${now}`, clientActionId: `ca-rep-${now}`, autor: sesion.userId, tipo: kind, medio: foto ?? "ejemplo rotulado", hora: capHora, precision, lugarConfirmado: lugar.checked, estado: pendFlag ? "pendiente" : "enviado" };
-    const target = join && kind === "Inundación" ? "INC-0007" : null;
-    const incId = registrarReporte(rep, target, { titulo: `${kind} en Campoy`, zona: "Campoy" });
-    setUi({ incId });
-    const repetido = target && inc.reportes.some((r) => r.autor === sesion.userId && r.estado === "enviado");
+    const now = marcaDeTiempo();
+    const rep = { id: `rep-${now}`, clientActionId: `ca-rep-${now}`, autor: sesion.userId, tipo: kind, medio: foto ?? "ejemplo rotulado", hora: capHora, precision, descripcion: desc.value.trim() || undefined, lugarConfirmado: lugar.checked, estado: pendFlag ? "pendiente" : "enviado" };
+    // pequeña variación (±100 m) para no apilar puntos exactos; el agrupamiento usa la distancia real
+    const jit = (m) => (Math.random() - 0.5) * 2 * m;
+    const ll = [ubic.lngLat[0] + jit(100) / 108000, ubic.lngLat[1] + jit(100) / 111320];
+    const target = join && cand ? cand.inc.id : null;
+    const r = registrarReporteAgrupado(rep, { incidenteId: target, tipo: kind, lngLat: ll, zona: ubic.nombre, descripcion: desc.value.trim() || undefined, prioridad });
+    setUi({ incId: r.id });
+    const repetido = target && inc.reportes.some((x) => x.autor === sesion.userId && x.estado === "enviado" && x.id !== rep.id);
     setSent({
       pendiente: pendFlag,
-      msg: pendFlag ? "Reporte guardado como pendiente. No se ha enviado." : target ? (repetido ? "✓ Reporte unido al incidente. Ya habías reportado: no suma otro testigo." : "✓ Reporte enviado y unido al incidente.") : "✓ Reporte enviado como incidente nuevo.",
+      msg: pendFlag ? "Reporte guardado como pendiente. No se ha enviado." : r.unido ? (repetido ? "✓ Reporte unido a la incidencia. Ya habías reportado: no suma otro testigo." : "✓ Reporte enviado y agrupado con una incidencia cercana.") : "✓ Reporte enviado como incidencia nueva.",
     });
-    logEvento(pendFlag ? `Reporte de ${kind} en cola sin conexión` : `Reporte de ${kind} ${target ? "unido a INC-0007" : "creó incidente " + incId}`);
+    logEvento(pendFlag ? `Reporte de ${kind} en cola sin conexión` : `Reporte de ${kind} ${r.unido ? "agrupado en " + r.id : "creó la incidencia " + r.id} (simulado)`);
     if (!pendFlag) avisar({ categoria: "emergencia", titulo: `Nuevo reporte: ${kind}`, texto: "Reportado cerca de tu zona. Fuente: vecinos (demostración).", href: "/emergencias" });
   };
   const sentMsg = sent?.msg ?? "";
@@ -140,13 +179,14 @@ export default function Emergencias() {
         {tabN && (<>
           <h2 className="text-[20px]!">Cerca de mí</h2>
           <button className="bg-[#fff1e6] border border-[#f0c8a8] rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 text-left w-full" onClick={() => abrir("INC-0007")}><div className={screenStyles.row}><span className={screenStyles.badgeEmergency}><svg className={`${screenStyles.icon} w-4! h-4!`} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2z" /><path d="M12 10v5M12 18v.5" /></svg>Eventualidad</span><span className={screenStyles.badgeDemo}>Simulación</span></div><h3 className="text-[19px]!">Calles anegadas en Campoy</h3><p className={screenStyles.muted}>{estadoCorroboracion(incs.items.find((i) => i.id === "INC-0007") ?? inc)} · {autoresDistintos(incs.items.find((i) => i.id === "INC-0007") ?? inc)} vecinos distintos · {(incs.items.find((i) => i.id === "INC-0007") ?? inc).actualizado}</p></button>
-          {otros.map((o) => (<button key={o.id} className={screenStyles.card} onClick={() => abrir(o.id)}><div className={screenStyles.row}><span className={screenStyles.badgeEmergency}>{estadoCorroboracion(o)}</span></div><h3 className="text-[19px]!">{o.titulo}</h3><p className={screenStyles.muted}>{o.actualizado === "ahora" ? "Actualizado ahora" : `Sin actualización reciente · ${o.actualizado}`} · {autoresDistintos(o)} {autoresDistintos(o) === 1 ? "vecino" : "vecinos"}</p></button>))}
+          {otros.map((o) => (<button key={o.id} className={screenStyles.card} onClick={() => abrir(o.id)}><div className={screenStyles.row}><span className={screenStyles.badgeEmergency}>{estadoCorroboracion(o)}</span><span className={screenStyles.badge}>{estadoOpDe(o)}</span><span className={screenStyles.badgeDemo}>Simulado</span></div><h3 className="text-[19px]!">{o.titulo}</h3><p className={screenStyles.muted}>{o.actualizado === "ahora" ? "Actualizado ahora" : `Sin actualización reciente · ${o.actualizado}`} · {autoresDistintos(o)} {autoresDistintos(o) === 1 ? "vecino" : "vecinos"}</p></button>))}
           <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => nav.go("reportar")}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>Reportar con cámara</button>
         </>)}
         {tabP && (<>
           <h2 className="text-[20px]!">Cómo puedo ayudar</h2>
           <p className={screenStyles.muted}>Ayuda con recursos y logística segura. No se envía a civiles a rescates peligrosos.</p>
           <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => nav.go("apoyo")}>Ver necesidades de apoyo</button>
+          <a className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full" href="/recursos">Recursos comunitarios (agua, alimentos, botiquines…)</a>
         </>)}
         <div className="grid-cols-2 grid! gap-2.5!">
           <button className={`${screenStyles.card} min-h-19! justify-center!`} onClick={() => nav.go("contactos")}><b>Contactos oficiales</b><span className={screenStyles.muted}>Sin conexión: disponible</span></button>
@@ -183,7 +223,13 @@ export default function Emergencias() {
         <div className="h-37.5 rounded-[20px] bg-[repeating-linear-gradient(45deg,#E3DDD7,#E3DDD7_10px,#EFE8DD_10px,#EFE8DD_20px)] grid place-items-center text-center p-3 border border-[#cfc7bf]" role="img" aria-label="Imagen protegida"><div><b>Imagen protegida</b><p className={screenStyles.muted}>Se oculta antes de publicar. Demostración con ejemplo inocuo.</p></div></div>
         <span className={screenStyles.badgeDemo}>Análisis simulado, sin IA real</span>
         <div className="flex flex-col gap-1.5"><p className={screenStyles.label}>Tipo sugerido (puedes corregir)</p><div className={screenStyles.wrap}>{(kinds ?? []).map((k, __i1) => (<Fragment key={__i1}><button className={k.cls} onClick={k.pick}>{k.name}</button></Fragment>))}</div></div>
-        <div className={screenStyles.card}><p className={screenStyles.label}>Posible incidente existente</p><p>«Calles anegadas en Campoy» · a 120 m · mismo tipo y franja horaria</p><div className={screenStyles.wrap}><button className={jOn} onClick={joinYes}>Unir a este incidente</button><button className={jOff} onClick={joinNo}>Es otro</button></div><p className={screenStyles.muted}>Se cuentan personas distintas y se conservan los reportes originales.</p></div>
+        <div className={screenStyles.field}><label htmlFor="dsc">Descripción (opcional)</label><textarea id="dsc" className="min-h-18 border-[1.5px] border-[#cfc7bf] rounded-[16px] px-3.5 py-3 bg-white w-full resize-none" maxLength={240} placeholder="Qué ocurre y qué se necesita" {...desc.props}></textarea></div>
+        <div className="flex flex-col gap-1.5"><p className={screenStyles.label}>Prioridad</p><div className={screenStyles.wrap} role="group" aria-label="Prioridad">{PRIORIDADES.map((p) => (<button key={p} className={p === prioridad ? KIND_ON : screenStyles.chip} aria-pressed={p === prioridad} onClick={() => setPrioridad(p)}>{p}</button>))}</div></div>
+        <div className="flex flex-col gap-1.5"><p className={screenStyles.label}>Ubicación aproximada</p><div className="flex gap-2 overflow-x-auto pb-0.5 [&>*]:shrink-0" role="group" aria-label="Ubicación">{UBICACIONES.map((u) => (<button key={u.id} className={u.id === ubicId ? KIND_ON : screenStyles.chip} aria-pressed={u.id === ubicId} onClick={() => setUbicId(u.id)}>{u.nombre}</button>))}<button className={ubicId === "gps" ? KIND_ON : screenStyles.chip} onClick={usarGps}>Mi ubicación</button></div>{gpsMsg && (<p className={screenStyles.muted} role="status">{gpsMsg}</p>)}</div>
+        <div className={screenStyles.card}><p className={screenStyles.label}>Incidencia cercana</p>
+          {cand ? (<><p>«{cand.inc.titulo}» · a {Math.round(cand.dist)} m · mismo tipo · hace {Math.max(1, Math.round(cand.minutos))} min</p><div className={screenStyles.wrap}><button className={jOn} onClick={joinYes}>Agrupar con esta incidencia</button><button className={jOff} onClick={joinNo}>Es otra</button></div></>)
+            : (<p className={screenStyles.muted}>No hay incidencias del mismo tipo a menos de {RADIO_AGRUPAR_M} m en las últimas {VENTANA_AGRUPAR_MIN / 60} h: se creará una nueva.</p>)}
+          <p className={screenStyles.muted}>Se agrupa por ubicación, tipo y tiempo. Se cuentan personas distintas y se conservan los reportes originales.</p></div>
         {pendFlag && (<><p className={screenStyles.muted}>Sin conexión: se guardará pendiente y se pedirá confirmar vigencia al reconectar.</p></>)}
         <div className={screenStyles.checkboxRow}><input id="off" type="checkbox" {...sinRed.props} /><label htmlFor="off"><b>Simular que no tengo conexión</b></label></div>
         {noSent && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={sendRep}>{sendLbl}</button></>)}
@@ -195,7 +241,13 @@ export default function Emergencias() {
       <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>{inc.titulo}</h1></div>
       <div className={screenStyles.content}>
         <div className={screenStyles.row}><span className={screenStyles.badgeEmergency}>{estadoReporte}</span><span className={screenStyles.badgeDemo}>Ejemplo ficticio</span></div>
-        <p className={screenStyles.muted}>ID {inc.id} · {autores} vecinos distintos · actualizado {inc.actualizado}</p>
+        <p className={screenStyles.muted}>ID {inc.id} · {autores} vecinos distintos · actualizado {inc.actualizado} · prioridad {inc.prioridad ?? "Media"}</p>
+        {inc.descripcion && (<p>{inc.descripcion}</p>)}
+        <div className={screenStyles.card}><p className={screenStyles.label}>Estado de la incidencia</p><div className={screenStyles.wrap} role="group" aria-label="Estado de la incidencia">{ESTADOS_OP.map((e) => (<button key={e} className={estadoOpDe(inc) === e ? KIND_ON : screenStyles.chip} aria-pressed={estadoOpDe(inc) === e} onClick={() => { cambiarEstadoIncidente(inc.id, e); logEvento(`Incidencia ${inc.id}: ${e} (simulado)`); }}>{e}</button>))}</div><p className={screenStyles.muted}>Estado de vecinos de demostración: no es una alerta oficial ni confirma atención real.</p></div>
+        <div className={screenStyles.card}><p className={screenStyles.label}>Reportes de esta incidencia ({inc.reportes.length})</p>
+          {inc.reportes.map((r) => (<p key={r.id} className="text-[14px]"><b>{r.autor ? r.autor.charAt(0).toUpperCase() + r.autor.slice(1) : "Vecino"}</b> · {r.hora || "—"} · {r.tipo} · {r.estado === "enviado" ? "enviado" : "pendiente"}{r.descripcion ? ` · «${r.descripcion}»` : ""}</p>))}
+          <p className={screenStyles.muted}>Agrupados por ubicación ({RADIO_AGRUPAR_M} m), tipo y tiempo. Comparten el mismo estado.</p></div>
+        <FichaPersona p={entidadDeIncidente(inc)} sinCerrar />
         <div className="flex gap-2 overflow-x-auto pb-0.5" role="tablist">{(dtabs ?? []).map((d, __i1) => (<Fragment key={__i1}><button className={d.cls} role="tab" onClick={d.pick}>{d.name}</button></Fragment>))}</div>
         <div className={screenStyles.card}><p>{dtext}</p><p className={screenStyles.muted}>Fuente: reportes de vecinos y guía de ejemplo de Defensa Civil (demostración).</p></div>
         <div className="bg-[#fff1e6] border border-[#f0c8a8] rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 text-left w-full"><p className={screenStyles.label}>Respuesta institucional</p><span className={screenStyles.badgeDemo}>Simulación</span><p className="font-bold">{instState}</p><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 min-h-12!" onClick={advance}>Simular siguiente respuesta</button><p className={screenStyles.muted}>No hay despacho real. Solo se muestran estados con constancia o rotulados como simulación.</p></div>

@@ -7,8 +7,12 @@ import { useTextInput } from "@/lib/hooks/use-text-input";
 import { Fragment, useState } from "react";
 import { useDemoState } from "@/lib/demo/store";
 import { VECINOS, chip, avisar, logEvento, emitirSello } from "@/lib/demo/shared";
-import { usePublicaciones } from "@/lib/demo/publicaciones";
-import { PostCard } from "./post-card";
+import { useBloqueos, registrarLegado, cambiarUsuarioDemo, bloquear, desbloquear } from "@/lib/demo/coordinaciones";
+import Link from "next/link";
+import { useEffect } from "react";
+import CachueloTarjeta from "@/components/cachuelos/CachueloTarjeta";
+import CachueloDetalle from "@/components/cachuelos/CachueloDetalle";
+import { useCachuelos, ESTADO_CACH } from "@/components/cachuelos/use-cachuelos";
 
 const CACH_INICIAL = { actor: "maria", tab: "serv", stage: "open", coordId: "", ag: { price: "", date: "", cond: "", proposed: false, conf: [] }, done: [], recs: [] };
 const DIAS = ["Jueves", "Viernes", "Sábado"];
@@ -20,7 +24,10 @@ import { screenStyles } from "./screen-styles";
  */
 export default function Cachuelos() {
   const nav = useViewStack("lista");
-  const [pubs] = usePublicaciones();
+  const lista = useCachuelos();
+  const [selId, setSelId] = useState("");
+  const [fCat, setFCat] = useState("Todas");
+  const [fEst, setFEst] = useState("todos");
   const [c, setC] = useDemoState("cachuelo-gasfiteria", CACH_INICIAL);
   const actor = c.actor;
   const other = actor === "maria" ? "pedro" : "maria";
@@ -28,8 +35,16 @@ export default function Cachuelos() {
   const cond = useTextInput(c.ag.cond || "Incluye revisión. Materiales aparte, con boleta.");
   const [dateSel, setDateSel] = useState(c.ag.date || "Jueves");
 
-  const asM = () => setC({ actor: "maria" });
-  const asP = () => setC({ actor: "pedro" });
+  const [bl] = useBloqueos();
+  const bloq = bl.items.some((x) => (x.by === "maria" && x.target === "pedro") || (x.by === "pedro" && x.target === "maria"));
+  const yoBloquee = bl.items.some((x) => x.by === "maria" && x.target === "pedro");
+  const asM = () => cambiarUsuarioDemo("maria");
+  const asP = () => cambiarUsuarioDemo("pedro");
+  useEffect(() => {
+    if (!c.coordId) return;
+    registrarLegado({ id: c.coordId, tipo: "cachuelo", titulo: "Gasfitería · Pedro", solicitante: "maria", receptor: "pedro", href: "/cachuelos",
+      estado: c.stage === "completed" ? "completada" : c.stage === "agreed" ? "acordada" : "aceptada" });
+  }, [c.coordId, c.stage]);
   const chipM = chip(actor === "maria");
   const chipP = chip(actor === "pedro");
   const tabIsServ = c.tab === "serv";
@@ -57,13 +72,13 @@ export default function Cachuelos() {
   const accepted = inCoord;
   const rejected = c.stage === "rejected";
   const request = () => {
-    if (!canRequest) return;
+    if (!canRequest || bloq) return;
     setC({ stage: "requested" });
     avisar({ categoria: "cachuelo", titulo: "María solicita tu servicio", texto: "Gasfitería · arreglo de fugas.", href: "/cachuelos" });
     logEvento("María solicitó el servicio de gasfitería de Pedro");
   };
   const accept = () => {
-    if (c.stage !== "requested") return;
+    if (c.stage !== "requested" || bloq) return;
     setC({ stage: "accepted", coordId: `cach-${Date.now()}`, ag: { ...CACH_INICIAL.ag }, done: [], recs: [] });
     logEvento("Pedro aceptó · coordinación de cachuelo abierta");
   };
@@ -74,6 +89,7 @@ export default function Cachuelos() {
   const dates = DIAS.map((d) => ({ name: d, cls: chip(d === dateSel), pick: () => setDateSel(d) }));
   const [agErr, setAgErr] = useState("");
   const propose = () => {
+    if (bloq) { setAgErr("Hay un bloqueo entre ustedes: no se pueden enviar propuestas."); return; }
     if (!price.value.trim()) { setAgErr("Escribe el precio acordado o «A convenir»."); return; }
     setAgErr("");
     setC({ ag: { price: price.value.trim(), date: dateSel, cond: cond.value.trim(), proposed: true, conf: [actor] } });
@@ -109,6 +125,25 @@ export default function Cachuelos() {
     const r = emitirSello({ coordId: c.coordId, from: actor, to: other, tipo: "cachuelo" }, completed);
     if (r === "emitido" || r === "duplicado") setC({ recs: [...new Set([...c.recs, actor])] });
   };
+  // Listado unificado: publicaciones creadas en Publicar + comunidad simulada, con filtros por categoría y estado
+  const deTab = lista.filter((vm) => vm.modo === (tabIsServ ? "pido" : "ofrezco"));
+  const cats = ["Todas", ...new Set(deTab.map((vm) => vm.categoria))];
+  const catAct = cats.includes(fCat) ? fCat : "Todas";
+  const visibles = deTab.filter((vm) => (catAct === "Todas" || vm.categoria === catAct) && (fEst === "todos" || vm.estado === fEst));
+  const sinFiltro = catAct === "Todas" && fEst === "todos";
+  const selVm = lista.find((vm) => vm.id === selId);
+  const abrirPub = (vm) => { setSelId(vm.id); nav.go("pub"); };
+  const filtrosJsx = (
+    <div className="flex flex-col gap-2">
+      <div className="flex gap-2 overflow-x-auto pb-0.5 [&>*]:shrink-0" role="group" aria-label="Categoría">{cats.map((k) => (<button key={k} className={chip(catAct === k)} aria-pressed={catAct === k} onClick={() => setFCat(k)}>{k}</button>))}</div>
+      <div className="flex gap-2 overflow-x-auto pb-0.5 [&>*]:shrink-0" role="group" aria-label="Estado">{[["todos", "Todos"], ...Object.entries(ESTADO_CACH)].map(([k, n]) => (<button key={k} className={chip(fEst === k)} aria-pressed={fEst === k} onClick={() => setFEst(k)}>{n}</button>))}</div>
+    </div>
+  );
+  const listaJsx = (<>
+    {filtrosJsx}
+    {visibles.map((vm) => (<CachueloTarjeta key={vm.id} vm={vm} onAbrir={abrirPub} />))}
+    {visibles.length === 0 && (<div className={screenStyles.card} role="status"><p className="font-bold!">No hay cachuelos con estos filtros</p><p className={screenStyles.muted}>Prueba otra categoría o estado, o publica uno nuevo.</p></div>)}
+  </>);
   const s1 = inCoord ? "on" : "";
   const s2 = agreed || completed ? "on" : "";
   const s3 = completed ? "on" : "";
@@ -120,25 +155,34 @@ export default function Cachuelos() {
       {nav.is("detalle") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Detalle del servicio</h1></div></>)}
       {nav.is("perfil") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Perfil de vecino</h1></div></>)}
       {nav.is("acuerdo") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Ficha de acuerdo</h1></div></>)}
+      {nav.is("pub") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Detalle del cachuelo</h1></div></>)}
       
-      <div className="flex gap-2 pt-0 px-4 pb-2 items-center flex-none [&_span]:text-[14px] [&_span]:text-(--color-muted) [&_span]:font-bold [&_span]:whitespace-nowrap [&_.chip]:min-h-10 [&_.chip]:px-3 [&_.chip]:py-0" role="group" aria-label="Probar como"><span>Probar como:</span><button className={chipM} onClick={asM}>María (pide)</button><button className={chipP} onClick={asP}>Pedro (ofrece)</button></div>
+      {!nav.is("pub") && (<div className="flex gap-2 pt-0 px-4 pb-2 items-center flex-wrap flex-none [&_span]:text-[14px] [&_span]:text-(--color-muted) [&_span]:font-bold [&_span]:whitespace-nowrap [&_.chip]:min-h-10 [&_.chip]:px-3 [&_.chip]:py-0" role="group" aria-label="Probar como"><span>Probar como:</span><button className={chipM} onClick={asM}>María (pide)</button><button className={chipP} onClick={asP}>Pedro (ofrece)</button></div>)}
+      {bloq && !nav.is("pub") && (<p className="px-4 pb-2 text-[#9e0c24] font-bold text-[14px]" role="alert">Hay un bloqueo entre María y Pedro: no pueden enviarse solicitudes ni propuestas.</p>)}
       
       {nav.is("lista") && (<>
       <div className={screenStyles.content}>
         <div className={screenStyles.wrap}><button className={tabServ} onClick={setServ}>Necesito un servicio</button><button className={tabTrab} onClick={setTrab}>Busco trabajo</button></div>
         {tabIsServ && (<>
-          {pubs.items.filter((p) => p.tipo === "cachuelo" && p.modo === "pido").map((p) => (<PostCard key={p.id} p={p} />))}
-          <button className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full border-l-0 border-t-[5px] border-t-[#8a5300]" onClick={() => nav.go("detalle")}><div className={screenStyles.row}><span className={screenStyles.badgeCachuelo}>A convenir</span><span className={screenStyles.badge}>{statusTxt}</span></div><h3 className="text-[19px]!">Gasfitería · Pedro arregla fugas</h3><p className={screenStyles.muted}>Campoy Sector 3 · Disponible esta semana</p><p className="font-bold! text-[15px]!">Lo recomiendan 4 vecinos de tu comunidad</p></button>
-          <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full border-l-0 border-t-[5px] border-t-[#8a5300]"><div className={screenStyles.row}><span className={screenStyles.badgeCachuelo}>S/ 25 por hora</span><span className={screenStyles.badgeDemo}>Ejemplo</span></div><h3 className="text-[19px]!">Clases de matemática de secundaria</h3><p className={screenStyles.muted}>Campoy Sector 1 · Tardes · Vecina nueva</p></div>
+          {listaJsx}
+          {sinFiltro && (<><button className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full border-l-0 border-t-[5px] border-t-[#8a5300]" onClick={() => nav.go("detalle")}><div className={screenStyles.row}><span className={screenStyles.badgeCachuelo}>A convenir</span><span className={screenStyles.badge}>{statusTxt}</span></div><h3 className="text-[19px]!">Gasfitería · Pedro arregla fugas</h3><p className={screenStyles.muted}>Campoy Sector 3 · Disponible esta semana</p><p className="font-bold! text-[15px]!">Lo recomiendan 4 vecinos de tu comunidad</p></button></>)}
+          {sinFiltro && (<><div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full border-l-0 border-t-[5px] border-t-[#8a5300]"><div className={screenStyles.row}><span className={screenStyles.badgeCachuelo}>S/ 25 por hora</span><span className={screenStyles.badgeDemo}>Ejemplo</span></div><h3 className="text-[19px]!">Clases de matemática de secundaria</h3><p className={screenStyles.muted}>Campoy Sector 1 · Tardes · Vecina nueva</p></div></>)}
         </>)}
         {tabIsTrab && (<>
-          {pubs.items.filter((p) => p.tipo === "cachuelo" && p.modo === "ofrezco").map((p) => (<PostCard key={p.id} p={p} />))}
-          <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full border-l-0 border-t-[5px] border-t-[#8a5300]"><div className={screenStyles.row}><span className={screenStyles.badgeCachuelo}>S/ 60 referencial</span><span className={screenStyles.badgeDemo}>Ejemplo</span></div><h3 className="text-[19px]!">Necesito pintar un cuarto pequeño</h3><p className={screenStyles.muted}>Campoy Sector 2 · Fin de semana</p></div>
+          {listaJsx}
+          {sinFiltro && (<><div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full border-l-0 border-t-[5px] border-t-[#8a5300]"><div className={screenStyles.row}><span className={screenStyles.badgeCachuelo}>S/ 60 referencial</span><span className={screenStyles.badgeDemo}>Ejemplo</span></div><h3 className="text-[19px]!">Necesito pintar un cuarto pequeño</h3><p className={screenStyles.muted}>Campoy Sector 2 · Fin de semana</p></div></>)}
         </>)}
         <a className={screenStyles.button} href="/publicar"><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>Publicar cachuelo</a>
+        <Link className={screenStyles.buttonSecondary} href="/coordinaciones">Mis coordinaciones</Link>
       </div>
       </>)}
       
+      {nav.is("pub") && (<>
+      <div className={screenStyles.content}>
+        {selVm ? (<CachueloDetalle vm={selVm} />) : (<div className={screenStyles.card} role="status"><p className="font-bold!">Este cachuelo ya no está disponible</p><button className={screenStyles.button} onClick={nav.back}>Volver a la lista</button></div>)}
+      </div>
+      </>)}
+
       {nav.is("detalle") && (<>
       <div className={screenStyles.content}>
         <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full border-l-0 border-t-[5px] border-t-[#8a5300]"><div className={screenStyles.row}><span className={screenStyles.badgeCachuelo}>A convenir</span><span className={screenStyles.badge}>{statusTxt}</span></div><h2 className="text-[24px]!">Arreglo fugas de agua en cocina y baño</h2><p>Llevo mis herramientas. Primero reviso y te digo el precio antes de empezar.</p><p className={screenStyles.muted}>Gasfitería · Campoy Sector 3 · Esta semana, por las tardes</p></div>
@@ -157,7 +201,8 @@ export default function Cachuelos() {
       <div className={screenStyles.content}>
         <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-center w-full items-center!"><span className="w-12 h-12 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[19px] flex-none bg-[#fbebd0] text-[#6b4000] w-18! h-18! text-[28px]!" aria-hidden="true">P</span><h2 className="text-[24px]!">Pedro</h2><p className={screenStyles.muted}>Campoy Sector 3 · Gasfitería</p><span className={screenStyles.badgeDemo}>Identidad simulada · DNI privado</span></div>
         <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full"><p className="font-bold!">Recomendado por 4 vecinos</p><details><summary>Ver comentarios</summary><div className="pt-1.5 flex! flex-col! gap-2.5!"><p className={screenStyles.muted}>«Llegó puntual y explicó el costo antes.» — Rosa · Servicio completado</p><p className={screenStyles.muted}>«Arregló la fuga el mismo día.» — Carlos · Servicio completado</p></div></details><p className={screenStyles.muted}>Sin estrellas: solo recomendaciones tras una coordinación completada.</p></div>
-        <button className={screenStyles.buttonSecondary}>Reportar o bloquear</button>
+        {actor === "maria" && !yoBloquee && (<button className={screenStyles.buttonSecondary} onClick={() => bloquear("maria", "pedro")}>Reportar o bloquear</button>)}
+        {actor === "maria" && yoBloquee && (<><p className={screenStyles.success} role="status">✓ Pedro bloqueado: no habrá mensajes ni solicitudes entre ustedes.</p><button className={screenStyles.buttonOutline} onClick={() => desbloquear("maria", "pedro")}>Desbloquear a Pedro</button></>)}
       </div>
       </>)}
       

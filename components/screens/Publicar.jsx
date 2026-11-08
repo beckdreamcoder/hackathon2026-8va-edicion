@@ -13,6 +13,8 @@ const TIPOS = [{id: "favor", name: "Favor gratuito", sub: "Préstamos, habilidad
 const TIPO_ON = "flex items-center gap-3.5 min-h-19 rounded-[20px] border-2 border-(--color-brand) bg-[#fff5f6] px-3.5 py-3 text-left w-full [&_.ic]:w-8.5 [&_.ic]:h-8.5 [&_.ic]:text-(--color-brand) [&_b]:block [&_b]:text-[18px] on";
 const TIPO_OFF = "flex items-center gap-3.5 min-h-19 rounded-[20px] border-2 border-(--color-line) bg-white px-3.5 py-3 text-left w-full [&_.ic]:w-8.5 [&_.ic]:h-8.5 [&_.ic]:text-(--color-brand) [&_b]:block [&_b]:text-[18px]";
 const CATS = ["Herramientas", "Habilidades", "Ayuda temporal", "Movilidad"];
+const DISTRITOS = ["San Juan de Lurigancho", "Jicamarca Anexo 22", "El Agustino", "Cercado de Lima", "San Borja", "Ate", "Santa Anita", "La Victoria", "Rímac", "Otro distrito de Lima"];
+const CACH_CATS = ["Reparación de computadoras", "Pintura de viviendas", "Instalación eléctrica", "Gasfitería", "Mudanzas pequeñas", "Limpieza", "Reparación de electrodomésticos", "Apoyo con entregas", "Otros"];
 const FORMAS = ["Bienes", "Dinero", "Compra solidaria", "Tiempo", "Logística"];
 /** Reglas de la sugerencia automática simulada (sin modelo de IA). */
 const SUGERENCIAS = [
@@ -44,6 +46,29 @@ export default function Publicar() {
   const [tipo, setTipo] = useState("favor");
   const [modo, setModo] = useState("pido");
   const [cat, setCat] = useState("Herramientas");
+  const [catCach, setCatCach] = useState("Otros");
+  const [distrito, setDistrito] = useState("San Juan de Lurigancho");
+  const meta = useTextInput("100");
+  const [inicio, setInicio] = useState("");
+  const [imagen, setImagen] = useState("");
+  const [imgMsg, setImgMsg] = useState("");
+  /** Reduce la imagen a 640 px y la guarda como data URL (almacenamiento local, sin subir a ningún servidor). */
+  const elegirImagen = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (!f.type.startsWith("image/")) { setImgMsg("Elige un archivo de imagen."); return; }
+    const url = URL.createObjectURL(f);
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, 640 / Math.max(img.width, img.height));
+      const cv = document.createElement("canvas");
+      cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+      cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+      setImagen(cv.toDataURL("image/jpeg", 0.72)); setImgMsg("Imagen lista (se guarda solo en este dispositivo)."); URL.revokeObjectURL(url);
+    };
+    img.onerror = () => { setImgMsg("No se pudo leer la imagen."); URL.revokeObjectURL(url); };
+    img.src = url;
+  };
   const [disp, setDisp] = useState("Hoy");
   const [forma, setForma] = useState(["Bienes"]);
   const [alcance, setAlcance] = useState("junta");
@@ -92,6 +117,8 @@ export default function Publicar() {
   const next = () => {
     if (desc.value.trim().length < 8) { setFalta(true); setFaltaMsg("Cuéntanos en pocas palabras qué necesitas u ofreces."); return; }
     if (esCamp && (!responsable.value.trim() || !plazo.value.trim() || forma.length === 0)) { setFalta(true); setFaltaMsg("Completa responsable, plazo y al menos una forma de apoyo."); return; }
+    if (esCach && !precio.value.trim()) { setFalta(true); setFaltaMsg("Indica el pago referencial en soles o «A convenir»."); return; }
+    if (esCamp && !(Number(meta.value) >= 1)) { setFalta(true); setFaltaMsg("Indica la meta de la campaña (al menos 1 unidad)."); return; }
     if (esCamp && !benef.checked) { setFalta(true); setFaltaMsg("Confirma que la persona beneficiaria autorizó la campaña."); return; }
     setFalta(false);
     if (!title.value.trim()) title.setValue(desc.value.trim().split(" ").slice(0, 8).join(" "));
@@ -110,10 +137,11 @@ export default function Publicar() {
       clientActionId: `ca-${now}`,
       tipo, modo, autor: sesion.userId, fecha: hoy,
       titulo: title.value.trim(), descripcion: desc.value.trim(),
-      categoria: esFavor ? cat : esCach ? "Servicio" : "Campaña",
+      categoria: esFavor ? cat : esCach ? catCach : "Campaña",
       disponibilidad: disp, precio: esCach ? precio.value.trim() || "A convenir" : null,
       responsable: responsable.value.trim(), plazo: plazo.value.trim(), formas: forma,
-      alcance, zona: `${sesion.localidad} · zona aproximada`,
+      alcance, zona: `${sesion.localidad} · zona aproximada`, distrito,
+      ...(esCamp ? { meta: Math.floor(Number(meta.value)), inicio: inicio || hoy, imagen: imagen || undefined } : {}),
       estado: pendiente ? "pendiente" : "publicado",
     };
     setPubs((p) => ({ items: [item, ...p.items] }));
@@ -134,7 +162,7 @@ export default function Publicar() {
   const reset = () => window.location.reload();
   return (
     <div className="m-0 bg-white text-(--color-ink) font-[Nunito,system-ui,sans-serif] text-[17px] leading-[1.4] [&_h1]:font-[Nunito,system-ui,sans-serif] [&_h1]:m-0 [&_h1]:leading-[1.15] [&_h1]:tracking-[-.01em] [&_h2]:font-[Nunito,system-ui,sans-serif] [&_h2]:m-0 [&_h2]:leading-[1.15] [&_h2]:tracking-[-.01em] [&_h3]:font-[Nunito,system-ui,sans-serif] [&_h3]:m-0 [&_h3]:leading-[1.15] [&_h3]:tracking-[-.01em] [&_h4]:font-[Nunito,system-ui,sans-serif] [&_h4]:m-0 [&_h4]:leading-[1.15] [&_h4]:tracking-[-.01em] [&_.t]:font-[Nunito,system-ui,sans-serif] [&_.t]:m-0 [&_.t]:leading-[1.15] [&_.t]:tracking-[-.01em] [&_p]:m-0 [&_button]:cursor-pointer [&_:focus-visible]:outline-3 [&_:focus-visible]:outline-(--color-ink) [&_:focus-visible]:outline-offset-2 [&_textarea.in]:px-3.5 [&_textarea.in]:py-3 [&_textarea.in]:min-h-26 [&_textarea.in]:resize-none">
-      <div className="w-97.5 h-211 flex flex-col bg-white overflow-hidden">
+      <div className="w-full md:max-w-[46rem] mx-auto h-dvh md:border-x md:border-(--color-line) flex flex-col bg-white overflow-hidden">
       
       {nav.is("tipo") && (<>
       <div className={screenStyles.header}><a className={screenStyles.iconButton} href="/inicio" aria-label="Cerrar"><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></a><h1>¿Qué quieres publicar?</h1></div>
@@ -172,9 +200,16 @@ export default function Publicar() {
           <div className={screenStyles.field}><p className={screenStyles.label}>Disponibilidad</p><div className={screenStyles.wrap}><button className={chip(disp === "Hoy")} onClick={() => setDisp("Hoy")}>Hoy</button><button className={chip(disp === "Esta semana")} onClick={() => setDisp("Esta semana")}>Esta semana</button><button className={chip(disp === "Fines de semana")} onClick={() => setDisp("Fines de semana")}>Fines de semana</button></div></div>
         </>)}
         {esCach && (<>
+          <div className={screenStyles.field}><p className={screenStyles.label}>Categoría del trabajo</p><div className={screenStyles.wrap}>{CACH_CATS.map((k) => (<button key={k} className={chip(catCach === k)} onClick={() => setCatCach(k)}>{k}</button>))}</div></div>
           <div className={screenStyles.field}><label htmlFor="precio">Precio referencial</label><input id="precio" className={screenStyles.input} placeholder="S/ o \u00abA convenir\u00bb" {...precio.props} /><p className={screenStyles.muted}>Los pagos no se hacen en la app: el precio se acuerda entre ustedes.</p></div>
         </>)}
         {esCamp && (<>
+          <div className={screenStyles.field}><label htmlFor="meta">Meta de la campaña (unidades)</label><input id="meta" className={screenStyles.input} inputMode="numeric" {...meta.props} /><p className={screenStyles.muted}>1 unidad = 1 bien, 1 turno, 1 artículo o S/ 10 simulados.</p></div>
+          <div className={screenStyles.field}><label htmlFor="ini">Fecha de inicio (opcional)</label><input id="ini" type="date" className={screenStyles.input} value={inicio} onChange={(e) => setInicio(e.target.value)} /><p className={screenStyles.muted}>Si es posterior a hoy, la campaña aparece como «Próxima».</p></div>
+          <div className={screenStyles.field}><label htmlFor="img">Imagen de la campaña (opcional)</label><input id="img" type="file" accept="image/*" className={screenStyles.input} onChange={elegirImagen} />{imgMsg && (<p className={screenStyles.muted} role="status">{imgMsg}</p>)}{imagen && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={imagen} alt="Vista previa de la imagen de la campaña" className="w-full max-h-40 object-cover rounded-[14px]" />
+          )}</div>
           <div className={screenStyles.field}><label htmlFor="resp">Responsable</label><input id="resp" className={screenStyles.input} placeholder="Nombre de la persona u organizaci\u00f3n" {...responsable.props} /></div>
           <div className={screenStyles.field}><label htmlFor="plazo">Plazo</label><input id="plazo" className={screenStyles.input} placeholder="Fecha l\u00edmite" {...plazo.props} /></div>
           <div className={screenStyles.field}><p className={screenStyles.label}>Formas de apoyo</p><div className={screenStyles.wrap}>{(formas ?? []).map((f, __i1) => (<Fragment key={__i1}><button className={f.cls} onClick={f.pick}>{f.name}</button></Fragment>))}</div><span className={screenStyles.badgeDemo}>Dinero y compras simulados</span></div>
@@ -192,6 +227,7 @@ export default function Publicar() {
         <p className={`${screenStyles.muted} font-bold!`}>Paso 3 de 3 · Confirmación</p>
         <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2"><span className={resTagCls}>{resTag}</span><h2 className="text-[22px]!">{resTitle}</h2><p className={screenStyles.muted}>{desc.value}</p></div>
         <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2"><p className={screenStyles.label}>Zona aproximada</p><div className={screenStyles.row}><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic text-(--color-brand)!" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></svg><p>{sesion.localidad} · zona aproximada <span className={screenStyles.muted}>(no se muestra tu dirección exacta)</span></p></div></div>
+        <div className={screenStyles.field}><p className={screenStyles.label}>Distrito</p><div className="flex gap-2 overflow-x-auto pb-0.5 [&>*]:shrink-0" role="group" aria-label="Distrito">{DISTRITOS.map((d) => (<button key={d} className={chip(distrito === d)} aria-pressed={distrito === d} onClick={() => setDistrito(d)}>{d}</button>))}</div></div>
         <div className={screenStyles.field}><p className={screenStyles.label}>¿Quién lo verá?</p><div className={screenStyles.wrap}><button className={alJunta} onClick={setJunta}>Mi junta primero</button><button className={alCom} onClick={setCom}>Mi comunidad</button></div></div>
         <div className={screenStyles.checkboxRow}><input id="off" type="checkbox" {...sinRed.props} /><label htmlFor="off"><b>Simular que no tengo conexión</b><br /><span className={screenStyles.muted}>Se guardará como pendiente y se enviará al reconectar.</span></label></div>
         {limite && (<><p className={screenStyles.error} role="alert">Llegaste al límite de 3 solicitudes de cachuelos por día. Puedes seguir respondiendo mensajes. Vuelve mañana para publicar otra.</p></>)}

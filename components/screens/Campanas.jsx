@@ -4,11 +4,12 @@ import { useViewStack } from "@/lib/hooks/use-view-stack";
 
 import { useTextInput } from "@/lib/hooks/use-text-input";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useDemoState } from "@/lib/demo/store";
-import { avisar, logEvento } from "@/lib/demo/shared";
-import { usePublicaciones } from "@/lib/demo/publicaciones";
-import { PostCard } from "./post-card";
+import { avisar, logEvento, useSesion } from "@/lib/demo/shared";
+import { useCampanas } from "@/lib/demo/campanas";
+import CampanaTarjeta from "@/components/campanas/CampanaTarjeta";
+import CampanaDetalle from "@/components/campanas/CampanaDetalle";
 
 const CAMP_INICIAL = { actor: "maria", estado: "Activa", intencion: false, picking: false, modoSel: "Bienes", modo: "Bienes", monto: "", aporte: "none", recibidoConservado: false, updates: [] };
 const MODOS = ["Bienes", "Dinero", "Tiempo", "Logística"];
@@ -24,8 +25,21 @@ import { screenStyles } from "./screen-styles";
 export default function Campanas() {
   const nav = useViewStack("lista");
   const [c, setC] = useDemoState("campana-abrigo", CAMP_INICIAL);
-  const [pubs] = usePublicaciones();
-  const misCampanas = pubs.items.filter((p) => p.tipo === "campana");
+  const camps = useCampanas();
+  const [sesion] = useSesion();
+  const [selId, setSelId] = useState("");
+  const [campFoco, setCampFoco] = useDemoState("camp-foco", { id: "" });
+  const misCampanas = camps.filter((x) => x.origen === "pub" && x.vecino === sesion.userId);
+  const apoyadas = camps.filter((x) => x.aportes.some((a) => a.vecino === sesion.userId));
+  const selCamp = camps.find((x) => x.id === selId);
+  const abrirCamp = (x) => { setSelId(x.id); nav.go("camp"); };
+  // Si se llegó desde Buscar, se abre exactamente esa campaña
+  useEffect(() => {
+    if (!campFoco.id) return undefined;
+    const t = setTimeout(() => { setSelId(campFoco.id); nav.go("camp"); setCampFoco({ id: "" }); }, 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campFoco.id]);
   const monto = useTextInput("");
   const [listFilter, setListFilter] = useState("Activas");
   const [shareMsg, setShareMsg] = useState("");
@@ -88,7 +102,9 @@ export default function Campanas() {
     catch { setShareMsg(url); }
   };
   const listAct = listFilter === "Activas";
-  const showMain = (c.estado === "Activa") === listAct;
+  const showMain = listFilter !== "Próximas" && (c.estado === "Activa") === listAct;
+  const estadoLista = { Activas: "activa", "Próximas": "proxima", Finalizadas: "finalizada" }[listFilter];
+  const enLista = camps.filter((x) => x.estado === estadoLista);
   return (
     <div className={screenStyles.screen}>
       <div className={screenStyles.frame}>
@@ -97,22 +113,28 @@ export default function Campanas() {
       {nav.is("detalle") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Campaña</h1></div></>)}
       {nav.is("acopio") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Centro de acopio</h1></div></>)}
       {nav.is("apoyos") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Mis apoyos</h1></div></>)}
+      {nav.is("camp") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Campaña</h1></div></>)}
       
-      <div className="flex gap-2 pt-0 px-4 pb-2 items-center flex-none overflow-x-auto [&_span]:text-[14px] [&_span]:text-(--color-muted) [&_span]:font-bold [&_span]:whitespace-nowrap [&_.chip]:min-h-10 [&_.chip]:px-3 [&_.chip]:py-0" role="group" aria-label="Probar como"><span>Probar como:</span><button className={chipM} onClick={asM}>María (apoya)</button><button className={chipR} onClick={asR}>Responsable de la campaña</button></div>
+      {!nav.is("camp") && (<div className="flex gap-2 pt-0 px-4 pb-2 items-center flex-none overflow-x-auto [&_span]:text-[14px] [&_span]:text-(--color-muted) [&_span]:font-bold [&_span]:whitespace-nowrap [&_.chip]:min-h-10 [&_.chip]:px-3 [&_.chip]:py-0" role="group" aria-label="Probar como"><span>Probar como:</span><button className={chipM} onClick={asM}>María (apoya)</button><button className={chipR} onClick={asR}>Responsable de la campaña</button></div>)}
       
       {nav.is("lista") && (<>
       <div className={screenStyles.content}>
-        <div className={screenStyles.wrap}><button className={listAct ? CHIP_SOL_ON : CHIP_SOL_OFF} onClick={() => setListFilter("Activas")}>Activas</button><button className={!listAct ? CHIP_SOL_ON : CHIP_SOL_OFF} onClick={() => setListFilter("Finalizadas")}>Finalizadas</button></div>
+        <div className={screenStyles.wrap}><button className={listAct ? CHIP_SOL_ON : CHIP_SOL_OFF} onClick={() => setListFilter("Activas")}>Activas</button><button className={listFilter === "Próximas" ? CHIP_SOL_ON : CHIP_SOL_OFF} onClick={() => setListFilter("Próximas")}>Próximas</button><button className={listFilter === "Finalizadas" ? CHIP_SOL_ON : CHIP_SOL_OFF} onClick={() => setListFilter("Finalizadas")}>Finalizadas</button></div>
         <span className={screenStyles.badgeDemo}>Campañas de ejemplo · dinero y compras simulados</span>
         {showMain && (<button className={screenStyles.card} onClick={() => nav.go("detalle")}><div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>Acopio</span><span className={screenStyles.badge}>{c.estado}</span></div><h3 className="text-[20px]!">Abrigo para familias de Calca</h3><p className={screenStyles.muted}>Responsable: Junta Vecinal Calca Centro · hasta el 30 de noviembre</p><p className="font-bold! text-[15px]!">{intent} personas quieren apoyar</p></button>)}
-        {listAct && misCampanas.map((p) => (<PostCard key={p.id} p={p} />))}
-        <div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>Donación</span><span className={screenStyles.badgeDemo}>Ejemplo</span></div><h3 className="text-[20px]!">Útiles escolares para Punchana</h3><p className={screenStyles.muted}>Responsable: Colegio comunitario · 6 personas quieren apoyar</p></div>
-        <div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>Actividad solidaria</span><span className={screenStyles.badgeDemo}>Ejemplo</span></div><h3 className="text-[20px]!">Pollada pro ayuda médica</h3><p className={screenStyles.muted}>Responsable: familia organizadora · requiere autorización del beneficiario</p></div>
+        {enLista.map((x) => (<CampanaTarjeta key={x.id} c={x} onAbrir={abrirCamp} />))}
+        {enLista.length === 0 && !showMain && (<div className={screenStyles.card} role="status"><p className="font-bold!">No hay campañas {listFilter.toLowerCase()}</p><p className={screenStyles.muted}>Cambia el filtro o crea una campaña.</p></div>)}
         <a className={screenStyles.button} href="/publicar"><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>Crear campaña</a>
         <button className={screenStyles.buttonSecondary} onClick={() => nav.go("apoyos")}>Mis apoyos</button>
       </div>
       </>)}
       
+      {nav.is("camp") && (<>
+      <div className={screenStyles.content}>
+        {selCamp ? (<CampanaDetalle c={selCamp} />) : (<div className={screenStyles.card} role="status"><p className="font-bold!">Esta campaña ya no está disponible</p><button className={screenStyles.button} onClick={nav.back}>Volver a la lista</button></div>)}
+      </div>
+      </>)}
+
       {nav.is("detalle") && (<>
       <div className={screenStyles.content}>
         <div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>Acopio</span><span className={screenStyles.badge}>{c.estado}</span><span className={screenStyles.badgeDemo}>Ejemplo</span></div>
@@ -162,9 +184,10 @@ export default function Campanas() {
       <div className={screenStyles.content}>
         <h2 className="text-[20px]!">Campañas que apoyo</h2>
         {hasIntent && (<><div className={screenStyles.card}><b>Abrigo para familias de Calca</b><p className={screenStyles.muted}>Forma: {myMode} {montoTxt}</p><div className={screenStyles.row}><span className={screenStyles.badgeDemo}>Prometido</span><span className={screenStyles.badge}>{aporteState}</span></div><button className={screenStyles.buttonOutline} onClick={() => nav.go("detalle")}>Retomar</button></div></>)}
-        {noIntent2 && (<><div className={screenStyles.card} role="status"><p className="font-bold!">Aún no apoyas ninguna campaña</p><button className={screenStyles.button} onClick={() => nav.go("lista")}>Ver campañas</button></div></>)}
+        {apoyadas.map((x) => (<CampanaTarjeta key={x.id} c={x} onAbrir={abrirCamp} />))}
+        {noIntent2 && apoyadas.length === 0 && (<><div className={screenStyles.card} role="status"><p className="font-bold!">Aún no apoyas ninguna campaña</p><button className={screenStyles.button} onClick={() => nav.go("lista")}>Ver campañas</button></div></>)}
         <h2 className="text-[20px]!">Campañas que organizo</h2>
-        {misCampanas.map((p) => (<PostCard key={p.id} p={p} />))}{misCampanas.length === 0 && (<div className={screenStyles.card} role="status"><p className={screenStyles.muted}>Todavía no organizas ninguna campaña.</p><a className={screenStyles.buttonOutline} href="/publicar">Crear campaña</a></div>)}
+        {misCampanas.map((x) => (<CampanaTarjeta key={x.id} c={x} onAbrir={abrirCamp} />))}{misCampanas.length === 0 && (<div className={screenStyles.card} role="status"><p className={screenStyles.muted}>Todavía no organizas ninguna campaña.</p><a className={screenStyles.buttonOutline} href="/publicar">Crear campaña</a></div>)}
       </div>
       </>)}
       

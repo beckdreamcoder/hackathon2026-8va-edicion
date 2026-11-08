@@ -9,6 +9,11 @@ import { useCheckbox } from "@/lib/hooks/use-checkbox";
 import { Fragment, useState } from "react";
 import { useDemoState } from "@/lib/demo/store";
 import { useSesion, chip, avisar, logEvento, emitirSello } from "@/lib/demo/shared";
+import { usePublicaciones } from "@/lib/demo/publicaciones";
+import { useBloqueos, registrarLegado, cambiarUsuarioDemo } from "@/lib/demo/coordinaciones";
+import Link from "next/link";
+import { useEffect } from "react";
+import { PostCard } from "./post-card";
 
 const MOV_INICIAL = { actor: "maria", tab: "nec", stage: "none", ampliado: false, conf: [], sellos: [], coordId: "", req: { origen: "Campoy", destino: "Hospital de la zona", cuando: "Mañana 9:00 a. m.", plazas: "1 plaza", urgente: false } };
 const CUANDO = ["Mañana 9:00 a. m.", "Hoy 4:00 p. m."];
@@ -33,8 +38,16 @@ export default function Movilidad() {
   const urg = useCheckbox(false);
   const req = m.req;
 
-  const asM = () => setM({ actor: "maria" });
-  const asC = () => setM({ actor: "carlos" });
+  const [pubs] = usePublicaciones();
+  const [bl] = useBloqueos();
+  const bloq = bl.items.some((x) => (x.by === "maria" && x.target === "carlos") || (x.by === "carlos" && x.target === "maria"));
+  const asM = () => cambiarUsuarioDemo("maria");
+  const asC = () => cambiarUsuarioDemo("carlos");
+  useEffect(() => {
+    if (!m.coordId) return;
+    registrarLegado({ id: m.coordId, tipo: "movilidad", titulo: "Traslado al hospital", solicitante: "maria", receptor: "carlos", href: "/movilidad",
+      estado: m.stage === "done" ? "completada" : m.stage === "cancel" ? "cancelada" : m.stage === "viaje" || m.conf.length === 2 ? "acordada" : "aceptada" });
+  }, [m.coordId, m.stage, m.conf.length]);
   const chipM = chip(actor === "maria");
   const chipC = chip(actor === "carlos");
   const tabIsNec = m.tab === "nec";
@@ -66,8 +79,8 @@ export default function Movilidad() {
     nav.go("detalle");
   };
   const ampliar = () => { setM({ ampliado: true }); logEvento("María amplió el aviso de traslado a su comunidad"); };
-  const offer = () => { if (st === "avisada") { setM({ stage: "oferta" }); logEvento("Carlos ofreció plaza: «Puedo llevarte»"); } };
-  const acceptOffer = () => { if (st === "oferta") { setM({ stage: "ficha", conf: [], coordId: `mov-${Date.now()}` }); logEvento("María aceptó a Carlos · ficha de traslado abierta"); } };
+  const offer = () => { if (st === "avisada" && !bloq) { setM({ stage: "oferta" }); logEvento("Carlos ofreció plaza: «Puedo llevarte»"); } };
+  const acceptOffer = () => { if (st === "oferta" && !bloq) { setM({ stage: "ficha", conf: [], coordId: `mov-${Date.now()}` }); logEvento("María aceptó a Carlos · ficha de traslado abierta"); } };
   const cM = m.conf.includes("maria") ? "confirmó" : "pendiente";
   const cC = m.conf.includes("carlos") ? "confirmó" : "pendiente";
   const iConf = st === "ficha" && m.conf.includes(actor) && m.conf.length < 2;
@@ -102,19 +115,22 @@ export default function Movilidad() {
       {nav.is("detalle") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Detalle del traslado</h1></div></>)}
       {nav.is("junta") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Mi junta vecinal</h1></div></>)}
       
-      <div className="flex gap-2 pt-0 px-4 pb-2 items-center flex-none [&_span]:text-[14px] [&_span]:text-(--color-muted) [&_span]:font-bold [&_span]:whitespace-nowrap [&_.chip]:min-h-10 [&_.chip]:px-3 [&_.chip]:py-0" role="group" aria-label="Probar como"><span>Probar como:</span><button className={chipM} onClick={asM}>María (pide)</button><button className={chipC} onClick={asC}>Carlos (pasa)</button></div>
+      <div className="flex gap-2 pt-0 px-4 pb-2 items-center flex-wrap flex-none [&_span]:text-[14px] [&_span]:text-(--color-muted) [&_span]:font-bold [&_span]:whitespace-nowrap [&_.chip]:min-h-10 [&_.chip]:px-3 [&_.chip]:py-0" role="group" aria-label="Probar como"><span>Probar como:</span><button className={chipM} onClick={asM}>María (pide)</button><button className={chipC} onClick={asC}>Carlos (pasa)</button></div>
+      {bloq && (<p className="px-4 pb-2 text-[#9e0c24] font-bold text-[14px]" role="alert">Hay un bloqueo entre María y Carlos: no pueden enviarse solicitudes ni ofertas.</p>)}
       
       {nav.is("home") && (<>
       <div className={screenStyles.content}>
         <div className="bg-[#fff1e6] border border-[#f0c8a8] rounded-[16px] px-3.5 py-3 text-[15px]" role="note"><b>No es transporte médico de urgencia.</b> Ante una urgencia, llama al 106 (SAMU). No esperes respuestas de vecinos.</div>
         <div className={screenStyles.wrap}><button className={tabNec} onClick={setNec}>Necesito un traslado</button><button className={tabPaso} onClick={setPaso}>Paso por ahí</button></div>
         {tabIsNec && (<>
+          {pubs.items.filter((p) => p.tipo === "favor" && p.categoria === "Movilidad" && p.modo === "pido").map((p) => (<PostCard key={p.id} p={p} />))}
           {hasReq && (<><button className={screenStyles.card} onClick={() => nav.go("detalle")}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span><span className={screenStyles.badge}>{statusTxt}</span></div><h3 className="text-[19px]!">María necesita llegar al hospital</h3><p className={screenStyles.muted}>Desde {req.origen} (zona aproximada) · {req.cuando} · {req.plazas}</p></button></>)}
           {noReq && (<><div className={screenStyles.card} role="status"><p className="font-bold!">Aún no hay traslados pedidos</p><p className={screenStyles.muted}>Pide uno y tu junta recibirá el aviso primero.</p></div></>)}
         </>)}
-        {tabIsPaso && (<><div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span><span className={screenStyles.badgeDemo}>Ejemplo</span></div><h3 className="text-[19px]!">Carlos pasa por el hospital mañana</h3><p className={screenStyles.muted}>Sale 8:45 a. m. · 2 plazas · Desde Campoy</p></div></>)}
+        {tabIsPaso && (<>{pubs.items.filter((p) => p.tipo === "favor" && p.categoria === "Movilidad" && p.modo === "ofrezco").map((p) => (<PostCard key={p.id} p={p} />))}<div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span><span className={screenStyles.badgeDemo}>Ejemplo</span></div><h3 className="text-[19px]!">Carlos pasa por el hospital mañana</h3><p className={screenStyles.muted}>Sale 8:45 a. m. · 2 plazas · Desde Campoy</p></div></>)}
         <button className={screenStyles.button} onClick={() => nav.go("nuevo")}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>Pedir un traslado</button>
         <button className={screenStyles.buttonSecondary} onClick={() => nav.go("junta")}>Mi junta vecinal</button>
+        <Link className={screenStyles.buttonSecondary} href="/coordinaciones">Mis coordinaciones</Link>
       </div>
       </>)}
       
