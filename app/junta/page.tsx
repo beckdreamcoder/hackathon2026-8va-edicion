@@ -1,10 +1,5 @@
-import { SectionHeader } from "@/components/section-header";
+import Junta from "@/components/screens/Junta";
 
-export default function Pagina() {
-  return (
-    <div className="flex flex-col gap-4">
-      <SectionHeader title="Mi junta vecinal" backHref="/" />
-      <p className="text-(--color-muted)">En construcción · Fase 1.</p>
-    </div>
-  );
+export default function Page() {
+  return <Junta />;
 }

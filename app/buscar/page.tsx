@@ -1,10 +1,5 @@
-import { SectionHeader } from "@/components/section-header";
+import Buscar from "@/components/screens/Buscar";
 
-export default function Pagina() {
-  return (
-    <div className="flex flex-col gap-4">
-      <SectionHeader title="Buscar" backHref="/comunidad" />
-      <p className="text-(--color-muted)">En construcción · Fase 1.</p>
-    </div>
-  );
+export default function Page() {
+  return <Buscar />;
 }
