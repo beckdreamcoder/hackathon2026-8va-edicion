@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAvisos } from "@/lib/demo/shared";
+import { useDemoState } from "@/lib/demo/store";
 import { screenStyles } from "./screen-styles";
 import { notificacionesTest } from "@/lib/mock/notificaciones";
 import { useViewStack } from "@/lib/hooks/use-view-stack";
+
+const LECT_INICIAL = { leidas: [] };
 
 const CATEGORIAS = {
   favor: { label: "Favor", cls: "inline-flex items-center text-[13px] font-bold rounded-full px-2.5 py-[3px] bg-[#e6f0e4] text-[#2f5a2d] w-fit" },
@@ -20,16 +24,29 @@ const CATEGORIAS = {
  */
 export default function Notificaciones() {
   const nav = useViewStack("lista");
-  const [items, setItems] = useState(notificacionesTest);
+  const router = useRouter();
+  const [avisos, setAvisos] = useAvisos();
+  const [lect, setLect] = useDemoState("notificaciones", LECT_INICIAL);
+  // Avisos generados por la actividad de la demo + ejemplos de semilla
+  const items = [
+    ...avisos.items.map((a) => ({ ...a, categoria: CATEGORIAS[a.categoria] ? a.categoria : "sistema" })),
+    ...notificacionesTest.map((n) => ({ ...n, leida: n.leida || lect.leidas.includes(n.id) })),
+  ];
 
   const sinLeer = items.filter((n) => !n.leida).length;
 
   const marcarLeida = (id) => {
-    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, leida: true } : n)));
+    if (avisos.items.some((a) => a.id === id)) setAvisos((p) => ({ items: p.items.map((a) => (a.id === id ? { ...a, leida: true } : a)) }));
+    else setLect((p) => ({ leidas: [...new Set([...p.leidas, id])] }));
+  };
+  const abrir = (n) => {
+    marcarLeida(n.id);
+    if (n.href) router.push(n.href);
   };
 
   const marcarTodas = () => {
-    setItems((prev) => prev.map((n) => ({ ...n, leida: true })));
+    setAvisos((p) => ({ items: p.items.map((a) => ({ ...a, leida: true })) }));
+    setLect({ leidas: notificacionesTest.map((n) => n.id) });
   };
 
   return (
@@ -58,7 +75,7 @@ export default function Notificaciones() {
             <button
               key={n.id}
               className={n.leida ? "bg-white border border-(--color-line) rounded-[20px] px-4 py-3.5 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-1.5 text-left w-full [&_b]:text-[18px] [&_b]:leading-[1.2]" : "bg-white border-2 border-(--color-brand) rounded-[20px] px-4 py-3.5 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-1.5 text-left w-full [&_b]:text-[18px] [&_b]:leading-[1.2]"}
-              onClick={() => marcarLeida(n.id)}
+              onClick={() => abrir(n)}
               aria-label={`${n.titulo}${n.leida ? "" : ", sin leer"}`}
             >
               <div className={screenStyles.row}>

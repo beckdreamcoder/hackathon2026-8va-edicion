@@ -2,7 +2,10 @@
 
 import { useViewStack } from "@/lib/hooks/use-view-stack";
 
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
+import { resetDemo, setDemo } from "@/lib/demo/store";
+import { useSesion, useEventos, logEvento } from "@/lib/demo/shared";
+import { useIncidentes } from "@/lib/demo/incidentes";
 import { screenStyles } from "./screen-styles";
 import { animateMotion } from "./animate-motion";
 
@@ -17,26 +20,51 @@ const animateSkeleton = animateMotion(
  */
 export default function Demo() {
   const nav = useViewStack("consola");
-  const askReset = () => {};
-  const closeReset = () => {};
-  const dates = [{name: "8 nov", cls: screenStyles.chipActive, pick: () => {}}, {name: "30 nov", cls: screenStyles.chip, pick: () => {}}, {name: "1 dic", cls: screenStyles.chip, pick: () => {}}];
-  const doReset = () => {};
-  const ia = [{name: "Controlada", cls: screenStyles.chipActive, pick: () => {}}, {name: "Sin respuesta", cls: screenStyles.chip, pick: () => {}}];
-  const inst = [{name: "Sin respuesta", cls: screenStyles.chipActive, pick: () => {}}, {name: "Ayuda solicitada", cls: screenStyles.chip, pick: () => {}}, {name: "Respuesta confirmada", cls: screenStyles.chip, pick: () => {}}];
-  const log = [];
-  const monthInfo = "Noviembre en curso: se muestra avance de Vecino del mes.";
-  const noLog = true;
-  const retried = false;
-  const retry = () => {};
-  const roles = [{name: "Vecino", cls: screenStyles.chipActive, pick: () => {}}, {name: "Coordinador", cls: screenStyles.chip, pick: () => {}}, {name: "Editor", cls: screenStyles.chip, pick: () => {}}];
-  const sheetReset = false;
-  const signals = [{name: "Normal", cls: screenStyles.chipActive, pick: () => {}}, {name: "Intermitente", cls: screenStyles.chip, pick: () => {}}, {name: "Sin conexión", cls: screenStyles.chip, pick: () => {}}];
-  const sms = [{name: "Activa", cls: screenStyles.chipActive, pick: () => {}}, {name: "Caída", cls: screenStyles.chip, pick: () => {}}];
-  const tCon = screenStyles.chipActive;
-  const tEst = screenStyles.chip;
-  const terrs = [{name: "Costa · Lima", cls: screenStyles.chipActive, pick: () => {}}, {name: "Sierra · Cusco", cls: screenStyles.chip, pick: () => {}}, {name: "Selva · Loreto", cls: screenStyles.chip, pick: () => {}}];
+  const [sesion, setSesion] = useSesion();
+  const [eventos] = useEventos();
+  const [incs, setIncs] = useIncidentes();
+  const [sheetReset, setSheetReset] = useState(false);
+  const [retried, setRetried] = useState(false);
+  const opts = (names, current, onPick) => names.map((name) => ({ name, cls: name === current ? screenStyles.chipActive : screenStyles.chip, pick: () => onPick(name) }));
+
+  const USERS = { María: "maria", Luis: "luis", Carlos: "carlos" };
+  const userName = Object.keys(USERS).find((k) => USERS[k] === sesion.userId) ?? "María";
+  const users = opts(Object.keys(USERS), userName, (n) => {
+    const id = USERS[n];
+    setSesion({ userId: id });
+    // Los escenarios de cada pantalla usan el mismo perfil activo
+    if (id === "maria" || id === "luis") setDemo("favor-escalera", {}, { actor: id });
+    if (id === "maria" || id === "carlos") setDemo("movilidad-hospital", {}, { actor: id });
+    logEvento(`Consola: usuario activo ${n}`);
+  });
+  const roles = opts(["Vecino", "Coordinador", "Editor"], sesion.rol, (r) => { setSesion({ rol: r }); logEvento(`Consola: rol ${r}`); });
+  const TERRS = { "Costa · Lima": ["Lima", "Campoy"], "Sierra · Cusco": ["Cusco", "Kari Grande"], "Selva · Loreto": ["Loreto", "Bajo Belén"] };
+  const terrName = Object.keys(TERRS).find((k) => TERRS[k][0] === sesion.departamento) ?? "Costa · Lima";
+  const terrs = opts(Object.keys(TERRS), terrName, (t) => { setSesion({ departamento: TERRS[t][0], localidad: TERRS[t][1] }); logEvento(`Consola: territorio ${t}`); });
+  const FECHAS = { "8 nov": "2026-11-08", "30 nov": "2026-11-30", "1 dic": "2026-12-01" };
+  const fechaName = Object.keys(FECHAS).find((k) => FECHAS[k] === sesion.fecha) ?? "8 nov";
+  const dates = opts(Object.keys(FECHAS), fechaName, (d) => { setSesion({ fecha: FECHAS[d] }); logEvento(`Consola: fecha ${d}`); });
+  const monthInfo = sesion.fecha.slice(0, 7) > "2026-11" ? "Noviembre cerrado: Noticias muestra el reconocimiento del mes." : "Noviembre en curso: se muestra avance de Vecino del mes.";
+  const SENAL = { Normal: "Normal", Intermitente: "Intermitente", "Sin conexión": "Sin datos" };
+  const senalName = Object.keys(SENAL).find((k) => SENAL[k] === sesion.senal) ?? "Normal";
+  const signals = opts(Object.keys(SENAL), senalName, (n) => { setSesion({ senal: SENAL[n] }); logEvento(`Consola: señal ${n}${n === "Sin conexión" ? " (las publicaciones y reportes quedan pendientes)" : ""}`); });
+  const sms = opts(["Activa", "Caída"], sesion.smsCentral ?? "Activa", (n) => { setSesion({ smsCentral: n }); logEvento(`Consola: central SMS ${n}`); });
+  const ia = opts(["Controlada", "Sin respuesta"], sesion.ia ?? "Controlada", (n) => { setSesion({ ia: n }); logEvento(`Consola: IA simulada ${n}`); });
+  const principal = incs.items.find((i) => i.id === "INC-0007");
+  const INST = ["Sin respuesta", "Ayuda solicitada", "Respuesta confirmada"];
+  const inst = opts(INST, INST[Math.min(principal?.inst ?? 0, 2)], (n) => {
+    setIncs((p) => ({ items: p.items.map((i) => (i.id === "INC-0007" ? { ...i, inst: INST.indexOf(n) } : i)) }));
+    logEvento(`Consola: respuesta institucional simulada «${n}» en INC-0007`);
+  });
+  const log = eventos.items.map((e) => ({ t: `${e.t} · ${e.text}` }));
+  const noLog = log.length === 0;
+  const askReset = () => setSheetReset(true);
+  const closeReset = () => setSheetReset(false);
+  const doReset = () => { resetDemo(); window.location.href = "/"; };
+  const retry = () => { setRetried(false); setTimeout(() => setRetried(true), 600); };
+  const tCon = nav.is("consola") ? screenStyles.chipActive : screenStyles.chip;
+  const tEst = nav.is("estados") ? screenStyles.chipActive : screenStyles.chip;
   const title = "Consola de demostración";
-  const users = [{name: "María", cls: screenStyles.chipActive, pick: () => {}}, {name: "Luis", cls: screenStyles.chip, pick: () => {}}, {name: "Carlos", cls: screenStyles.chip, pick: () => {}}];
   return (
     <div className={screenStyles.screen}>
       <div className={screenStyles.frame}>
@@ -45,7 +73,7 @@ export default function Demo() {
       
       {nav.is("consola") && (<>
       <div className={screenStyles.content}>
-        <div className="bg-[#fff4d6] text-[#5c3d00] border border-[#e6c77a] rounded-[14px] px-3 py-2.5 text-[14px] font-bold" role="note">Esta consola está separada del recorrido normal. En la versión Next.js escribirá en la base local; aquí solo muestra su interfaz y registra eventos.</div>
+        <div className="bg-[#fff4d6] text-[#5c3d00] border border-[#e6c77a] rounded-[14px] px-3 py-2.5 text-[14px] font-bold" role="note">Esta consola está separada del recorrido normal. Los cambios se guardan en la base local de este navegador y los usan todas las pantallas.</div>
         <div className={screenStyles.card}><p className={screenStyles.label}>Usuario</p><div className={screenStyles.wrap}>{(users ?? []).map((o, __i1) => (<Fragment key={__i1}><button className={o.cls} onClick={o.pick}>{o.name}</button></Fragment>))}</div>
           <p className={screenStyles.label}>Rol</p><div className={screenStyles.wrap}>{(roles ?? []).map((o, __i1) => (<Fragment key={__i1}><button className={o.cls} onClick={o.pick}>{o.name}</button></Fragment>))}</div>
           <p className={screenStyles.label}>Territorio</p><div className={screenStyles.wrap}>{(terrs ?? []).map((o, __i1) => (<Fragment key={__i1}><button className={o.cls} onClick={o.pick}>{o.name}</button></Fragment>))}</div></div>

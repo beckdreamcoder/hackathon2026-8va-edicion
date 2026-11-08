@@ -56,8 +56,8 @@ export const notificacionesTest: Notificacion[] = [
   {
     id: "n6",
     categoria: "sistema",
-    titulo: "Tu perfil está verificado",
-    texto: "Ya puedes publicar cachuelos y favores con tu insignia.",
+    titulo: "Bienvenida a BarrioConecta",
+    texto: "Elige tu zona y, si quieres, únete a una junta. Todo es de demostración.",
     hace: "hace 3 días",
     leida: true,
   },
