@@ -23,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="es-PE"
+      suppressHydrationWarning
       className="[--color-brand:#c8102e] [--color-canvas:#fbf8f3] [--color-ink:#202124] [--color-line:#e3ddd7] [--color-muted:#5e6268]"
     >
       <head>
