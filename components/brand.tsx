@@ -24,10 +24,10 @@ export function BrandMark({ className = "h-12 w-12" }: { className?: string }) {
 export function Wordmark() {
   return (
     <div className="flex flex-col items-start">
-      <p className="font-display text-2xl font-extrabold leading-none">
-        Barrio<span className="text-brand">Conecta</span>
+      <p className="font-sans text-2xl font-extrabold leading-none">
+        Barrio<span className="text-(--color-brand)">Conecta</span>
       </p>
-      <p className="text-sm text-muted">Un Perú más cercano</p>
+      <p className="text-sm text-(--color-muted)">Un Perú más cercano</p>
     </div>
   );
 }

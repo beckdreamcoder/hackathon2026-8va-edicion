@@ -8,7 +8,7 @@ export function SectionHeader({ title, backHref }: { title: string; backHref?: s
         <Link
           href={backHref}
           aria-label="Volver"
-          className="flex size-12 items-center justify-center rounded-full border border-line bg-surface"
+          className="flex size-12 items-center justify-center rounded-full border border-(--color-line) bg-white"
         >
           <Icon name="arrowLeft" className="size-5" />
         </Link>
