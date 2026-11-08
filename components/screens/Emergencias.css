@@ -1,0 +1,47 @@
+/* Estilos de la pantalla Emergencias (con alcance en .scr-emergencias) */
+.scr-emergencias * {box-sizing:border-box}
+.scr-emergencias {margin:0;background:#fff;color:#202124;font-family:'Nunito',system-ui,sans-serif;font-size:17px;line-height:1.4}
+.scr-emergencias h1, .scr-emergencias h2, .scr-emergencias h3, .scr-emergencias h4, .scr-emergencias .t {font-family:'Nunito','Nunito',system-ui,sans-serif;margin:0;line-height:1.15;letter-spacing:-.01em}
+.scr-emergencias p {margin:0}
+.scr-emergencias button, .scr-emergencias input, .scr-emergencias select, .scr-emergencias textarea {font:inherit;color:inherit}
+.scr-emergencias button {cursor:pointer}
+.scr-emergencias a {color:inherit;text-decoration:none}
+.scr-emergencias :focus-visible {outline:3px solid #202124;outline-offset:2px}
+.scr-emergencias .ic {width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.scr-emergencias .app {width:390px;height:844px;display:flex;flex-direction:column;background:#fff;overflow:hidden;position:relative}
+.scr-emergencias .top {display:flex;align-items:center;gap:4px;padding:8px;min-height:64px;flex:none}
+.scr-emergencias .top h1 {font-size:22px;flex:1}
+.scr-emergencias .ib {width:48px;height:48px;display:grid;place-items:center;border:0;background:none;border-radius:16px;color:#202124}
+.scr-emergencias .body {flex:1;min-height:0;overflow-y:auto;padding:4px 16px 112px;display:flex;flex-direction:column;gap:14px}
+.scr-emergencias .btn {min-height:52px;border-radius:18px;border:2px solid #C8102E;background:#C8102E;color:#fff;font-weight:700;padding:0 20px;display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;width:100%}
+.scr-emergencias .btn.o {background:#fff;color:#C8102E}
+.scr-emergencias .btn.g {background:#fff;border-color:#E3DDD7;color:#202124}
+.scr-emergencias .btn.call {background:#9A3412;border-color:#9A3412;min-height:60px;font-size:19px}
+.scr-emergencias .btn:disabled {opacity:.5}
+.scr-emergencias .card {background:#fff;border:1px solid #E3DDD7;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(32,33,36,.05);display:flex;flex-direction:column;gap:8px;text-align:left;width:100%}
+.scr-emergencias .card.eme {background:#FFF1E6;border-color:#F0C8A8}
+.scr-emergencias .row {display:flex;align-items:center;gap:12px}
+.scr-emergencias .sp {flex:1;min-width:0}
+.scr-emergencias .mut {color:#5E6268;font-size:15px}
+.scr-emergencias .tag {display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:700;border-radius:999px;padding:3px 10px;background:#F1ECE6;color:#202124;width:fit-content}
+.scr-emergencias .tag.sim {background:#FFF4D6;color:#5C3D00}
+.scr-emergencias .tag.fav {background:#E6F0E4;color:#2F5A2D}
+.scr-emergencias .tag.eme {background:#FFE9DA;color:#8A2B07}
+.scr-emergencias .tag.sol {background:#DDF0F2;color:#14505A}
+.scr-emergencias .field {display:flex;flex-direction:column;gap:6px}
+.scr-emergencias .lbl {font-weight:700;font-size:15px}
+.scr-emergencias .chip {min-height:44px;border-radius:999px;border:1.5px solid #CFC7BF;background:#fff;padding:0 14px;font-weight:700;font-size:15px;white-space:nowrap}
+.scr-emergencias .chip.on {background:#202124;border-color:#202124;color:#fff}
+.scr-emergencias .chip.sel {background:#9A3412;border-color:#9A3412;color:#fff}
+.scr-emergencias .wrap {display:flex;flex-wrap:wrap;gap:8px}
+.scr-emergencias .scrollx {display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.scr-emergencias .nav {position:absolute;left:12px;right:12px;bottom:12px;z-index:10;display:flex;background:#fff;padding:8px 6px;border:1px solid #ede9e6;border-radius:28px;box-shadow:0 8px 24px rgba(32,33,36,.14)}
+.scr-emergencias .nav a {flex:1;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:13px;color:#5E6268;border-radius:14px}
+.scr-emergencias .sw {display:flex;gap:12px;align-items:flex-start}
+.scr-emergencias .sw input {width:26px;height:26px;margin-top:2px;accent-color:#C8102E;flex:none}
+.scr-emergencias .ok {color:#2F5A2D;font-weight:700}
+.scr-emergencias .err {color:#9E0C24;font-weight:700;font-size:15px}
+.scr-emergencias .cam {position:relative;height:250px;border-radius:20px;background:#2B2B2B;display:grid;place-items:center;color:#fff;overflow:hidden}
+.scr-emergencias .cam .fr {position:absolute;inset:18px;border:2px dashed rgba(255,255,255,.7);border-radius:16px}
+.scr-emergencias .prot {height:150px;border-radius:20px;background:repeating-linear-gradient(45deg,#E3DDD7,#E3DDD7 10px,#EFE8DD 10px,#EFE8DD 20px);display:grid;place-items:center;text-align:center;padding:12px;border:1px solid #CFC7BF}
+.scr-emergencias .msg {border-left:0;border-top:4px solid #9A3412}

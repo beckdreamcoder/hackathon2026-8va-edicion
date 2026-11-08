@@ -1,0 +1,44 @@
+/* Estilos de la pantalla Demo (con alcance en .scr-demo) */
+.scr-demo * {box-sizing:border-box}
+.scr-demo {margin:0;background:#fff;color:#202124;font-family:'Nunito',system-ui,sans-serif;font-size:17px;line-height:1.4}
+.scr-demo h1, .scr-demo h2, .scr-demo h3, .scr-demo h4, .scr-demo .t {font-family:'Nunito','Nunito',system-ui,sans-serif;margin:0;line-height:1.15;letter-spacing:-.01em}
+.scr-demo p {margin:0}
+.scr-demo button, .scr-demo input, .scr-demo select, .scr-demo textarea {font:inherit;color:inherit}
+.scr-demo button {cursor:pointer}
+.scr-demo a {color:inherit;text-decoration:none}
+.scr-demo :focus-visible {outline:3px solid #202124;outline-offset:2px}
+.scr-demo .ic {width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.scr-demo .app {width:390px;height:844px;display:flex;flex-direction:column;background:#fff;overflow:hidden;position:relative}
+.scr-demo .top {display:flex;align-items:center;gap:4px;padding:8px 8px 8px 16px;min-height:64px;flex:none}
+.scr-demo .top h1 {font-size:22px;flex:1}
+.scr-demo .body {flex:1;min-height:0;overflow-y:auto;padding:4px 16px 112px;display:flex;flex-direction:column;gap:14px}
+.scr-demo .btn {min-height:52px;border-radius:18px;border:2px solid #C8102E;background:#C8102E;color:#fff;font-weight:700;padding:0 20px;display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;width:100%}
+.scr-demo .btn.o {background:#fff;color:#C8102E}
+.scr-demo .btn.g {background:#fff;border-color:#E3DDD7;color:#202124}
+.scr-demo .card {background:#fff;border:1px solid #E3DDD7;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(32,33,36,.05);display:flex;flex-direction:column;gap:8px;text-align:left;width:100%}
+.scr-demo .row {display:flex;align-items:center;gap:12px}
+.scr-demo .sp {flex:1;min-width:0}
+.scr-demo .mut {color:#5E6268;font-size:15px}
+.scr-demo .tag {display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:700;border-radius:999px;padding:3px 10px;background:#F1ECE6;color:#202124;width:fit-content}
+.scr-demo .tag.sim {background:#FFF4D6;color:#5C3D00}
+.scr-demo .tag.red {background:#FBE3E7;color:#9E0C24}
+.scr-demo .tag.fav {background:#E6F0E4;color:#2F5A2D}
+.scr-demo .tag.sol {background:#DDF0F2;color:#14505A}
+.scr-demo .lbl {font-weight:700;font-size:15px}
+.scr-demo .chip {min-height:44px;border-radius:999px;border:1.5px solid #CFC7BF;background:#fff;padding:0 14px;font-weight:700;font-size:15px;white-space:nowrap}
+.scr-demo .chip.on {background:#202124;border-color:#202124;color:#fff}
+.scr-demo .wrap {display:flex;flex-wrap:wrap;gap:8px}
+.scr-demo .tabs {display:flex;gap:8px;padding:0 16px 8px;flex:none}
+.scr-demo .nav {position:absolute;left:12px;right:12px;bottom:12px;z-index:10;display:flex;background:#fff;padding:8px 6px;border:1px solid #ede9e6;border-radius:28px;box-shadow:0 8px 24px rgba(32,33,36,.14)}
+.scr-demo .nav a {flex:1;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:13px;color:#5E6268;border-radius:14px}
+.scr-demo .ok {color:#2F5A2D;font-weight:700}
+.scr-demo .err {color:#9E0C24;font-weight:700;font-size:15px}
+.scr-demo .log {font-family:ui-monospace,Menlo,monospace;font-size:13px;color:#202124;background:#F6F2EC;border-radius:12px;padding:8px 10px}
+.scr-demo .sk {height:14px;border-radius:7px;background:linear-gradient(90deg,#EDE6DC,#F7F2EA,#EDE6DC);background-size:200% 100%;animation:sk 1.4s linear infinite}
+@keyframes sk {from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce) {
+.scr-demo .sk {animation:none}
+}
+.scr-demo .sheet {position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:24px 24px 0 0;border-top:1px solid #E3DDD7;box-shadow:0 -8px 24px rgba(32,33,36,.15);padding:20px 16px;display:flex;flex-direction:column;gap:12px;z-index:5}
+.scr-demo .scrim {position:absolute;inset:0;background:rgba(32,33,36,.35);z-index:4}
+.scr-demo .warn {background:#FFF4D6;color:#5C3D00;border:1px solid #E6C77A;border-radius:14px;padding:10px 12px;font-size:14px;font-weight:700}

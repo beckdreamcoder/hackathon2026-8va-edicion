@@ -1,0 +1,48 @@
+/* Estilos de la pantalla Movilidad (con alcance en .scr-movilidad) */
+.scr-movilidad * {box-sizing:border-box}
+.scr-movilidad {margin:0;background:#fff;color:#202124;font-family:'Nunito',system-ui,sans-serif;font-size:17px;line-height:1.4}
+.scr-movilidad h1, .scr-movilidad h2, .scr-movilidad h3, .scr-movilidad h4, .scr-movilidad .t {font-family:'Nunito','Nunito',system-ui,sans-serif;margin:0;line-height:1.15;letter-spacing:-.01em}
+.scr-movilidad p {margin:0}
+.scr-movilidad button, .scr-movilidad input, .scr-movilidad select, .scr-movilidad textarea {font:inherit;color:inherit}
+.scr-movilidad button {cursor:pointer}
+.scr-movilidad a {color:inherit;text-decoration:none}
+.scr-movilidad :focus-visible {outline:3px solid #202124;outline-offset:2px}
+.scr-movilidad .ic {width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.scr-movilidad .app {width:390px;height:844px;display:flex;flex-direction:column;background:#fff;overflow:hidden;position:relative}
+.scr-movilidad .top {display:flex;align-items:center;gap:4px;padding:8px;min-height:64px;flex:none}
+.scr-movilidad .top h1 {font-size:22px;flex:1}
+.scr-movilidad .ib {width:48px;height:48px;display:grid;place-items:center;border:0;background:none;border-radius:16px;color:#202124}
+.scr-movilidad .body {flex:1;min-height:0;overflow-y:auto;padding:4px 16px 112px;display:flex;flex-direction:column;gap:14px}
+.scr-movilidad .btn {min-height:52px;border-radius:18px;border:2px solid #C8102E;background:#C8102E;color:#fff;font-weight:700;padding:0 20px;display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;width:100%}
+.scr-movilidad .btn.o {background:#fff;color:#C8102E}
+.scr-movilidad .btn.g {background:#fff;border-color:#E3DDD7;color:#202124}
+.scr-movilidad .card {background:#fff;border:1px solid #E3DDD7;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(32,33,36,.05);display:flex;flex-direction:column;gap:8px;text-align:left;width:100%}
+.scr-movilidad .row {display:flex;align-items:center;gap:12px}
+.scr-movilidad .sp {flex:1;min-width:0}
+.scr-movilidad .mut {color:#5E6268;font-size:15px}
+.scr-movilidad .tag {display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:700;border-radius:999px;padding:3px 10px;background:#F1ECE6;color:#202124;width:fit-content}
+.scr-movilidad .tag.sim {background:#FFF4D6;color:#5C3D00}
+.scr-movilidad .tag.fav {background:#E6F0E4;color:#2F5A2D}
+.scr-movilidad .tag.eme {background:#FFE9DA;color:#8A2B07}
+.scr-movilidad .field {display:flex;flex-direction:column;gap:6px}
+.scr-movilidad .field label, .scr-movilidad .lbl {font-weight:700;font-size:15px}
+.scr-movilidad .in {min-height:52px;border:1.5px solid #CFC7BF;border-radius:16px;padding:0 14px;background:#fff;width:100%}
+.scr-movilidad .chip {min-height:44px;border-radius:999px;border:1.5px solid #CFC7BF;background:#fff;padding:0 14px;font-weight:700;font-size:15px;white-space:nowrap}
+.scr-movilidad .chip.on {background:#C8102E;border-color:#C8102E;color:#fff}
+.scr-movilidad .wrap {display:flex;flex-wrap:wrap;gap:8px}
+.scr-movilidad .nav {position:absolute;left:12px;right:12px;bottom:12px;z-index:10;display:flex;background:#fff;padding:8px 6px;border:1px solid #ede9e6;border-radius:28px;box-shadow:0 8px 24px rgba(32,33,36,.14)}
+.scr-movilidad .nav a {flex:1;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:13px;color:#5E6268;border-radius:14px}
+.scr-movilidad .av {width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-family:'Nunito',sans-serif;font-size:18px;flex:none;background:#F4D9C6;color:#8A2B07}
+.scr-movilidad .av.g {background:#E6F0E4;color:#2F5A2D}
+.scr-movilidad .av.t {background:#DDF0F2;color:#14505A}
+.scr-movilidad .who {display:flex;gap:8px;padding:0 16px 8px;align-items:center;flex:none}
+.scr-movilidad .who span {font-size:14px;color:#5E6268;font-weight:700;white-space:nowrap}
+.scr-movilidad .who .chip {min-height:40px;padding:0 12px}
+.scr-movilidad .ok {color:#2F5A2D;font-weight:700}
+.scr-movilidad .err {color:#9E0C24;font-weight:700;font-size:15px}
+.scr-movilidad .sw {display:flex;gap:12px;align-items:flex-start}
+.scr-movilidad .sw input {width:26px;height:26px;margin-top:2px;accent-color:#C8102E;flex:none}
+.scr-movilidad .warn {background:#FFF1E6;border:1px solid #F0C8A8;border-radius:16px;padding:12px 14px;font-size:15px}
+.scr-movilidad .stack {display:flex}
+.scr-movilidad .stack .av {margin-left:-10px;border:2px solid #fff;width:40px;height:40px;font-size:16px}
+.scr-movilidad .stack .av:first-child {margin-left:0}
