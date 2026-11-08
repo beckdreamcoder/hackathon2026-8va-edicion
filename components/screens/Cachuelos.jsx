@@ -4,7 +4,14 @@ import { useViewStack } from "@/lib/hooks/use-view-stack";
 
 import { useTextInput } from "@/lib/hooks/use-text-input";
 
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
+import { useDemoState } from "@/lib/demo/store";
+import { VECINOS, chip, avisar, logEvento, emitirSello } from "@/lib/demo/shared";
+import { usePublicaciones } from "@/lib/demo/publicaciones";
+import { PostCard } from "./post-card";
+
+const CACH_INICIAL = { actor: "maria", tab: "serv", stage: "open", coordId: "", ag: { price: "", date: "", cond: "", proposed: false, conf: [] }, done: [], recs: [] };
+const DIAS = ["Jueves", "Viernes", "Sábado"];
 import { screenStyles } from "./screen-styles";
 
 /**
@@ -13,51 +20,98 @@ import { screenStyles } from "./screen-styles";
  */
 export default function Cachuelos() {
   const nav = useViewStack("lista");
-  const accept = () => {};
-  const accepted = false;
-  const agreed = false;
-  const asM = () => {};
-  const asP = () => {};
-  const cM = "pendiente";
-  const cP = "pendiente";
-  const canRec = true;
-  const canRequest = true;
-  const changeTerms = () => {};
-  const chipM = "min-h-11 rounded-full border-[1.5px] border-(--color-brand) bg-(--color-brand) px-3.5 py-0 font-bold text-[15px] whitespace-nowrap text-white chip";
-  const chipP = "min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip";
-  const completed = false;
-  const cond = useTextInput("");
-  const confirmAg = () => {};
-  const dM = "pendiente";
-  const dP = "pendiente";
-  const dateSel = "Jueves";
-  const dates = [{name: "Jueves", cls: "min-h-11 rounded-full border-[1.5px] border-(--color-brand) bg-(--color-brand) px-3.5 py-0 font-bold text-[15px] whitespace-nowrap text-white chip", pick: () => {}}, {name: "Viernes", cls: "min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip", pick: () => {}}, {name: "Sábado", cls: "min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip", pick: () => {}}];
-  const doneBtn = () => {};
-  const doneLbl = "Marcar servicio completado";
-  const editHint = "Pedro propone; tú puedes pedir cambios aquí";
-  const editing = true;
-  const iConfirmed = false;
-  const iNeedConfirm = true;
-  const pedroPend = false;
-  const price = useTextInput("");
-  const propose = () => {};
-  const proposed = false;
-  const recDone = false;
-  const recommend = () => {};
-  const reject = () => {};
-  const rejected = false;
-  const reqSentM = false;
-  const request = () => {};
-  const s1 = "";
-  const s2 = "";
-  const s3 = "";
-  const setServ = () => {};
-  const setTrab = () => {};
-  const statusTxt = "Abierta";
-  const tabIsServ = true;
-  const tabIsTrab = false;
-  const tabServ = "min-h-11 rounded-full border-[1.5px] border-(--color-brand) bg-(--color-brand) px-3.5 py-0 font-bold text-[15px] whitespace-nowrap text-white chip";
-  const tabTrab = "min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip";
+  const [pubs] = usePublicaciones();
+  const [c, setC] = useDemoState("cachuelo-gasfiteria", CACH_INICIAL);
+  const actor = c.actor;
+  const other = actor === "maria" ? "pedro" : "maria";
+  const price = useTextInput(c.ag.price);
+  const cond = useTextInput(c.ag.cond || "Incluye revisión. Materiales aparte, con boleta.");
+  const [dateSel, setDateSel] = useState(c.ag.date || "Jueves");
+
+  const asM = () => setC({ actor: "maria" });
+  const asP = () => setC({ actor: "pedro" });
+  const chipM = chip(actor === "maria");
+  const chipP = chip(actor === "pedro");
+  const tabIsServ = c.tab === "serv";
+  const tabIsTrab = c.tab === "trab";
+  const tabServ = chip(tabIsServ);
+  const tabTrab = chip(tabIsTrab);
+  const setServ = () => setC({ tab: "serv" });
+  const setTrab = () => setC({ tab: "trab" });
+
+  const inCoord = ["accepted", "agreed", "completed"].includes(c.stage);
+  const proposed = c.stage === "accepted" && c.ag.proposed;
+  const editing = c.stage === "accepted" && !c.ag.proposed;
+  const agreed = c.stage === "agreed";
+  const completed = c.stage === "completed";
+  const statusTxt =
+    c.stage === "open" || c.stage === "rejected" ? "Abierta"
+    : c.stage === "requested" ? "Solicitud enviada"
+    : c.stage === "accepted" ? (proposed ? "Esperando confirmación" : "En coordinación")
+    : agreed ? (c.done.length ? "Pendiente de cierre" : "Acordado")
+    : "Completado";
+
+  const canRequest = actor === "maria" && (c.stage === "open" || c.stage === "rejected");
+  const reqSentM = actor === "maria" && c.stage === "requested";
+  const pedroPend = actor === "pedro" && c.stage === "requested";
+  const accepted = inCoord;
+  const rejected = c.stage === "rejected";
+  const request = () => {
+    if (!canRequest) return;
+    setC({ stage: "requested" });
+    avisar({ categoria: "cachuelo", titulo: "María solicita tu servicio", texto: "Gasfitería · arreglo de fugas.", href: "/cachuelos" });
+    logEvento("María solicitó el servicio de gasfitería de Pedro");
+  };
+  const accept = () => {
+    if (c.stage !== "requested") return;
+    setC({ stage: "accepted", coordId: `cach-${Date.now()}`, ag: { ...CACH_INICIAL.ag }, done: [], recs: [] });
+    logEvento("Pedro aceptó · coordinación de cachuelo abierta");
+  };
+  const reject = () => { if (c.stage === "requested") setC({ stage: "rejected" }); };
+
+  const nombre = (v) => VECINOS[v].name;
+  const editHint = actor === "pedro" ? "Propón precio, fecha y condiciones" : "Pedro propone; tú puedes pedir cambios aquí";
+  const dates = DIAS.map((d) => ({ name: d, cls: chip(d === dateSel), pick: () => setDateSel(d) }));
+  const [agErr, setAgErr] = useState("");
+  const propose = () => {
+    if (!price.value.trim()) { setAgErr("Escribe el precio acordado o «A convenir»."); return; }
+    setAgErr("");
+    setC({ ag: { price: price.value.trim(), date: dateSel, cond: cond.value.trim(), proposed: true, conf: [actor] } });
+    logEvento(`${nombre(actor)} propuso acuerdo: ${price.value.trim()} · ${dateSel}`);
+  };
+  const ag = c.ag;
+  const cP = ag.conf.includes("pedro") ? "confirmó" : "pendiente";
+  const cM = ag.conf.includes("maria") ? "confirmó" : "pendiente";
+  const iConfirmed = ag.conf.includes(actor);
+  const iNeedConfirm = !iConfirmed;
+  const confirmAg = () => {
+    if (ag.conf.includes(actor)) return;
+    const conf = [...ag.conf, actor];
+    setC({ ag: { ...ag, conf }, ...(conf.length === 2 ? { stage: "agreed" } : {}) });
+    if (conf.length === 2) logEvento("Acuerdo de cachuelo confirmado por ambos");
+  };
+  const changeTerms = () => {
+    // Cambiar términos invalida la confirmación anterior
+    setC({ ag: { ...ag, proposed: false, conf: [] } });
+  };
+  const dM = c.done.includes("maria") ? "confirmó" : "pendiente";
+  const dP = c.done.includes("pedro") ? "confirmó" : "pendiente";
+  const doneLbl = c.done.includes(actor) ? `Esperando a ${nombre(other)}` : "Marcar servicio completado";
+  const doneBtn = () => {
+    if (c.done.includes(actor)) return;
+    const done = [...c.done, actor];
+    setC({ done, ...(done.length === 2 ? { stage: "completed" } : {}) });
+    if (done.length === 2) logEvento("Cachuelo completado por ambos");
+  };
+  const recDone = c.recs.includes(actor);
+  const canRec = completed && !recDone;
+  const recommend = () => {
+    const r = emitirSello({ coordId: c.coordId, from: actor, to: other, tipo: "cachuelo" }, completed);
+    if (r === "emitido" || r === "duplicado") setC({ recs: [...new Set([...c.recs, actor])] });
+  };
+  const s1 = inCoord ? "on" : "";
+  const s2 = agreed || completed ? "on" : "";
+  const s3 = completed ? "on" : "";
   return (
     <div className="m-0 bg-white text-(--color-ink) font-[Nunito,system-ui,sans-serif] text-[17px] leading-[1.4] [&_h1]:font-[Nunito,system-ui,sans-serif] [&_h1]:m-0 [&_h1]:leading-[1.15] [&_h1]:tracking-[-.01em] [&_h2]:font-[Nunito,system-ui,sans-serif] [&_h2]:m-0 [&_h2]:leading-[1.15] [&_h2]:tracking-[-.01em] [&_h3]:font-[Nunito,system-ui,sans-serif] [&_h3]:m-0 [&_h3]:leading-[1.15] [&_h3]:tracking-[-.01em] [&_h4]:font-[Nunito,system-ui,sans-serif] [&_h4]:m-0 [&_h4]:leading-[1.15] [&_h4]:tracking-[-.01em] [&_.t]:font-[Nunito,system-ui,sans-serif] [&_.t]:m-0 [&_.t]:leading-[1.15] [&_.t]:tracking-[-.01em] [&_p]:m-0 [&_button]:cursor-pointer [&_:focus-visible]:outline-3 [&_:focus-visible]:outline-(--color-ink) [&_:focus-visible]:outline-offset-2 [&_textarea.in]:px-3.5 [&_textarea.in]:py-3 [&_textarea.in]:min-h-21 [&_textarea.in]:resize-none [&_details_summary]:min-h-11 [&_details_summary]:flex [&_details_summary]:items-center [&_details_summary]:cursor-pointer [&_details_summary]:font-bold [&_details_summary]:text-(--color-brand)">
       <div className={screenStyles.frame}>
@@ -73,10 +127,12 @@ export default function Cachuelos() {
       <div className={screenStyles.content}>
         <div className={screenStyles.wrap}><button className={tabServ} onClick={setServ}>Necesito un servicio</button><button className={tabTrab} onClick={setTrab}>Busco trabajo</button></div>
         {tabIsServ && (<>
+          {pubs.items.filter((p) => p.tipo === "cachuelo" && p.modo === "pido").map((p) => (<PostCard key={p.id} p={p} />))}
           <button className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full border-l-0 border-t-[5px] border-t-[#8a5300]" onClick={() => nav.go("detalle")}><div className={screenStyles.row}><span className={screenStyles.badgeCachuelo}>A convenir</span><span className={screenStyles.badge}>{statusTxt}</span></div><h3 className="text-[19px]!">Gasfitería · Pedro arregla fugas</h3><p className={screenStyles.muted}>Campoy Sector 3 · Disponible esta semana</p><p className="font-bold! text-[15px]!">Lo recomiendan 4 vecinos de tu comunidad</p></button>
           <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full border-l-0 border-t-[5px] border-t-[#8a5300]"><div className={screenStyles.row}><span className={screenStyles.badgeCachuelo}>S/ 25 por hora</span><span className={screenStyles.badgeDemo}>Ejemplo</span></div><h3 className="text-[19px]!">Clases de matemática de secundaria</h3><p className={screenStyles.muted}>Campoy Sector 1 · Tardes · Vecina nueva</p></div>
         </>)}
         {tabIsTrab && (<>
+          {pubs.items.filter((p) => p.tipo === "cachuelo" && p.modo === "ofrezco").map((p) => (<PostCard key={p.id} p={p} />))}
           <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full border-l-0 border-t-[5px] border-t-[#8a5300]"><div className={screenStyles.row}><span className={screenStyles.badgeCachuelo}>S/ 60 referencial</span><span className={screenStyles.badgeDemo}>Ejemplo</span></div><h3 className="text-[19px]!">Necesito pintar un cuarto pequeño</h3><p className={screenStyles.muted}>Campoy Sector 2 · Fin de semana</p></div>
         </>)}
         <a className={screenStyles.button} href="/publicar"><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>Publicar cachuelo</a>
@@ -91,7 +147,7 @@ export default function Cachuelos() {
         {canRequest && (<><button className={screenStyles.button} onClick={request}>Solicitar servicio</button><button className={screenStyles.buttonSecondary} onClick={request}>Me interesa</button></>)}
         {reqSentM && (<><div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full" role="status"><p className={screenStyles.success}>✓ Solicitud enviada a Pedro</p><p className={screenStyles.muted}>Pedro debe aceptar para abrir el chat. Cambia a «Pedro» arriba para probarlo.</p></div></>)}
         {pedroPend && (<><div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full" role="status"><p className="font-bold!">María solicita tu servicio</p><div className="grid-cols-2 grid! gap-2!"><button className={`${screenStyles.buttonSecondary} min-h-12!`} onClick={reject}>Rechazar</button><button className={`${screenStyles.button} min-h-12!`} onClick={accept}>Aceptar</button></div></div></>)}
-        {accepted && (<><button className={screenStyles.button} onClick={() => nav.go("acuerdo")}>Ver ficha de acuerdo</button><a className={screenStyles.buttonSecondary} href="/favores">Abrir chat temporal</a></>)}
+        {accepted && (<><button className={screenStyles.button} onClick={() => nav.go("acuerdo")}>Ver ficha de acuerdo</button></>)}
         {rejected && (<><div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full" role="status"><p className="font-bold!">La solicitud no fue aceptada</p></div></>)}
         <p className={screenStyles.muted}>Los pagos no se hacen en la app. Revisa las condiciones y evita adelantos a personas que no conoces.</p>
       </div>
@@ -113,10 +169,10 @@ export default function Cachuelos() {
             <div className={screenStyles.field}><label htmlFor="pr">Precio acordado</label><input id="pr" className={screenStyles.input} {...price.props} /></div>
             <div className={screenStyles.field}><p className={screenStyles.label}>Fecha</p><div className={screenStyles.wrap}>{(dates ?? []).map((d, __i1) => (<Fragment key={__i1}><button className={d.cls} onClick={d.pick}>{d.name}</button></Fragment>))}</div></div>
             <div className={screenStyles.field}><label htmlFor="cd">Condiciones</label><textarea id="cd" className="min-h-21 border-[1.5px] border-[#cfc7bf] rounded-[16px] px-3.5 py-3 bg-white w-full resize-none" {...cond.props}></textarea></div>
-            <button className={screenStyles.button} onClick={propose}>Proponer acuerdo</button></div>
+            {agErr && (<p className={screenStyles.error} role="alert">{agErr}</p>)}<button className={screenStyles.button} onClick={propose}>Proponer acuerdo</button></div>
         </>)}
         {proposed && (<>
-          <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full"><p className={screenStyles.label}>Acuerdo propuesto</p><p><b>{price.value}</b> · {dateSel}</p><p className={screenStyles.muted}>{cond.value}</p><p>Pedro: <b>{cP}</b> · María: <b>{cM}</b></p>
+          <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full"><p className={screenStyles.label}>Acuerdo propuesto</p><p><b>{ag.price}</b> · {ag.date}</p><p className={screenStyles.muted}>{ag.cond}</p><p>Pedro: <b>{cP}</b> · María: <b>{cM}</b></p>
             {iNeedConfirm && (<><button className={screenStyles.button} onClick={confirmAg}>Confirmar acuerdo</button></>)}
             {iConfirmed && (<><p className={screenStyles.success} role="status">Esperando confirmación de la otra persona.</p></>)}
             <button className={screenStyles.buttonSecondary} onClick={changeTerms}>Cambiar términos</button><p className={screenStyles.muted}>Si cambias los términos, se borran las confirmaciones anteriores.</p></div>

@@ -4,7 +4,17 @@ import { useViewStack } from "@/lib/hooks/use-view-stack";
 
 import { useTextInput } from "@/lib/hooks/use-text-input";
 
-import { Fragment } from "react";
+import { Fragment, useEffect, useState } from "react";
+import { useDemoState } from "@/lib/demo/store";
+import { VECINOS, chip, avisar, logEvento, emitirSello } from "@/lib/demo/shared";
+import { usePublicaciones } from "@/lib/demo/publicaciones";
+import { PostCard } from "./post-card";
+
+const FAVOR_INICIAL = { actor: "maria", tab: "nec", stage: "open", coordId: "", conf: [], sellos: [], msgs: [], read: {} };
+const AVATAR = "w-11 h-11 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[18px] flex-none bg-[#ddf0f2] text-[#14505a]";
+const BUBBLE_ME = "self-end max-w-[82%] rounded-[18px] rounded-br-[6px] bg-(--color-brand) text-white px-3.5 py-2 flex flex-col gap-0.5 [&_b]:text-[13px] [&_b]:opacity-90";
+const BUBBLE_OTHER = "self-start max-w-[82%] rounded-[18px] rounded-bl-[6px] bg-[#f1ece6] text-(--color-ink) px-3.5 py-2 flex flex-col gap-0.5 [&_b]:text-[13px] [&_b]:text-(--color-muted)";
+const QUICK = ["¿A qué hora puedes?", "Estoy en camino", "Necesito reprogramar"];
 import { screenStyles } from "./screen-styles";
 
 /**
@@ -13,68 +23,134 @@ import { screenStyles } from "./screen-styles";
  */
 export default function Favores() {
   const nav = useViewStack("muro");
-  const accept = () => {};
-  const asL = () => {};
-  const asM = () => {};
-  const canOffer = false;
-  const canSello = false;
-  const chatClosed = false;
-  const chatOpen = true;
-  const chipL = "min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip";
-  const chipM = "min-h-11 rounded-full border-[1.5px] border-(--color-brand) bg-(--color-brand) px-3.5 py-0 font-bold text-[15px] whitespace-nowrap text-white chip";
-  const cierreDone = false;
-  const cierrePend = true;
-  const cierreTitle = "Completar favor";
-  const closeSheet = () => {};
-  const confL = "pendiente";
-  const confM = "pendiente";
-  const confirmClose = () => {};
-  const doCancel = () => {};
-  const doRep = () => {};
+  const [pubs] = usePublicaciones();
   const draft = useTextInput("");
-  const giveSello = () => {};
-  const goChat = false;
-  const hasCoord = false;
-  const hasUnread = false;
-  const isAuthorPending = false;
-  const isAuthorView = false;
-  const meConf = false;
-  const meNotConf = true;
-  const msgs = [];
-  const myUnread = false;
-  const myUnreadN = 0;
-  const nextStep = "Coordinen el encuentro";
-  const noCoord = true;
-  const offer = () => {};
-  const offerSent = false;
-  const openCierre = () => {};
-  const openCoord = () => {};
-  const openRep = () => {};
-  const otherAv = "w-11 h-11 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[18px] flex-none bg-[#ddf0f2] text-[#14505a]";
-  const otherIni = "L";
-  const otherName = "Luis";
-  const quick = [{t: "¿A qué hora puedes?", pick: () => {}}, {t: "Estoy en camino", pick: () => {}}, {t: "Necesito reprogramar", pick: () => {}}];
-  const reject = () => {};
-  const repDone = false;
-  const repOpen = true;
-  const selloGiven = false;
-  const send = () => {};
-  const setNec = () => {};
-  const setOfr = () => {};
-  const sheetCierre = false;
-  const sheetRep = false;
-  const solDone = false;
-  const solDoneTxt = "Rechazaste esta solicitud.";
-  const solNone = true;
+  const [f, setF] = useDemoState("favor-escalera", FAVOR_INICIAL);
+  const actor = f.actor;
+  const other = actor === "maria" ? "luis" : "maria";
+  const otherName = VECINOS[other].name;
+  const otherIni = VECINOS[other].ini;
+  const otherAv = AVATAR;
+
+  const asM = () => setF({ actor: "maria" });
+  const asL = () => setF({ actor: "luis" });
+  const chipM = chip(actor === "maria");
+  const chipL = chip(actor === "luis");
+  const tabIsNec = f.tab === "nec";
+  const tabIsOfr = f.tab === "ofr";
+  const tabNec = chip(tabIsNec);
+  const tabOfr = chip(tabIsOfr);
+  const setNec = () => setF({ tab: "nec" });
+  const setOfr = () => setF({ tab: "ofr" });
+
+  const enCoord = f.stage === "accepted";
+  const completed = f.stage === "completed";
+  const cancelled = f.stage === "cancelled";
+  const hasCoordStage = enCoord || completed || cancelled;
+  const confirmedBy = (who) => f.conf.includes(who);
+  const statusTxt =
+    f.stage === "open" ? "Abierta"
+    : f.stage === "offered" ? "Solicitud enviada"
+    : f.stage === "rejected" ? "Abierta"
+    : enCoord ? (f.conf.length ? "Esperando confirmación" : "En coordinación")
+    : completed ? "Completada" : "Cancelada";
+
+  const canOffer = actor === "luis" && f.stage === "open";
+  const offerSent = actor === "luis" && f.stage === "offered";
+  const isAuthorView = actor === "maria" && ["open", "offered", "rejected"].includes(f.stage);
+  const goChat = hasCoordStage;
+  const wasRejected = actor === "luis" && f.stage === "rejected";
+  const solPending = f.stage === "offered";
+  const solNone = f.stage === "open";
   const solNoneTxt = "No tienes solicitudes nuevas";
-  const solPending = false;
-  const statusTxt = "Abierta";
-  const tabIsNec = true;
-  const tabIsOfr = false;
-  const tabNec = "min-h-11 rounded-full border-[1.5px] border-(--color-brand) bg-(--color-brand) px-3.5 py-0 font-bold text-[15px] whitespace-nowrap text-white chip";
-  const tabOfr = "min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip";
-  const unreadN = 0;
-  const wasRejected = false;
+  const solDone = f.stage === "rejected" || hasCoordStage;
+  const solDoneTxt = f.stage === "rejected" ? "Rechazaste esta solicitud." : "✓ Aceptaste a Luis. Se abrió el chat temporal.";
+  const hasCoord = hasCoordStage;
+  const noCoord = !hasCoordStage;
+  const isAuthorPending = actor === "maria" && f.stage === "offered";
+
+  const lastRead = f.read[actor] ?? 0;
+  const unreadN = f.msgs.slice(lastRead).filter((m) => m.from !== actor).length;
+  const hasUnread = unreadN > 0;
+  const myUnread = hasUnread;
+  const myUnreadN = unreadN;
+
+  const nextStep =
+    enCoord && confirmedBy(actor) ? `Esperando que ${otherName} confirme`
+    : enCoord && f.conf.length ? "Confirma que el favor se completó"
+    : enCoord ? "Coordinen el encuentro"
+    : completed ? (f.sellos.includes(actor) ? "Favor cerrado" : `Agradece a ${otherName} con un sello`)
+    : cancelled ? "Coordinación cancelada" : "Esperando aceptación";
+
+  const msgs = f.msgs.map((m) => ({ cls: m.from === actor ? BUBBLE_ME : BUBBLE_OTHER, who: VECINOS[m.from].name, text: m.text }));
+  const chatOpen = enCoord;
+  const chatClosed = completed || cancelled;
+  const quick = QUICK.map((t) => ({ t, pick: () => draft.setValue(t) }));
+
+  useEffect(() => {
+    if (nav.current === "chat" && f.msgs.length !== (f.read[actor] ?? 0)) setF((p) => ({ read: { ...p.read, [actor]: p.msgs.length } }));
+  }, [nav.current, f.msgs.length, f.read, actor, setF]);
+
+  const offer = () => {
+    if (f.stage !== "open") return;
+    setF({ stage: "offered" });
+    avisar({ categoria: "favor", titulo: "Luis quiere ayudarte", texto: "Se ofreció para la escalera de 3 metros.", href: "/favores" });
+    logEvento("Luis ofreció ayuda en «Escalera de 3 metros»");
+  };
+  const accept = () => {
+    if (f.stage !== "offered") return; // evita aceptar dos veces por reintento
+    setF({ stage: "accepted", coordId: `fav-${Date.now()}`, conf: [], sellos: [], msgs: [{ from: "maria", text: "¡Gracias por ofrecerte! ¿Puedes traerla el sábado temprano?" }] });
+    avisar({ categoria: "favor", titulo: "María aceptó tu ayuda", texto: "Ya pueden coordinar por chat.", href: "/favores" });
+    logEvento("María aceptó a Luis · se abrió chat temporal");
+  };
+  const reject = () => {
+    if (f.stage !== "offered") return;
+    setF({ stage: "rejected" });
+    logEvento("María rechazó la oferta de Luis");
+  };
+  const send = () => {
+    const text = draft.value.trim();
+    if (!text || !chatOpen) return;
+    setF((p) => ({ msgs: [...p.msgs, { from: actor, text }], read: { ...p.read, [actor]: p.msgs.length + 1 } }));
+    draft.setValue("");
+  };
+  const openCoord = () => nav.go("chat");
+  const [sheet, setSheet] = useState(null);
+  const sheetCierre = sheet === "cierre";
+  const sheetRep = sheet === "rep";
+  const openCierre = () => setSheet("cierre");
+  const openRep = () => { setRepDone(false); setSheet("rep"); };
+  const closeSheet = () => setSheet(null);
+  const cierreTitle = completed ? "Favor completado" : "Completar favor";
+  const cierrePend = !completed;
+  const cierreDone = completed;
+  const confM = confirmedBy("maria") ? "confirmó" : "pendiente";
+  const confL = confirmedBy("luis") ? "confirmó" : "pendiente";
+  const meConf = confirmedBy(actor);
+  const meNotConf = !meConf && enCoord;
+  const confirmClose = () => {
+    if (!enCoord || confirmedBy(actor)) return;
+    const conf = [...f.conf, actor];
+    if (conf.length === 2) {
+      setF({ conf, stage: "completed" });
+      avisar({ categoria: "favor", titulo: "Favor completado", texto: "Ambas personas confirmaron el cierre.", href: "/favores" });
+      logEvento("Favor «Escalera» completado por ambas partes");
+    } else setF({ conf });
+  };
+  const selloGiven = f.sellos.includes(actor);
+  const canSello = completed && !selloGiven;
+  const giveSello = () => {
+    const r = emitirSello({ coordId: f.coordId, from: actor, to: other, tipo: "favor" }, completed);
+    if (r === "emitido" || r === "duplicado") setF({ sellos: [...new Set([...f.sellos, actor])] });
+  };
+  const doCancel = () => {
+    if (!enCoord) return;
+    setF({ stage: "cancelled" });
+    logEvento("Coordinación del favor cancelada");
+  };
+  const [repDone, setRepDone] = useState(false);
+  const repOpen = !repDone;
+  const doRep = () => { setRepDone(true); logEvento(`Reporte demo sobre ${otherName} (no se avisa a autoridades)`); };
   return (
     <div className={screenStyles.screen}>
       <div className="w-97.5 h-211 flex flex-col bg-white overflow-hidden relative!">
@@ -104,10 +180,12 @@ export default function Favores() {
         <div className={screenStyles.wrap}><button className={tabNec} onClick={setNec}>Necesito ayuda</button><button className={tabOfr} onClick={setOfr}>Ofrezco ayuda</button></div>
         <div className="flex gap-2 overflow-x-auto pb-0.5" role="group" aria-label="Categor\u00eda"><button className="min-h-11 rounded-full border-[1.5px] border-(--color-brand) bg-(--color-brand) px-3.5 py-0 font-bold text-[15px] whitespace-nowrap text-white chip">Todos</button><button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip">Herramientas</button><button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip">Habilidades</button><button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip">Ayuda temporal</button><button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip">Movilidad</button></div>
         {tabIsNec && (<>
+          {pubs.items.filter((p) => p.tipo === "favor" && p.modo === "pido").map((p) => (<PostCard key={p.id} p={p} />))}
           <button className={screenStyles.card} onClick={() => nav.go("detalle")}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span><span className={screenStyles.badge}>{statusTxt}</span><span className="flex-1 min-w-0 text-(--color-muted) text-[15px] text-right!">a 300 m</span></div><h3 className="text-[19px]!">Necesito una escalera de 3 metros prestada</h3><p className={screenStyles.muted}>Herramientas · Campoy Sector 2 · Disponible hoy por la tarde</p><div className={screenStyles.row}><span className="w-8 h-8 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[18px] flex-none bg-[#f4d9c6] text-[#8a2b07] text-[14px]!" aria-hidden="true">M</span><span className={screenStyles.muted}>María</span></div></button>
           <div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span><span className={screenStyles.badgeDemo}>Ejemplo</span></div><h3 className="text-[19px]!">Alguien que me enseñe a usar WhatsApp</h3><p className={screenStyles.muted}>Habilidades · Campoy Sector 4 · Esta semana</p></div>
         </>)}
         {tabIsOfr && (<>
+          {pubs.items.filter((p) => p.tipo === "favor" && p.modo === "ofrezco").map((p) => (<PostCard key={p.id} p={p} />))}
           <div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span><span className={screenStyles.badgeDemo}>Ejemplo</span></div><h3 className="text-[19px]!">Ayudo con trámites digitales a adultos mayores</h3><p className={screenStyles.muted}>Habilidades · Rosa · Sábados por la mañana</p></div>
           <div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span><span className={screenStyles.badgeDemo}>Ejemplo</span></div><h3 className="text-[19px]!">Presto herramientas de jardinería</h3><p className={screenStyles.muted}>Herramientas · Luis · Fines de semana</p></div>
         </>)}
