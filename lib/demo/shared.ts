@@ -26,6 +26,8 @@ export type Sesion = {
   fecha: string;
   /** Señal simulada desde la consola demo. */
   senal: "Normal" | "Intermitente" | "Sin datos";
+  smsCentral: "Activa" | "Caída";
+  ia: "Controlada" | "Sin respuesta";
 };
 
 export const SESION_INICIAL: Sesion = {
@@ -39,6 +41,8 @@ export const SESION_INICIAL: Sesion = {
   ubicacionPermitida: false,
   fecha: "2026-11-08",
   senal: "Normal",
+  smsCentral: "Activa",
+  ia: "Controlada",
 };
 
 export function useSesion() {

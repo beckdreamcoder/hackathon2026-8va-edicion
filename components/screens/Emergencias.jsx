@@ -4,7 +4,17 @@ import { useViewStack } from "@/lib/hooks/use-view-stack";
 
 import { useCheckbox } from "@/lib/hooks/use-checkbox";
 
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
+import { useDemoState } from "@/lib/demo/store";
+import { useSesion, avisar, logEvento } from "@/lib/demo/shared";
+import { useIncidentes, autoresDistintos, estadoCorroboracion, registrarReporte, ESTADOS_INST } from "@/lib/demo/incidentes";
+
+const EME_UI = { tab: "n", incId: "INC-0007", needs: [{name: "Alimentos", note: "Comida lista y agua embotellada", ofrecido: false}, {name: "Abrigo", note: "Frazadas y ropa seca", ofrecido: false}, {name: "Materiales", note: "Bolsas, palas y botas", ofrecido: false}, {name: "Logística", note: "Transporte seguro de donaciones", ofrecido: false}] };
+const CMSGS = [{kind: "Alertas", title: "Evita el pasaje Los Olivos por agua acumulada", time: "09:20", zone: "Campoy Sector 2", src: "Vecinos (ejemplo)", until: "12:00"}, {kind: "Puntos de reunión", title: "Punto de reunión: local comunal", time: "09:05", zone: "Campoy", src: "Junta de demostración", until: "18:00"}, {kind: "Suministros", title: "Acopio de agua embotellada en el parque", time: "08:50", zone: "Campoy Sector 1", src: "Junta de demostración", until: "20:00"}, {kind: "Apoyo institucional", title: "Mensaje institucional de ejemplo", time: "08:30", zone: "Distrito", src: "Simulación", until: "—"}];
+const KIND_ON = "min-h-11 rounded-full border-[1.5px] border-[#9a3412] bg-[#9a3412] px-3.5 py-0 font-bold text-[15px] whitespace-nowrap text-white";
+const KINDS = ["Inundación", "Corte de agua", "Árbol caído", "Otro"];
+const DTABS = ["Qué ocurre", "Qué hacer", "Cómo ayudar"];
+const CFILTERS = ["Todos", "Alertas", "Puntos de reunión", "Suministros", "Apoyo institucional"];
 import { screenStyles } from "./screen-styles";
 
 /**
@@ -13,41 +23,110 @@ import { screenStyles } from "./screen-styles";
  */
 export default function Emergencias() {
   const nav = useViewStack("centro");
-  const advance = () => {};
-  const autores = 2;
-  const camKind = "";
-  const camMsg = "Vista de la cámara";
-  const cfilters = [{name: "Todos", cls: screenStyles.chipActive, pick: () => {}}, {name: "Alertas", cls: screenStyles.chip, pick: () => {}}, {name: "Puntos de reunión", cls: screenStyles.chip, pick: () => {}}, {name: "Suministros", cls: screenStyles.chip, pick: () => {}}, {name: "Apoyo institucional", cls: screenStyles.chip, pick: () => {}}];
-  const cmsgs = [{kind: "Alertas", title: "Evita el pasaje Los Olivos por agua acumulada", time: "09:20", zone: "Campoy Sector 2", src: "Vecinos (ejemplo)", until: "12:00"}, {kind: "Puntos de reunión", title: "Punto de reunión: local comunal", time: "09:05", zone: "Campoy", src: "Junta de demostración", until: "18:00"}, {kind: "Suministros", title: "Acopio de agua embotellada en el parque", time: "08:50", zone: "Campoy Sector 1", src: "Junta de demostración", until: "20:00"}, {kind: "Apoyo institucional", title: "Mensaje institucional de ejemplo", time: "08:30", zone: "Distrito", src: "Simulación", until: "—"}];
-  const dtabs = [{name: "Qué ocurre", cls: screenStyles.chipActive, pick: () => {}}, {name: "Qué hacer", cls: screenStyles.chip, pick: () => {}}, {name: "Cómo ayudar", cls: screenStyles.chip, pick: () => {}}];
-  const dtext = "Varios vecinos reportan calles con agua acumulada cerca del pasaje principal. El estado no está confirmado por una entidad.";
-  const estadoReporte = "Reportado por varios vecinos";
-  const foto = false;
-  const instState = "Sin respuesta institucional registrada";
-  const jOff = screenStyles.chip;
-  const jOn = screenStyles.chipActive;
-  const joinNo = () => {};
-  const joinYes = () => {};
-  const kinds = [{name: "Inundación (sugerido)", cls: "min-h-11 rounded-full border-[1.5px] border-[#9a3412] bg-[#9a3412] px-3.5 py-0 font-bold text-[15px] whitespace-nowrap text-white", pick: () => {}}, {name: "Corte de agua", cls: screenStyles.chip, pick: () => {}}, {name: "Árbol caído", cls: screenStyles.chip, pick: () => {}}, {name: "Otro", cls: screenStyles.chip, pick: () => {}}];
+  const [sesion] = useSesion();
+  const [incs, setIncs] = useIncidentes();
+  const [ui, setUi] = useDemoState("emergencias-ui", EME_UI);
   const lugar = useCheckbox(false);
-  const needs = [{name: "Alimentos", note: "Comida lista y agua embotellada", state: "Activa", cls: "min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50", lbl: "Puedo ofrecer", pick: () => {}}, {name: "Abrigo", note: "Frazadas y ropa seca", state: "Activa", cls: "min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50", lbl: "Puedo ofrecer", pick: () => {}}, {name: "Materiales", note: "Bolsas, palas y botas", state: "Activa", cls: "min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50", lbl: "Puedo ofrecer", pick: () => {}}, {name: "Logística", note: "Transporte seguro de donaciones", state: "Activa", cls: "min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50", lbl: "Puedo ofrecer", pick: () => {}}];
-  const noFoto = true;
-  const noLugar = true;
-  const noSent = true;
-  const pendFlag = false;
-  const retake = () => {};
-  const sendLbl = "Enviar reporte";
-  const sendRep = () => {};
-  const sent = false;
-  const sentMsg = "✓ Reporte enviado y unido al incidente.";
-  const setN = () => {};
-  const setP = () => {};
   const sinRed = useCheckbox(false);
-  const tN = screenStyles.chipActive;
-  const tP = screenStyles.chip;
-  const tabN = true;
-  const tabP = false;
-  const takePhoto = () => {};
+  const [foto, setFoto] = useState(null); // null | "cámara" | "ejemplo rotulado"
+  const [capHora, setCapHora] = useState("");
+  const [precision, setPrecision] = useState("±15 m");
+  const [camMsg, setCamMsg] = useState("Vista de la cámara");
+  const [kind, setKind] = useState("Inundación");
+  const [join, setJoin] = useState(true);
+  const [sent, setSent] = useState(null); // null | { pendiente, incId, msg }
+  const [dtab, setDtab] = useState(0);
+  const [cfilter, setCfilter] = useState("Todos");
+
+  const inc = incs.items.find((i) => i.id === ui.incId) ?? incs.items[0];
+  const autores = autoresDistintos(inc);
+  const estadoReporte = estadoCorroboracion(inc);
+  const instState = ESTADOS_INST[inc.inst];
+  const otros = incs.items.filter((i) => i.id !== "INC-0007" && i.reportes.some((r) => r.estado === "enviado"));
+
+  const tabN = ui.tab === "n";
+  const tabP = ui.tab === "p";
+  const tN = tabN ? screenStyles.chipActive : screenStyles.chip;
+  const tP = tabP ? screenStyles.chipActive : screenStyles.chip;
+  const setN = () => setUi({ tab: "n" });
+  const setP = () => setUi({ tab: "p" });
+  const abrir = (id) => { setUi({ incId: id }); setDtab(0); nav.go("detalle"); };
+
+  const takePhoto = async (real) => {
+    let medio = "ejemplo rotulado";
+    if (real && navigator.mediaDevices?.getUserMedia) {
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        s.getTracks().forEach((t) => t.stop());
+        medio = "cámara";
+        setCamMsg("Foto capturada con la cámara. No se guarda en el dispositivo.");
+      } catch {
+        setCamMsg("No se pudo usar la cámara. Usamos un ejemplo rotulado de demostración.");
+      }
+    } else setCamMsg("Ejemplo rotulado de demostración (sin cámara).");
+    setCapHora(new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }));
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (p) => setPrecision(`±${Math.round(p.coords.accuracy)} m`),
+        () => setPrecision("ubicación no autorizada · zona elegida a mano"),
+        { timeout: 6000 },
+      );
+    }
+    setFoto(medio);
+  };
+  const retake = () => { setFoto(null); setCamMsg("Vista de la cámara"); };
+  const camKind = foto ?? "";
+  const noFoto = !foto;
+  const noLugar = !lugar.checked;
+
+  const kinds = KINDS.map((k, i) => ({ name: i === 0 ? `${k} (sugerido)` : k, cls: k === kind ? KIND_ON : screenStyles.chip, pick: () => setKind(k) }));
+  const jOn = join ? screenStyles.chipActive : screenStyles.chip;
+  const jOff = join ? screenStyles.chip : screenStyles.chipActive;
+  const joinYes = () => setJoin(true);
+  const joinNo = () => setJoin(false);
+  const pendFlag = sinRed.checked || sesion.senal === "Sin datos";
+  const sendLbl = pendFlag ? "Guardar como pendiente" : "Enviar reporte";
+  const noSent = !sent;
+  const sendRep = () => {
+    if (sent) return; // bloquea doble envío
+    const now = Date.now();
+    const rep = { id: `rep-${now}`, clientActionId: `ca-rep-${now}`, autor: sesion.userId, tipo: kind, medio: foto ?? "ejemplo rotulado", hora: capHora, precision, lugarConfirmado: lugar.checked, estado: pendFlag ? "pendiente" : "enviado" };
+    const target = join && kind === "Inundación" ? "INC-0007" : null;
+    const incId = registrarReporte(rep, target, { titulo: `${kind} en Campoy`, zona: "Campoy" });
+    setUi({ incId });
+    const repetido = target && inc.reportes.some((r) => r.autor === sesion.userId && r.estado === "enviado");
+    setSent({
+      pendiente: pendFlag,
+      msg: pendFlag ? "Reporte guardado como pendiente. No se ha enviado." : target ? (repetido ? "✓ Reporte unido al incidente. Ya habías reportado: no suma otro testigo." : "✓ Reporte enviado y unido al incidente.") : "✓ Reporte enviado como incidente nuevo.",
+    });
+    logEvento(pendFlag ? `Reporte de ${kind} en cola sin conexión` : `Reporte de ${kind} ${target ? "unido a INC-0007" : "creó incidente " + incId}`);
+    if (!pendFlag) avisar({ categoria: "emergencia", titulo: `Nuevo reporte: ${kind}`, texto: "Reportado cerca de tu zona. Fuente: vecinos (demostración).", href: "/emergencias" });
+  };
+  const sentMsg = sent?.msg ?? "";
+
+  const advance = () => {
+    setIncs((p) => ({ items: p.items.map((i) => (i.id === inc.id ? { ...i, inst: (i.inst + 1) % ESTADOS_INST.length } : i)) }));
+    logEvento(`Respuesta institucional simulada: ${ESTADOS_INST[(inc.inst + 1) % ESTADOS_INST.length]}`);
+  };
+  const dtabs = DTABS.map((d, i) => ({ name: d, cls: i === dtab ? screenStyles.chipActive : screenStyles.chip, pick: () => setDtab(i) }));
+  const dtext = [
+    `Vecinos reportan ${inc.tipo.toLowerCase()} en ${inc.zona}. ${autores} personas distintas han reportado. El estado no está confirmado por una entidad.`,
+    "Aléjate del agua en movimiento, desconecta la electricidad si es seguro y sigue la guía oficial de INDECI para lluvias intensas. Si hay peligro, llama al 116 o al 106.",
+    "Apoya con recursos concretos (alimentos, abrigo, materiales o logística segura). No entres a zonas peligrosas ni hagas rescates.",
+  ][dtab];
+
+  const needs = ui.needs.map((n, i) => ({
+    ...n,
+    lbl: n.ofrecido ? "Retirar mi oferta" : "Puedo ofrecer",
+    state: n.ofrecido ? "En coordinación" : "Activa",
+    cls: n.ofrecido ? screenStyles.buttonSecondary : screenStyles.button,
+    pick: () => {
+      setUi((p) => ({ needs: p.needs.map((x, j) => (j === i ? { ...x, ofrecido: !x.ofrecido } : x)) }));
+      logEvento(`${n.ofrecido ? "Retiró" : "Ofreció"} apoyo: ${n.name}`);
+    },
+  }));
+  const cfilters = CFILTERS.map((f) => ({ name: f, cls: f === cfilter ? screenStyles.chipActive : screenStyles.chip, pick: () => setCfilter(f) }));
+  const cmsgs = CMSGS.filter((m) => cfilter === "Todos" || m.kind === cfilter);
   return (
     <div className={screenStyles.screen}>
       <div className={screenStyles.frame}>
@@ -60,8 +139,8 @@ export default function Emergencias() {
         <div className={screenStyles.wrap}><button className={tN} onClick={setN}>Necesito ayuda</button><button className={tP} onClick={setP}>Puedo apoyar</button></div>
         {tabN && (<>
           <h2 className="text-[20px]!">Cerca de mí</h2>
-          <button className="bg-[#fff1e6] border border-[#f0c8a8] rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 text-left w-full" onClick={() => nav.go("detalle")}><div className={screenStyles.row}><span className={screenStyles.badgeEmergency}><svg className={`${screenStyles.icon} w-4! h-4!`} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2z" /><path d="M12 10v5M12 18v.5" /></svg>Eventualidad</span><span className={screenStyles.badgeDemo}>Simulación</span></div><h3 className="text-[19px]!">Calles anegadas en Campoy</h3><p className={screenStyles.muted}>{estadoReporte} · {autores} vecinos distintos · hace 25 min</p></button>
-          <div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeEmergency}>Sin confirmar</span></div><h3 className="text-[19px]!">Corte de agua en la avenida principal</h3><p className={screenStyles.muted}>Sin actualización reciente · hace 40 min</p></div>
+          <button className="bg-[#fff1e6] border border-[#f0c8a8] rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 text-left w-full" onClick={() => abrir("INC-0007")}><div className={screenStyles.row}><span className={screenStyles.badgeEmergency}><svg className={`${screenStyles.icon} w-4! h-4!`} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2z" /><path d="M12 10v5M12 18v.5" /></svg>Eventualidad</span><span className={screenStyles.badgeDemo}>Simulación</span></div><h3 className="text-[19px]!">Calles anegadas en Campoy</h3><p className={screenStyles.muted}>{estadoCorroboracion(incs.items.find((i) => i.id === "INC-0007") ?? inc)} · {autoresDistintos(incs.items.find((i) => i.id === "INC-0007") ?? inc)} vecinos distintos · {(incs.items.find((i) => i.id === "INC-0007") ?? inc).actualizado}</p></button>
+          {otros.map((o) => (<button key={o.id} className={screenStyles.card} onClick={() => abrir(o.id)}><div className={screenStyles.row}><span className={screenStyles.badgeEmergency}>{estadoCorroboracion(o)}</span></div><h3 className="text-[19px]!">{o.titulo}</h3><p className={screenStyles.muted}>{o.actualizado === "ahora" ? "Actualizado ahora" : `Sin actualización reciente · ${o.actualizado}`} · {autoresDistintos(o)} {autoresDistintos(o) === 1 ? "vecino" : "vecinos"}</p></button>))}
           <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => nav.go("reportar")}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>Reportar con cámara</button>
         </>)}
         {tabP && (<>
@@ -83,11 +162,11 @@ export default function Emergencias() {
         <div className="bg-[#fff1e6] border border-[#f0c8a8] rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 text-left w-full" role="note"><p><b>¿Hay peligro ahora?</b> Llama primero. No necesitas foto para pedir ayuda.</p><a className="min-h-15 rounded-[18px] border-2 border-[#9a3412] bg-[#9a3412] text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full text-[19px] disabled:opacity-50 min-h-13!" href="tel:106">Llamar al 106</a></div>
         <div className="relative h-62.5 rounded-[20px] bg-[#2b2b2b] grid place-items-center text-white overflow-hidden [&_.fr]:absolute [&_.fr]:inset-4.5 [&_.fr]:border-2 [&_.fr]:border-dashed [&_.fr]:border-[rgba(255,255,255,.7)] [&_.fr]:rounded-[16px]"><div className="fr"></div><p className="text-center px-10! py-0!">{camMsg}</p></div>
         <p className={screenStyles.muted}>La foto se toma con la cámara; no se sube desde la galería. Tu navegador pedirá permiso.</p>
-        <div className={screenStyles.card}><p className={screenStyles.label}>Ubicación y hora (de tu dispositivo)</p><p>Campoy · precisión ±15 m · 09:41 a. m.</p><p className={screenStyles.muted}>Tu ubicación no prueba por sí sola dónde ocurrió el hecho.</p></div>
+        <div className={screenStyles.card}><p className={screenStyles.label}>Ubicación y hora (de tu dispositivo)</p><p>{sesion.localidad} · precisión {precision} · {capHora || "se registra al tomar la foto"}</p><p className={screenStyles.muted}>Tu ubicación no prueba por sí sola dónde ocurrió el hecho.</p></div>
         <div className={screenStyles.checkboxRow}><input id="lug" type="checkbox" {...lugar.props} /><label htmlFor="lug"><b>Confirmo que veo este lugar ahora</b></label></div>
         {noFoto && (<>
-          <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={takePhoto}>Tomar foto</button>
-          <button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={takePhoto}>No tengo cámara · ejemplo rotulado</button>
+          <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => takePhoto(true)}>Tomar foto</button>
+          <button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => takePhoto(false)}>No tengo cámara · ejemplo rotulado</button>
         </>)}
         {foto && (<>
           <p className={screenStyles.success} role="status">✓ Foto tomada ({camKind})</p>
@@ -104,7 +183,7 @@ export default function Emergencias() {
         <div className="h-37.5 rounded-[20px] bg-[repeating-linear-gradient(45deg,#E3DDD7,#E3DDD7_10px,#EFE8DD_10px,#EFE8DD_20px)] grid place-items-center text-center p-3 border border-[#cfc7bf]" role="img" aria-label="Imagen protegida"><div><b>Imagen protegida</b><p className={screenStyles.muted}>Se oculta antes de publicar. Demostración con ejemplo inocuo.</p></div></div>
         <span className={screenStyles.badgeDemo}>Análisis simulado, sin IA real</span>
         <div className="flex flex-col gap-1.5"><p className={screenStyles.label}>Tipo sugerido (puedes corregir)</p><div className={screenStyles.wrap}>{(kinds ?? []).map((k, __i1) => (<Fragment key={__i1}><button className={k.cls} onClick={k.pick}>{k.name}</button></Fragment>))}</div></div>
-        <div className={screenStyles.card}><p className={screenStyles.label}>Posible incidente existente</p><p>«Calles anegadas en Campoy» · a 120 m · hace 25 min</p><div className={screenStyles.wrap}><button className={jOn} onClick={joinYes}>Unir a este incidente</button><button className={jOff} onClick={joinNo}>Es otro</button></div><p className={screenStyles.muted}>Se cuentan personas distintas y se conservan los reportes originales.</p></div>
+        <div className={screenStyles.card}><p className={screenStyles.label}>Posible incidente existente</p><p>«Calles anegadas en Campoy» · a 120 m · mismo tipo y franja horaria</p><div className={screenStyles.wrap}><button className={jOn} onClick={joinYes}>Unir a este incidente</button><button className={jOff} onClick={joinNo}>Es otro</button></div><p className={screenStyles.muted}>Se cuentan personas distintas y se conservan los reportes originales.</p></div>
         {pendFlag && (<><p className={screenStyles.muted}>Sin conexión: se guardará pendiente y se pedirá confirmar vigencia al reconectar.</p></>)}
         <div className={screenStyles.checkboxRow}><input id="off" type="checkbox" {...sinRed.props} /><label htmlFor="off"><b>Simular que no tengo conexión</b></label></div>
         {noSent && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={sendRep}>{sendLbl}</button></>)}
@@ -113,10 +192,10 @@ export default function Emergencias() {
       </>)}
       
       {nav.is("detalle") && (<>
-      <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Calles anegadas en Campoy</h1></div>
+      <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>{inc.titulo}</h1></div>
       <div className={screenStyles.content}>
         <div className={screenStyles.row}><span className={screenStyles.badgeEmergency}>{estadoReporte}</span><span className={screenStyles.badgeDemo}>Ejemplo ficticio</span></div>
-        <p className={screenStyles.muted}>ID INC-0007 · {autores} vecinos distintos · actualizado hace 25 min</p>
+        <p className={screenStyles.muted}>ID {inc.id} · {autores} vecinos distintos · actualizado {inc.actualizado}</p>
         <div className="flex gap-2 overflow-x-auto pb-0.5" role="tablist">{(dtabs ?? []).map((d, __i1) => (<Fragment key={__i1}><button className={d.cls} role="tab" onClick={d.pick}>{d.name}</button></Fragment>))}</div>
         <div className={screenStyles.card}><p>{dtext}</p><p className={screenStyles.muted}>Fuente: reportes de vecinos y guía de ejemplo de Defensa Civil (demostración).</p></div>
         <div className="bg-[#fff1e6] border border-[#f0c8a8] rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 text-left w-full"><p className={screenStyles.label}>Respuesta institucional</p><span className={screenStyles.badgeDemo}>Simulación</span><p className="font-bold">{instState}</p><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 min-h-12!" onClick={advance}>Simular siguiente respuesta</button><p className={screenStyles.muted}>No hay despacho real. Solo se muestran estados con constancia o rotulados como simulación.</p></div>
