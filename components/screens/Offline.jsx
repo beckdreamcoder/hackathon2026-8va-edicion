@@ -5,7 +5,26 @@ import { useViewStack } from "@/lib/hooks/use-view-stack";
 import { useCheckbox } from "@/lib/hooks/use-checkbox";
 import { useTextInput } from "@/lib/hooks/use-text-input";
 
-import { Fragment } from "react";
+import { Fragment, useEffect, useState } from "react";
+import { useDemoState } from "@/lib/demo/store";
+import { useSesion, logEvento, CHIP_ON } from "@/lib/demo/shared";
+import { usePublicaciones } from "@/lib/demo/publicaciones";
+import { useIncidentes } from "@/lib/demo/incidentes";
+import { precacheZona } from "@/lib/demo/offline-cache";
+
+const CHIP_OFF = "min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip";
+const CHIP_INK_ON = "min-h-11 rounded-full border-[1.5px] border-(--color-ink) bg-(--color-ink) px-3.5 py-0 font-bold text-[15px] whitespace-nowrap text-white chip";
+const OFF_INICIAL = { zonas: { campoy: { estado: "Descargada", sync: "hoy 7:50 a. m.", mb: 48 }, calca: { estado: "No descargada", sync: "", mb: 0 } }, consultas: [], actual: null };
+const SMS_KINDS = ["Necesito orientación", "Busco suministros", "Necesito ayuda", "Consultar mi solicitud"];
+const SMS_ME = "self-end max-w-[85%] rounded-[18px] rounded-br-[6px] bg-(--color-ink) text-white px-3.5 py-2 flex flex-col gap-0.5 [&_b]:text-[13px] [&_b]:opacity-80";
+const SMS_CENTRAL = "self-start max-w-[85%] rounded-[18px] rounded-bl-[6px] bg-[#f1ece6] px-3.5 py-2 flex flex-col gap-0.5 [&_b]:text-[13px] [&_b]:text-(--color-muted)";
+/** Respuestas controladas (sin IA real): guías oficiales y recursos registrados en la demo. */
+const RESPUESTAS = {
+  "Necesito orientación": { t: "Aléjate de zonas con agua en movimiento y cables. Si hay peligro, llama al 116 (Bomberos) o al 106 (SAMU).", contingencia: "sigue las indicaciones de INDECI y llama al 116 o 106 si hay peligro.", fuente: "Guía INDECI (ejemplo)" },
+  "Busco suministros": { t: "Punto de acopio de demostración: parque del Sector 1, agua embotellada hasta las 20:00. No hay más suministros confirmados.", contingencia: "no hay información confirmada de suministros en este momento.", fuente: "Canal de ayuda de la junta (demo)" },
+  "Necesito ayuda": { t: "Si es una urgencia médica llama al 106. Registramos tu necesidad con este ID para que vecinos de apoyo la vean, sin publicar tus datos.", contingencia: "llama al 106 o al 105 según el caso. No se despacha ayuda desde este canal.", fuente: "Directorio oficial de emergencias" },
+  "Consultar mi solicitud": { t: "Tu última solicitud sigue Activa, sin respuesta institucional registrada (simulación).", contingencia: "no pudimos consultar el estado ahora; se conserva tu ID.", fuente: "Registro de la demo" },
+};
 import { screenStyles } from "./screen-styles";
 
 /**
@@ -14,41 +33,150 @@ import { screenStyles } from "./screen-styles";
  */
 export default function Offline() {
   const nav = useViewStack("zonas");
+  const [sesion, setSesion] = useSesion();
+  const [of, setOf] = useDemoState("offline", OFF_INICIAL);
+  const [pubs, setPubs] = usePublicaciones();
+  const [incs, setIncs] = useIncidentes();
   const question = useTextInput("");
-  const cOff = "min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip";
-  const cOn = "min-h-11 rounded-full border-[1.5px] border-(--color-ink) bg-(--color-ink) px-3.5 py-0 font-bold text-[15px] whitespace-nowrap text-white chip";
-  const cid = "";
-  const cstatus = "";
-  const delWarn = false;
-  const delZone = () => {};
-  const dlFail = false;
-  const dlLbl = "Actualizar";
-  const dlRun = false;
-  const failMode = useCheckbox(false);
-  const goOffline = () => {};
-  const goOnline = () => {};
-  const hasConsulta = false;
-  const kinds = [{name: "Necesito orientación", cls: "min-h-11 rounded-full border-[1.5px] border-(--color-ink) bg-(--color-ink) px-3.5 py-0 font-bold text-[15px] whitespace-nowrap text-white chip", pick: () => {}}, {name: "Busco suministros", cls: "min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip", pick: () => {}}, {name: "Necesito ayuda", cls: "min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip", pick: () => {}}, {name: "Consultar mi solicitud", cls: "min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip", pick: () => {}}];
-  const msg = false;
-  const msgCls = screenStyles.success;
-  const msgTxt = "";
-  const msgs = [];
-  const needZone = false;
-  const offline = false;
-  const pct = 100;
-  const pendCount = 2;
-  const queue = [{title: "Favor: «Presto escalera»", kind: "Ordinaria", stateLbl: "Pendiente", tagCls: screenStyles.badgeDemo, ask: false, canCancel: true, yes: () => {}, no: () => {}, cancel: () => {}}, {title: "Reporte: calles anegadas en Campoy", kind: "Emergencia", stateLbl: "Pendiente", tagCls: screenStyles.badgeDemo, ask: false, canCancel: true, yes: () => {}, no: () => {}, cancel: () => {}}];
-  const reconnect = () => {};
-  const reply = useTextInput("");
-  const sendReply = () => {};
-  const sendSms = () => {};
-  const setQ = () => {};
-  const startDl = () => {};
-  const sync = () => {};
-  const synced = false;
   const zone = useTextInput("");
-  const zoneInfo = "48 MB · Última sincronización COMPLETA: hoy 7:50 a. m.";
-  const zoneTag = "Descargada";
+  const reply = useTextInput("");
+  const failMode = useCheckbox(false);
+  const [navOnline, setNavOnline] = useState(true);
+  useEffect(() => {
+    const upd = () => setNavOnline(navigator.onLine);
+    upd();
+    window.addEventListener("online", upd);
+    window.addEventListener("offline", upd);
+    return () => { window.removeEventListener("online", upd); window.removeEventListener("offline", upd); };
+  }, []);
+
+  const offline = sesion.senal === "Sin datos" || !navOnline;
+  const cOn = offline ? CHIP_OFF : CHIP_ON;
+  const cOff = offline ? CHIP_ON : CHIP_OFF;
+  const goOnline = () => setSesion({ senal: "Normal" });
+  const goOffline = () => setSesion({ senal: "Sin datos" });
+
+  // ---- Zonas descargadas
+  const [dl, setDl] = useState({ zona: null, pct: 0, fail: false });
+  const z = of.zonas.campoy;
+  const zoneTag = z.estado;
+  const zoneInfo = z.estado === "Descargada" ? `${z.mb} MB · Última sincronización COMPLETA: ${z.sync}` : "Sin datos guardados en este dispositivo";
+  const dlRun = dl.zona === "campoy" && dl.pct < 100 && !dl.fail;
+  const dlFail = dl.zona === "campoy" && dl.fail;
+  const pct = dl.pct;
+  const dlLbl = z.estado === "Descargada" ? "Actualizar" : "Guardar zona";
+  const descargar = (id) => {
+    if (offline) { setDl({ zona: id, pct: 0, fail: true }); return; }
+    setDl({ zona: id, pct: 0, fail: false });
+    let p = 0;
+    const t = setInterval(() => {
+      p += 20;
+      if (failMode.checked && p >= 60) {
+        clearInterval(t);
+        setDl({ zona: id, pct: p, fail: true }); // se conserva la versión anterior
+        logEvento(`Descarga de zona falló al ${p} %: se conserva la versión anterior`);
+        return;
+      }
+      setDl({ zona: id, pct: p, fail: false });
+      if (p >= 100) {
+        clearInterval(t);
+        precacheZona();
+        const sync = `hoy ${new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}`;
+        setOf((o) => ({ zonas: { ...o.zonas, [id]: { ...o.zonas[id], estado: "Descargada", sync, mb: id === "campoy" ? 48 : 31 } } }));
+        logEvento(`Zona ${id === "campoy" ? "Campoy" : "Calca Centro"} descargada (sincronización completa)`);
+      }
+    }, 350);
+  };
+  const startDl = () => descargar("campoy");
+  const [delWarn, setDelWarn] = useState(false);
+  const delZone = () => {
+    setDelWarn(pendCount > 0);
+    setOf((o) => ({ zonas: { ...o.zonas, campoy: { ...o.zonas.campoy, estado: "No descargada" } } }));
+    logEvento("Zona Campoy eliminada del dispositivo (los pendientes se conservan)");
+  };
+  const calca = of.zonas.calca;
+
+  // ---- Cola de pendientes (idempotente por clientActionId)
+  const [askIds, setAskIds] = useState([]);
+  const [msg, setMsg] = useState(null);
+  const pubsPend = pubs.items.filter((p) => p.estado === "pendiente");
+  const repsPend = incs.items.flatMap((i) => i.reportes.filter((r) => r.estado === "pendiente").map((r) => ({ ...r, incId: i.id, incTitulo: i.titulo })));
+  const pendCount = pubsPend.length + repsPend.length;
+  const resolverReporte = (r, vigente) => {
+    setIncs((p) => ({
+      items: p.items
+        .map((i) => (i.id !== r.incId ? i : { ...i, actualizado: vigente ? "ahora" : i.actualizado, reportes: vigente ? i.reportes.map((x) => (x.clientActionId === r.clientActionId ? { ...x, estado: "enviado" } : x)) : i.reportes.filter((x) => x.clientActionId !== r.clientActionId) }))
+        .filter((i) => i.reportes.length > 0),
+    }));
+    setAskIds((a) => a.filter((x) => x !== r.clientActionId));
+    logEvento(vigente ? `Reporte pendiente enviado tras confirmar vigencia (${r.incId})` : "Reporte pendiente descartado: ya no estaba vigente");
+  };
+  const queue = [
+    ...pubsPend.map((p) => ({
+      title: `${p.tipo === "cachuelo" ? "Cachuelo" : p.tipo === "campana" ? "Campaña" : "Favor"}: «${p.titulo}»`, kind: "Ordinaria", stateLbl: "Pendiente de enviar", tagCls: screenStyles.badgeDemo, ask: false, canCancel: true,
+      yes: () => {}, no: () => {}, cancel: () => setPubs((x) => ({ items: x.items.filter((y) => y.clientActionId !== p.clientActionId) })),
+    })),
+    ...repsPend.map((r) => ({
+      title: `Reporte: ${r.tipo} · ${r.incTitulo}`, kind: "Emergencia", stateLbl: askIds.includes(r.clientActionId) ? "Confirma vigencia" : "Pendiente de enviar", tagCls: screenStyles.badgeDemo,
+      ask: askIds.includes(r.clientActionId), canCancel: !askIds.includes(r.clientActionId),
+      yes: () => resolverReporte(r, true), no: () => resolverReporte(r, false), cancel: () => resolverReporte(r, false),
+    })),
+  ];
+  const sync = () => {
+    if (offline) { setMsg({ ok: false, t: "Sin conexión: no se envió nada. Tus pendientes siguen guardados." }); return; }
+    const n = pubsPend.length;
+    if (n) {
+      setPubs((x) => ({ items: x.items.map((y) => (y.estado === "pendiente" ? { ...y, estado: "publicado" } : y)) }));
+      logEvento(`Sincronización: ${n} publicación(es) enviadas sin duplicar`);
+    }
+    setAskIds(repsPend.map((r) => r.clientActionId));
+    setMsg({ ok: true, t: n ? `✓ ${n} envío(s) ordinarios confirmados por el servidor demo.${repsPend.length ? " Confirma la vigencia de las emergencias." : ""}` : repsPend.length ? "Confirma si las emergencias pendientes siguen vigentes." : "✓ No hay nada pendiente." });
+  };
+  const msgCls = msg?.ok === false ? screenStyles.error : screenStyles.success;
+  const msgTxt = msg?.t ?? "";
+
+  // ---- Consulta SMS simulada
+  const [kind, setKind] = useState(SMS_KINDS[0]);
+  const kinds = SMS_KINDS.map((k) => ({ name: k, cls: k === kind ? CHIP_INK_ON : CHIP_OFF, pick: () => setKind(k) }));
+  const cons = of.consultas.find((c) => c.id === of.actual) ?? null;
+  const hasConsulta = !!cons;
+  const cid = cons?.id ?? "";
+  const cstatus = cons?.estado ?? "";
+  const needZone = cons?.estado === "Esperando tu localidad";
+  const synced = !!cons?.sincronizada;
+  const hora = () => new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+  const msgs = (cons?.msgs ?? []).map((m) => ({ ...m, cls: m.who === "Tú" ? SMS_ME : SMS_CENTRAL }));
+  const responder = (c, zona) => {
+    if (sesion.smsCentral === "Caída") return { ...c, estado: "Sin respuesta de la central", msgs: [...c.msgs, { who: "Pasarela", time: hora(), t: "La central simulada no responde. Tu mensaje queda registrado con el mismo ID; reintenta más tarde." }] };
+    const base = RESPUESTAS[c.kind] ?? RESPUESTAS["Necesito orientación"];
+    const texto = sesion.ia === "Sin respuesta" ? `Respuesta revisada de contingencia para ${zona}: ${base.contingencia}` : `Para ${zona}: ${base.t}`;
+    return { ...c, zona, estado: "Respondida", msgs: [...c.msgs, { who: "Central (simulada)", time: hora(), t: `${texto} Fuente: ${base.fuente}. ID ${c.id}.` }] };
+  };
+  const sendSms = () => {
+    const q = question.value.trim();
+    if (!q) return;
+    const dup = of.consultas.find((c) => c.msgs.some((m) => m.who === "Tú" && m.t === q));
+    if (dup) { setOf({ actual: dup.id }); logEvento(`SMS duplicado ignorado (${dup.id})`); nav.go("consulta"); return; }
+    const id = `SMS-${String(of.consultas.length + 1).padStart(4, "0")}`;
+    let c = { id, kind, zona: zone.value.trim(), estado: "Recibida", sincronizada: false, msgs: [{ who: "Tú", time: hora(), t: q }] };
+    c = c.zona ? responder(c, c.zona) : { ...c, estado: "Esperando tu localidad", msgs: [...c.msgs, { who: "Central (simulada)", time: hora(), t: `Recibimos tu consulta ${id}. ¿En qué localidad estás? Responde con el nombre de tu barrio o comunidad.` }] };
+    setOf((o) => ({ consultas: [c, ...o.consultas], actual: id }));
+    logEvento(`SMS simulado recibido por la central: ${id} (${kind})`);
+    question.setValue("");
+    nav.go("consulta");
+  };
+  const sendReply = () => {
+    const zona = reply.value.trim();
+    if (!zona || !cons) return;
+    const c = responder({ ...cons, msgs: [...cons.msgs, { who: "Tú", time: hora(), t: zona }] }, zona);
+    setOf((o) => ({ consultas: o.consultas.map((x) => (x.id === c.id ? c : x)) }));
+    reply.setValue("");
+  };
+  const reconnect = () => {
+    if (!cons) return;
+    setOf((o) => ({ consultas: o.consultas.map((x) => (x.id === cons.id ? { ...x, sincronizada: true } : x)) }));
+    logEvento(`Consulta ${cons.id} sincronizada con la app al recuperar conexión`);
+  };
   return (
     <div className="m-0 bg-white text-(--color-ink) font-[Nunito,system-ui,sans-serif] text-[17px] leading-[1.4] [&_h1]:font-[Nunito,system-ui,sans-serif] [&_h1]:m-0 [&_h1]:leading-[1.15] [&_h1]:tracking-[-.01em] [&_h2]:font-[Nunito,system-ui,sans-serif] [&_h2]:m-0 [&_h2]:leading-[1.15] [&_h2]:tracking-[-.01em] [&_h3]:font-[Nunito,system-ui,sans-serif] [&_h3]:m-0 [&_h3]:leading-[1.15] [&_h3]:tracking-[-.01em] [&_h4]:font-[Nunito,system-ui,sans-serif] [&_h4]:m-0 [&_h4]:leading-[1.15] [&_h4]:tracking-[-.01em] [&_.t]:font-[Nunito,system-ui,sans-serif] [&_.t]:m-0 [&_.t]:leading-[1.15] [&_.t]:tracking-[-.01em] [&_p]:m-0 [&_button]:cursor-pointer [&_:focus-visible]:outline-3 [&_:focus-visible]:outline-(--color-ink) [&_:focus-visible]:outline-offset-2 [&_textarea.in]:px-3.5 [&_textarea.in]:py-3 [&_textarea.in]:min-h-21 [&_textarea.in]:resize-none">
       <div className={screenStyles.frame}>
@@ -65,13 +193,13 @@ export default function Offline() {
       <div className={screenStyles.content}>
         <div className={screenStyles.card}><div className={screenStyles.row}><b className={screenStyles.grow}>Campoy · San Juan de Lurigancho</b><span className={screenStyles.badgeFavor}>{zoneTag}</span></div>
           <p className={screenStyles.muted}>{zoneInfo}</p>
-          {dlRun && (<><div className="h-3 rounded-[6px] bg-(--color-line) overflow-hidden [&_i]:block [&_i]:h-full [&_i]:bg-[#2f5a2d]" role="progressbar" aria-valuenow={`${pct ?? ""}`} aria-valuemin="0" aria-valuemax="100" aria-label="Descarga"><i></i></div><p className={screenStyles.muted} role="status">Descargando… {pct} %</p></>)}
-          {dlFail && (<><p className={screenStyles.error} role="alert">No se pudo completar la descarga. Conservamos tu versión anterior.</p></>)}
+          {dlRun && (<><div className="h-3 rounded-[6px] bg-(--color-line) overflow-hidden [&_i]:block [&_i]:h-full [&_i]:bg-[#2f5a2d]" role="progressbar" aria-valuenow={`${pct ?? ""}`} aria-valuemin="0" aria-valuemax="100" aria-label="Descarga"><i style={{ width: `${pct}%` }}></i></div><p className={screenStyles.muted} role="status">Descargando… {pct} %</p></>)}
+          {dlFail && (<><p className={screenStyles.error} role="alert">{offline ? "Sin conexión no se puede descargar. Conservamos tu versión anterior." : "No se pudo completar la descarga. Conservamos tu versión anterior."}</p></>)}
           <div className={`${screenStyles.row} flex-wrap!`}><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 flex-1! min-h-12!" onClick={startDl}>{dlLbl}</button><button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 flex-1! min-h-12!" onClick={delZone}>Eliminar</button></div>
           <div className={screenStyles.checkboxRow}><input id="fl" type="checkbox" {...failMode.props} /><label htmlFor="fl"><span className={screenStyles.muted}>Simular que la descarga falla</span></label></div>
-          {delWarn && (<><p className={screenStyles.error} role="alert">Tienes 2 envíos pendientes. Eliminar la zona no los borra; se enviarán cuando haya conexión.</p></>)}
+          {delWarn && (<><p className={screenStyles.error} role="alert">Tienes {pendCount} envíos pendientes. Eliminar la zona no los borra; se enviarán cuando haya conexión.</p></>)}
           <p className={screenStyles.muted}>Incluye mapa de demostración, incidencias con hora, calor de instantánea, contactos oficiales y orientación. Se guarda en el dispositivo (IndexedDB y caché), no solo en memoria.</p></div>
-        <div className={screenStyles.card}><div className={screenStyles.row}><b className={screenStyles.grow}>Calca Centro</b><span className={screenStyles.badge}>No descargada</span></div><p className={screenStyles.muted}>Fuera de la zona descargada verías un aviso y la lista de reportes como alternativa.</p><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 min-h-12!">Guardar zona</button></div>
+        <div className={screenStyles.card}><div className={screenStyles.row}><b className={screenStyles.grow}>Calca Centro</b><span className={screenStyles.badge}>{calca.estado}</span></div><p className={screenStyles.muted}>{calca.estado === "Descargada" ? `${calca.mb} MB · Última sincronización COMPLETA: ${calca.sync}` : "Área no descargada: sin conexión verías un aviso y la lista de reportes como alternativa."}</p>{dl.zona === "calca" && dl.pct < 100 && !dl.fail && (<p className={screenStyles.muted} role="status">Descargando… {dl.pct} %</p>)}{dl.zona === "calca" && dl.fail && (<p className={screenStyles.error} role="alert">No se pudo descargar. No se marcó como disponible.</p>)}<button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 min-h-12!" onClick={() => descargar("calca")}>{calca.estado === "Descargada" ? "Actualizar" : "Guardar zona"}</button></div>
         <div className={screenStyles.card}><p className={screenStyles.label}>Espacio</p><div className="h-3 rounded-[6px] bg-(--color-line) overflow-hidden [&_i]:block [&_i]:h-full [&_i]:bg-[#2f5a2d]" aria-hidden="true"><i className="w-[18%]!"></i></div><p className={screenStyles.muted}>Usado por BarrioConecta: 48 MB · Espacio libre suficiente</p></div>
         <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => nav.go("pend")}>Pendientes de envío ({pendCount})</button>
         <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => nav.go("sms")}>Consulta por SMS</button>
@@ -80,6 +208,7 @@ export default function Offline() {
       
       {nav.is("pend") && (<>
       <div className={screenStyles.content}>
+        {queue.length === 0 && (<div className={screenStyles.card} role="status"><p className="font-bold!">No tienes envíos pendientes</p><p className={screenStyles.muted}>Lo que publiques o reportes sin conexión aparecerá aquí.</p></div>)}
         {(queue ?? []).map((q, __i1) => (<Fragment key={__i1}>
           <div className={screenStyles.card}><div className={screenStyles.row}><span className={q.tagCls}>{q.stateLbl}</span><span className="flex-1 min-w-0 text-(--color-muted) text-[15px] text-right!">{q.kind}</span></div><b>{q.title}</b>
             {q.ask && (<><p className={screenStyles.muted}>Antes de enviar: ¿esta emergencia sigue vigente?</p><div className="grid-cols-2 grid! gap-2!"><button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 min-h-12!" onClick={q.no}>Ya no</button><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 min-h-12!" onClick={q.yes}>Sigue vigente</button></div></>)}

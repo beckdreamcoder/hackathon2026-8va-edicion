@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "tailwindcss/index.css";
+import { SwRegister } from "@/components/sw-register";
 
 export const metadata: Metadata = {
   title: "BarrioConecta",
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="bg-(--color-canvas) font-sans text-[17px] leading-normal text-(--color-ink) [&_:where(h1,h2,h3)]:font-bold [&_:where(h1,h2,h3)]:tracking-[-.01em] [&_:where(:focus-visible)]:outline-3 [&_:where(:focus-visible)]:outline-offset-2 [&_:where(:focus-visible)]:outline-(--color-brand)">
         {children}
+        <SwRegister />
       </body>
     </html>
   );
