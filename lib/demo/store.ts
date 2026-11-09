@@ -111,6 +111,12 @@ function read<T>(key: string, initial: T): T {
 
 function write<T>(key: string, value: T) {
   cache.set(key, value);
+  if (!estado.hidratado) {
+    // Antes de cargar lo guardado, las pantallas ya pueden haberse renderizado (con los valores iniciales): lo que
+    // escriban aquí es solo temporal y se descarta al hidratar, para no pisar los datos guardados.
+    listeners.get(key)?.forEach((l) => l());
+    return;
+  }
   crudo.set(key, value);
   programar(key, value);
   listeners.get(key)?.forEach((l) => l());

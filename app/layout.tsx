@@ -1,9 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import "tailwindcss/index.css";
+import "./tema.css";
 import { SwRegister } from "@/components/sw-register";
 import { HScroll } from "@/components/h-scroll";
 import { Hidratacion } from "@/components/hidratacion";
 import { Conexion } from "@/components/conexion";
+import { Tutorial } from "@/components/tutorial";
+import { Personalizacion } from "@/components/personalizacion";
+import { SCRIPT_TEMA } from "@/lib/preferencias";
 
 export const metadata: Metadata = {
   title: "BarrioConecta",
@@ -27,6 +31,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className="[--color-brand:#c8102e] [--color-canvas:#fbf8f3] [--color-ink:#202124] [--color-line:#e3ddd7] [--color-muted:#5e6268]"
     >
       <head>
+        {/* Aplica el tema guardado antes de pintar, para evitar el parpadeo */}
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA }} />
         <style>{`*{scrollbar-width:none;-ms-overflow-style:none}*::-webkit-scrollbar{display:none;width:0;height:0}nav[aria-label="Principal"]{max-width:26rem;margin-inline:auto}`}</style>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -39,7 +45,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Hidratacion>
           {children}
           <Conexion />
+          <Tutorial />
         </Hidratacion>
+        <Personalizacion />
         <SwRegister />
         <HScroll />
       </body>

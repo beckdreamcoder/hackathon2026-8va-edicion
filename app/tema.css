@@ -1,0 +1,92 @@
+/* ===== Modo oscuro · cálido y neutro (sin negro absoluto) =====
+   Se activa con <html data-theme="dark">. Redefine los tokens y remapea las clases de color fijo
+   de las pantallas, de modo que no hay que duplicar componentes ni tocar su lógica. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-brand: #d62f4a;
+  --color-canvas: #1c1917;
+  --color-surface: #26211f;
+  --color-ink: #f3ece5;
+  --color-muted: #b9afa6;
+  --color-line: #3d3632;
+  --color-favores: #8fcf8b;
+  --color-cachuelos: #e6b567;
+  --color-solidaridad: #7ccbd6;
+}
+:root[data-theme="dark"] body { background: var(--color-canvas); color: var(--color-ink); }
+
+/* Superficies */
+:root[data-theme="dark"] [class~="bg-white"],
+:root[data-theme="dark"] [class~="bg-(--color-surface)"] { background-color: #26211f; }
+:root[data-theme="dark"] [class~="bg-[#f1ece6]"],
+:root[data-theme="dark"] [class~="bg-[#f6f2ec]"],
+:root[data-theme="dark"] [class~="bg-[#efe8dd]"] { background-color: #342e2a; }
+:root[data-theme="dark"] [class~="bg-[rgba(32,33,36,.35)]"] { background-color: rgba(0, 0, 0, .6); }
+:root[data-theme="dark"] [class~="bg-(--color-ink)"] { background-color: #efe7df; }
+:root[data-theme="dark"] [class~="bg-(--color-ink)"][class~="text-white"],
+:root[data-theme="dark"] [class~="bg-(--color-ink)"] [class~="text-white"] { color: #1c1917; }
+:root[data-theme="dark"] [class~="bg-(--color-ink)"][class~="border-white"] { border-color: #1c1917; }
+
+/* Estados y categorías (fondo + texto emparejados para mantener el contraste) */
+:root[data-theme="dark"] [class~="bg-[#e6f0e4]"], :root[data-theme="dark"] [class~="bg-[#e1f1e2]"] { background-color: #243a29; }
+:root[data-theme="dark"] [class~="text-[#2f5a2d]"], :root[data-theme="dark"] [class~="text-[#1f5a22]"] { color: #a9d9a4; }
+:root[data-theme="dark"] [class~="bg-[#ddf0f2]"], :root[data-theme="dark"] [class~="bg-[#ddeff1]"] { background-color: #1f393d; }
+:root[data-theme="dark"] [class~="text-[#14505a]"], :root[data-theme="dark"] [class~="text-[#1f6f7a]"] { color: #93d8e2; }
+:root[data-theme="dark"] [class~="bg-[#fff1e6]"], :root[data-theme="dark"] [class~="bg-[#ffe9da]"],
+:root[data-theme="dark"] [class~="bg-[#f3e3d3]"], :root[data-theme="dark"] [class~="bg-[#f4d9c6]"] { background-color: #43302a; }
+:root[data-theme="dark"] [class~="text-[#8a2b07]"], :root[data-theme="dark"] [class~="text-[#8a4300]"] { color: #ffbc9a; }
+:root[data-theme="dark"] [class~="bg-[#fff4d6]"], :root[data-theme="dark"] [class~="bg-[#fbebd0]"] { background-color: #42371f; }
+:root[data-theme="dark"] [class~="text-[#5c3d00]"], :root[data-theme="dark"] [class~="text-[#6b4000]"] { color: #f2d28d; }
+:root[data-theme="dark"] [class~="bg-[#fbe3e7]"], :root[data-theme="dark"] [class~="bg-[#fff5f6]"] { background-color: #4a242c; }
+:root[data-theme="dark"] [class~="text-[#9e0c24]"] { color: #ff9aa9; }
+:root[data-theme="dark"] [class~="text-(--color-brand)"], :root[data-theme="dark"] [class~="text-[#c8102e]"] { color: #ff8b9d; }
+:root[data-theme="dark"] [class~="text-[#1f3a5f]"] { color: #a9c4ee; }
+
+/* Bordes */
+:root[data-theme="dark"] [class~="border-[#cfc7bf]"] { border-color: #5b524c; }
+:root[data-theme="dark"] [class~="border-[#ede9e6]"] { border-color: #3d3632; }
+:root[data-theme="dark"] [class~="border-[#f0c8a8]"], :root[data-theme="dark"] [class~="border-[#e6c77a]"],
+:root[data-theme="dark"] [class~="border-[#f0b8c0]"], :root[data-theme="dark"] [class~="border-[#b9d5b5]"] { border-color: #5d4c40; }
+:root[data-theme="dark"] [class~="border-white"] { border-color: #26211f; }
+:root[data-theme="dark"] [class~="bg-(--color-brand)"][class~="border-white"] { border-color: #f3ece5; }
+
+/* Formularios, vídeo/imágenes de ejemplo y barra de desplazamiento */
+:root[data-theme="dark"] input, :root[data-theme="dark"] textarea, :root[data-theme="dark"] select { color: var(--color-ink); }
+:root[data-theme="dark"] ::placeholder { color: #9a9088; opacity: 1; }
+:root[data-theme="dark"] input[type="date"], :root[data-theme="dark"] input[type="time"] { color-scheme: dark; }
+
+/* Mapa: teselas atenuadas; los marcadores y paneles conservan sus colores */
+:root[data-theme="dark"] .maplibregl-canvas { filter: invert(1) hue-rotate(180deg) brightness(.86) contrast(.92) saturate(.75); }
+:root[data-theme="dark"] .maplibregl-ctrl-group { background: #26211f; }
+:root[data-theme="dark"] .maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: invert(1); }
+:root[data-theme="dark"] .maplibregl-ctrl-attrib { background: rgba(38, 33, 31, .8); color: #b9afa6; }
+:root[data-theme="dark"] .maplibregl-ctrl-attrib a { color: #d9cfc6; }
+
+/* Tutorial */
+@keyframes bc-pulso { 0%, 100% { box-shadow: 0 0 0 9999px rgba(20, 16, 14, .55), 0 0 0 3px var(--color-brand); } 50% { box-shadow: 0 0 0 9999px rgba(20, 16, 14, .55), 0 0 0 7px rgba(200, 16, 46, .55); } }
+@media (prefers-reduced-motion: reduce) { .bc-tour-aro { animation: none !important; transition: none !important; } }
+
+/* Variantes arbitrarias ([&_x]:...) */
+:root[data-theme="dark"] [class~="[&_button]:bg-white"] button, :root[data-theme="dark"] [class~="[&_.b]:bg-white"] .b { background-color: #26211f; }
+:root[data-theme="dark"] [class~="[&_div]:bg-[#f6f2ec]"] div { background-color: #342e2a; }
+:root[data-theme="dark"] [class~="[&_.av]:border-white"] .av { border-color: #26211f; }
+:root[data-theme="dark"] [class~="[&_i]:bg-[#cfc7bf]"] i { background-color: #5b524c; }
+:root[data-theme="dark"] [class~="[&_i]:bg-[#2f5a2d]"] i { background-color: #6fbf6a; }
+
+/* Variantes con ! (important) de las clases anteriores · van en la capa «theme» porque las declaraciones !important de capas anteriores ganan a las de utilities */
+@layer theme {
+  :root[data-theme="dark"] [class~="bg-white!"] { background-color: #26211f !important; }
+  :root[data-theme="dark"] [class~="bg-[#efe8dd]!"] { background-color: #342e2a !important; }
+  :root[data-theme="dark"] [class~="bg-[#f1ece6]!"] { background-color: #342e2a !important; }
+  :root[data-theme="dark"] [class~="bg-[#fff1e6]!"] { background-color: #43302a !important; }
+  :root[data-theme="dark"] [class~="text-[#9e0c24]!"] { color: #ff9aa9 !important; }
+  :root[data-theme="dark"] [class~="text-[#2f5a2d]!"] { color: #a9d9a4 !important; }
+  :root[data-theme="dark"] [class~="text-(--color-brand)!"] { color: #ff8b9d !important; }
+  :root[data-theme="dark"] [class~="border-[#f0c8a8]!"] { border-color: #5d4c40 !important; }
+}
+
+/* Texto de acento (rojo) legible sobre superficies oscuras */
+:root[data-theme="dark"] nav[aria-label="Principal"] a.on,
+:root[data-theme="dark"] nav[aria-label="Principal"] a[aria-current="page"],
+:root[data-theme="dark"] [class*="text-(--color-brand)"] { color: #ff8b9d; }
+:root[data-theme="dark"] [class~="bg-(--color-brand)"][class*="text-(--color-brand)"] { color: #fff; }
