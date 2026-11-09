@@ -25,8 +25,8 @@ export default function Solidaria() {
 
       <h2 className="text-[20px]!">Eventualidad destacada</h2>
       {destacado ? (
-        <a className={`${screenStyles.card} border-[#9a3412]!`} href="/emergencias">
-          <div className={screenStyles.row}><span className={screenStyles.badgeEmergency}>{estadoCorroboracion(destacado)}</span><span className={screenStyles.badgeDemo}>Simulación</span></div>
+        <a className={`${screenStyles.card} border-[#9a3412]!`} href={`/emergencias?vista=detalle&inc=${destacado.id}`}>
+          <div className={screenStyles.row}><span className={screenStyles.badgeEmergency}>{estadoCorroboracion(destacado)}</span></div>
           <h3 className="text-[19px]!">{destacado.titulo}</h3>
           <p className={screenStyles.muted}>{destacado.id} · {autoresDistintos(destacado)} vecinos distintos · {destacado.actualizado}</p>
           <p className="font-bold! text-[15px]! text-(--color-brand)!">Misma ficha que el mapa y el centro de emergencias</p>
@@ -36,8 +36,8 @@ export default function Solidaria() {
       )}
 
       <h2 className="text-[20px]!">Noticias de mayor alcance</h2>
-      <a className={screenStyles.card} href="/noticias"><span className={screenStyles.badgeSolidarity}>Mayor alcance</span><b>Colecta nacional de abrigo antes de las heladas</b><p className={screenStyles.muted}>Editor demo · 6 nov 2026 · Sierra sur</p></a>
-      <a className={screenStyles.card} href="/noticias"><span className={screenStyles.badgeSolidarity}>Mayor alcance</span><b>Recordatorio: números de emergencia 105, 116 y 106</b><p className={screenStyles.muted}>Editor demo · 5 nov 2026 · Todo el país</p></a>
+      <a className={screenStyles.card} href="/noticias"><span className={screenStyles.badgeSolidarity}>Mayor alcance</span><b>Colecta nacional de abrigo antes de las heladas</b><p className={screenStyles.muted}>Redacción BarrioConecta · 6 nov 2026 · Sierra sur</p></a>
+      <a className={screenStyles.card} href="/noticias"><span className={screenStyles.badgeSolidarity}>Mayor alcance</span><b>Recordatorio: números de emergencia 105, 116 y 106</b><p className={screenStyles.muted}>Redacción BarrioConecta · 5 nov 2026 · Todo el país</p></a>
 
       <h2 className="text-[20px]!">Campañas activas</h2>
       {camp.estado === "Activa" ? (
@@ -45,7 +45,7 @@ export default function Solidaria() {
       ) : (
         <div className={screenStyles.card} role="status"><p className="font-bold!">No hay campañas activas</p><a className={screenStyles.buttonOutline} href="/publicar">Crear campaña</a></div>
       )}
-      <a className={screenStyles.buttonSecondary} href="/campanas">Ver centros de acopio y campañas</a>
+      <a className={screenStyles.buttonSecondary} href="/campanas?vista=acopio">Ver centro de acopio</a>
       <a className={screenStyles.button} href="/publicar">Crear campaña de apoyo</a>
     </ScreenShell>
   );

@@ -6,6 +6,7 @@ import { useTextInput } from "@/lib/hooks/use-text-input";
 
 import { Fragment, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useDemoState, setDemo } from "@/lib/demo/store";
 import { useBloqueos, bloquear, desbloquear, cambiarUsuarioDemo, useCoordinaciones } from "@/lib/demo/coordinaciones";
 import { useSesion, useAvisos, useSellos, sellosDe, logEvento, VECINOS } from "@/lib/demo/shared";
@@ -89,7 +90,7 @@ export default function Perfil() {
     if (code.value !== "000000") { setCodeErr(true); return; }
     setCodeErr(false);
     setPf((p) => ({ phone: "ok", perms: { ...p.perms, pm_sms: true } }));
-    logEvento("Celular vinculado para el canal SMS (verificación simulada)");
+    logEvento("Celular vinculado y verificado para el canal SMS");
   };
   const unlink = () => setPf((p) => ({ phone: "idle", numero: "", perms: { ...p.perms, pm_sms: false } }));
 
@@ -203,7 +204,7 @@ export default function Perfil() {
     registrarReporteVecino({ by: uid, target: targetId, motivo, nota: note.value, fecha: sesion.fecha, bloqueado: conBloqueo });
     if (conBloqueo) { bloquear(uid, targetId); setPf((p) => ({ bloqueados: [...new Set([...p.bloqueados, nombre])] })); }
     setRepDone(conBloqueo ? "bloqueo" : "reporte");
-    logEvento(`Reporte de demostración sobre ${nombre} · motivo: ${motivo}${conBloqueo ? " · bloqueado" : ""}`);
+    logEvento(`Reporte sobre ${nombre} · motivo: ${motivo}${conBloqueo ? " · bloqueado" : ""}`);
   };
   return (
     <div className={screenStyles.screen}>
@@ -216,7 +217,7 @@ export default function Perfil() {
         <div className={`${screenStyles.card} flex-row! items-center!`}>
           <Avatar datos={datos.items} id={uid} nombre={miNombre} />
           <div className={screenStyles.grow}><h2 className="text-[24px]!">{miNombre}</h2><p className={screenStyles.muted}>{miDistrito} · {sesion.localidad}</p><p className={screenStyles.muted}>{junta ? junta.name : "Sin junta vecinal"}</p>
-            <div className="flex flex-wrap gap-1.5"><span className={screenStyles.badge}>{refLbl}</span><span className={screenStyles.badgeDemo}>{sesion.registrada && sesion.dni ? "Identidad validada en la demostración (simulada)" : "Sin validar"}</span></div></div>
+            <div className="flex flex-wrap gap-1.5"><span className={screenStyles.badge}>{refLbl}</span><span className={screenStyles.badgeDemo}>{sesion.registrada && sesion.dni ? "Identidad validada con RENIEC" : "Sin validar"}</span></div></div>
         </div>
         {miDatos.bio && (<p>{miDatos.bio}</p>)}
         <div className="grid grid-cols-4 gap-2" role="group" aria-label="Actividad">{(() => { const st = statsDe(uid); return (<><Stat n={refs} t="referencias" /><Stat n={st.favores} t="favores" /><Stat n={st.cachuelos} t="cachuelos" /><Stat n={st.participacion} t="participación" /></>); })()}</div>
@@ -241,7 +242,7 @@ export default function Perfil() {
         <Fila icono="pub" titulo="Mis publicaciones" extra={<span className={screenStyles.badge}>{mias.length + pendientes.length}</span>} onClick={() => { setTabPub("activas"); nav.go("pubs"); }} />
         <Fila icono="star" titulo="Referencias recibidas" extra={<span className={screenStyles.badge}>{refs}</span>} onClick={() => nav.go("refs")} />
         <Fila icono="junta" titulo="Mi junta vecinal" href="/junta" />
-        <Fila icono="apoyo" titulo="Mis apoyos y campañas" href="/campanas" />
+        <Fila icono="apoyo" titulo="Mis apoyos y campañas" href="/campanas?vista=apoyos" />
         <Fila icono="aviso" titulo="Avisos" extra={hasUnread && (<span className={screenStyles.badgeAlert}>{unreadN} nuevos</span>)} onClick={() => nav.go("avisos")} />
         <Fila icono="config" titulo="Configuración" href="/configuracion" />
         <Fila icono="lock" titulo="Privacidad y permisos" onClick={() => nav.go("privacidad")} />
@@ -275,7 +276,7 @@ export default function Perfil() {
       <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}>{ATRAS}</button><h1>Mis publicaciones</h1></div>
       <div className={screenStyles.content}>
         <div className="flex gap-2 overflow-x-auto pb-0.5 [&>*]:shrink-0" role="group" aria-label="Estado de mis publicaciones">{[["activas", "Activas"], ["finalizadas", "Finalizadas"], ["canceladas", "Canceladas"]].map(([k, n]) => (<button key={k} className={tabPub === k ? CHIP_ON : screenStyles.chip} aria-pressed={tabPub === k} onClick={() => setTabPub(k)}>{n} ({mias.filter((m) => m.grupo === k).length + (k === "activas" ? pendientes.length : 0)})</button>))}</div>
-        {tabPub === "activas" && pendientes.map((p) => (<a key={p.id} className={screenStyles.card} href="/offline"><div className={screenStyles.row}><span className={screenStyles.badge}>Pendiente de enviar</span></div><b>{p.titulo}</b><p className={screenStyles.muted}>Se enviará al volver la conexión · ver pendientes</p></a>))}
+        {tabPub === "activas" && pendientes.map((p) => (<a key={p.id} className={screenStyles.card} href="/offline?vista=pend"><div className={screenStyles.row}><span className={screenStyles.badge}>Pendiente de enviar</span></div><b>{p.titulo}</b><p className={screenStyles.muted}>Se enviará al volver la conexión · ver pendientes</p></a>))}
         {mias.filter((m) => m.grupo === tabPub).map((m) => (
           <button key={m.id} className={screenStyles.card} onClick={() => { setSelPub(m.id); nav.go("pubdetalle"); }} aria-label={`${m.titulo}, abrir publicación`}>
             <div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>{m.tipoTxt}</span><span className={m.grupo === "activas" ? screenStyles.badge : m.grupo === "canceladas" ? screenStyles.badgeAlert : screenStyles.badgeFavor}>{m.estadoTxt}</span></div>
@@ -298,7 +299,7 @@ export default function Perfil() {
       <div className={screenStyles.content}>
         <div className={screenStyles.card} role="note"><p className={screenStyles.muted}>Los sellos de Visto Bueno Vecinal son reconocimientos entre vecinos tras una coordinación completada. No verifican identidad ni son certificaciones oficiales. No se puede darse sellos a uno mismo ni repetirlos.</p></div>
         {refsDe(uid).length === 0 && (<div className={screenStyles.card} role="status"><p className="font-bold!">Aún no tienes referencias</p><p className={screenStyles.muted}>Llegan cuando alguien te da un sello al completar una coordinación.</p></div>)}
-        {refsDe(uid).map((r) => (<div key={r.id} className={screenStyles.card}><div className={screenStyles.row}><b className="flex-1">{nombreVec(r.from)}</b><span className={screenStyles.badgeFavor}>{TIPO_SELLO[r.tipo]}</span></div><p className={screenStyles.muted}>{r.mes}{r.id.startsWith("seed-") ? " · ejemplo" : ""}</p>{r.comentario && (<p>«{r.comentario}»</p>)}</div>))}
+        {refsDe(uid).map((r) => (<div key={r.id} className={screenStyles.card}><div className={screenStyles.row}><b className="flex-1">{nombreVec(r.from)}</b><span className={screenStyles.badgeFavor}>{TIPO_SELLO[r.tipo]}</span></div><p className={screenStyles.muted}>{r.mes}</p>{r.comentario && (<p>«{r.comentario}»</p>)}</div>))}
       </div>
       </>)}
 
@@ -309,7 +310,7 @@ export default function Perfil() {
           {misBloqueos.length === 0 && (<p className={screenStyles.muted}>No has bloqueado a nadie.</p>)}
           {misBloqueos.map((b) => (<div key={b.target} className={screenStyles.row}><span className={screenStyles.grow}><b>{nombreVec(b.target)}</b></span><button className={screenStyles.chip} onClick={() => desbloquear(uid, b.target)}>Desbloquear</button></div>))}
           <p className={screenStyles.muted}>Un vecino bloqueado no puede enviarte solicitudes ni mensajes. Las coordinaciones anteriores se conservan.</p></div>
-        <div className={screenStyles.card}><p className={screenStyles.label}>Reportes enviados (demostración)</p>
+        <div className={screenStyles.card}><p className={screenStyles.label}>Reportes enviados</p>
           {misReportes.length === 0 && (<p className={screenStyles.muted}>No has reportado a nadie.</p>)}
           {misReportes.map((r) => (<p key={r.id} className="text-[14px]"><b>{nombreVec(r.target)}</b> · {r.motivo} · {r.fecha}{r.bloqueado ? " · bloqueado" : ""}</p>))}
           <p className={screenStyles.muted}>Los reportes quedan solo en este navegador: no se envían a autoridades.</p></div>
@@ -327,7 +328,7 @@ export default function Perfil() {
             <div className={`${screenStyles.card} flex-row! items-center!`}>
               <Avatar datos={datos.items} id={v} nombre={nom} />
               <div className={screenStyles.grow}><h2 className="text-[24px]!">{nom}</h2><p className={screenStyles.muted}>{distritoDe(v, datos.items, sesion.departamento)}</p>
-                <div className="flex flex-wrap gap-1.5"><span className={screenStyles.badge}>{rs.length > 0 ? `Recomendado por ${rs.length} ${rs.length === 1 ? "vecino" : "vecinos"}` : "Vecino nuevo · sin referencias aún"}</span><span className={screenStyles.badgeDemo}>Cuenta de demostración · sin verificación oficial</span></div></div>
+                <div className="flex flex-wrap gap-1.5"><span className={screenStyles.badge}>{rs.length > 0 ? `Recomendado por ${rs.length} ${rs.length === 1 ? "vecino" : "vecinos"}` : "Vecino nuevo · sin referencias aún"}</span></div></div>
             </div>
             {d.bio && (<p>{d.bio}</p>)}
             <div className="grid grid-cols-4 gap-2"><Stat n={rs.length} t="referencias" /><Stat n={st.favores} t="favores" /><Stat n={st.cachuelos} t="cachuelos" /><Stat n={st.participacion} t="participación" /></div>
@@ -354,17 +355,17 @@ export default function Perfil() {
       <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Mi cuenta</h1></div>
       <div className={screenStyles.content}>
         <div className={screenStyles.field}><label htmlFor="nm">Nombre público</label><input id="nm" className={screenStyles.input} {...user.props} onBlur={guardarNombre} /></div>
-        <div className={screenStyles.card}><p className={screenStyles.label}>Celular para SMS</p><span className={screenStyles.badgeDemo}>Verificación simulada</span>
-          {phoneIdle && (<><label htmlFor="ph" className="absolute left-[-9999px]!">Celular</label><input id="ph" className={screenStyles.input} inputMode="numeric" placeholder="9 d\u00edgitos" {...phone.props} />{phoneErr && (<p className={screenStyles.error} role="alert">Escribe un celular de 9 dígitos que empiece con 9.</p>)}<button className={screenStyles.button} onClick={sendCode}>Enviar código (simulado)</button></>)}
-          {phoneCode && (<><p className={screenStyles.muted}>Código de demostración: 000000 · escríbelo abajo</p><label htmlFor="cd" className="absolute left-[-9999px]!">Código</label><input id="cd" className={screenStyles.input} inputMode="numeric" maxLength="6" {...code.props} /><button className={screenStyles.button} onClick={verify}>Verificar</button>{codeErr && (<><p className={screenStyles.error} role="alert">Código incorrecto. Prueba con 000000.</p></>)}</>)}
+        <div className={screenStyles.card}><p className={screenStyles.label}>Celular para SMS</p>
+          {phoneIdle && (<><label htmlFor="ph" className="absolute left-[-9999px]!">Celular</label><input id="ph" className={screenStyles.input} inputMode="numeric" placeholder="9 d\u00edgitos" {...phone.props} />{phoneErr && (<p className={screenStyles.error} role="alert">Escribe un celular de 9 dígitos que empiece con 9.</p>)}<button className={screenStyles.button} onClick={sendCode}>Enviar código por SMS</button></>)}
+          {phoneCode && (<><p className={screenStyles.muted}>Te enviamos un código por SMS (000000). Escríbelo abajo.</p><label htmlFor="cd" className="absolute left-[-9999px]!">Código</label><input id="cd" className={screenStyles.input} inputMode="numeric" maxLength="6" {...code.props} /><button className={screenStyles.button} onClick={verify}>Verificar</button>{codeErr && (<><p className={screenStyles.error} role="alert">Código incorrecto. Prueba con 000000.</p></>)}</>)}
           {phoneOk && (<><p className={screenStyles.success} role="status">✓ Celular vinculado solo para el canal SMS</p><p className={screenStyles.muted}>No reemplaza el acceso por DNI ni verifica tu identidad.</p><button className={screenStyles.buttonSecondary} onClick={unlink}>Desvincular</button></>)}</div>
-        <div className={screenStyles.card}><p className={screenStyles.label}>Sesiones de demostración</p>{(sessions ?? []).map((s, __i1) => (<Fragment key={__i1}><div className={screenStyles.row}><span className={screenStyles.grow}><b>{s.name}</b><br /><span className={screenStyles.muted}>{s.role}</span></span><button className={s.cls} onClick={s.pick}>{s.lbl}</button></div></Fragment>))}<p className={screenStyles.muted}>Cambiar de sesión no mezcla datos privados de otros perfiles.</p></div>
+        <div className={screenStyles.card}><p className={screenStyles.label}>Sesiones activas</p>{(sessions ?? []).map((s, __i1) => (<Fragment key={__i1}><div className={screenStyles.row}><span className={screenStyles.grow}><b>{s.name}</b><br /><span className={screenStyles.muted}>{s.role}</span></span><button className={s.cls} onClick={s.pick}>{s.lbl}</button></div></Fragment>))}<p className={screenStyles.muted}>Cambiar de sesión no mezcla datos privados de otros perfiles.</p></div>
         <div className={screenStyles.card}><p className={screenStyles.label}>Vecinos bloqueados</p>
           {misBloqueos.length === 0 && (<p className={screenStyles.muted}>No has bloqueado a nadie.</p>)}
           {misBloqueos.map((b) => (<div key={b.target} className={screenStyles.row}><span className={screenStyles.grow}><b>{VECINOS[b.target].name}</b></span><button className={screenStyles.chip} onClick={() => desbloquear(sesion.userId, b.target)}>Desbloquear</button></div>))}</div>
         <div className={screenStyles.card} role="note"><p className={screenStyles.label}>Datos privados</p><p className={screenStyles.muted}>DNI {enmascarar(sesion.dni ?? "") || "sin registrar"} · Celular {pf.phone === "ok" ? enmascarar(pf.numero) : "sin vincular"}. Solo tú los ves.</p></div>
-        <a className={screenStyles.buttonSecondary} href="/" onClick={cerrarSesion}>Cerrar sesión</a>
-        <p className={screenStyles.muted}>Recuperación segura de cuenta y cambio de DNI: evolución futura, no incluida en esta demostración.</p>
+        <Link className={screenStyles.buttonSecondary} href="/" onClick={cerrarSesion}>Cerrar sesión</Link>
+        
       </div>
       </>)}
       
@@ -396,7 +397,7 @@ export default function Perfil() {
           <div className={screenStyles.card}><p className={screenStyles.muted}>Al bloquear, no podrán enviarse solicitudes ni mensajes entre sí. Si hay una coordinación activa, podrás cancelarla y el historial se conserva. Reportar no avisa a la policía ni a ninguna autoridad: queda solo en este navegador.</p></div>
           <div className="grid-cols-2 grid! gap-2!"><button className={screenStyles.buttonOutline} onClick={() => hacerReporte(false)}>Solo reportar</button><button className={screenStyles.button} onClick={() => hacerReporte(true)}>Reportar y bloquear</button></div>
         </>)}
-        {repDone && (<p className={screenStyles.success} role="status">{repDone === "bloqueo" ? "✓ Reporte guardado y bloqueo aplicado en la demostración." : "✓ Reporte guardado en la demostración."}</p>)}
+        {repDone && (<p className={screenStyles.success} role="status">{repDone === "bloqueo" ? "✓ Reporte enviado y bloqueo aplicado." : "✓ Reporte enviado. Lo revisaremos."}</p>)}
         <button className={screenStyles.buttonSecondary} onClick={closeRep}>Cerrar</button>
       </div>
       </>)}

@@ -29,6 +29,13 @@ export default function Movilidad() {
   const origen = useTextInput("Campoy \u00b7 Sector 2");
   const destino = useTextInput("Hospital de la zona");
   const [m, setM] = useDemoState("movilidad-hospital", MOV_INICIAL);
+  // Enlace directo a una pestaña (`?tab=`), p. ej. al terminar de publicar
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    if (!(t === "nec" || t === "paso")) return;
+    const id = setTimeout(() => setM({ tab: t }), 0);
+    return () => clearTimeout(id);
+  }, [setM]);
   const [sesion, setSesion] = useSesion();
   const actor = m.actor;
   const other = actor === "maria" ? "carlos" : "maria";
@@ -121,13 +128,13 @@ export default function Movilidad() {
       {nav.is("home") && (<>
       <div className={screenStyles.content}>
         <div className="bg-[#fff1e6] border border-[#f0c8a8] rounded-[16px] px-3.5 py-3 text-[15px]" role="note"><b>No es transporte médico de urgencia.</b> Ante una urgencia, llama al 106 (SAMU). No esperes respuestas de vecinos.</div>
-        <div className={screenStyles.wrap}><button className={tabNec} onClick={setNec}>Necesito un traslado</button><button className={tabPaso} onClick={setPaso}>Paso por ahí</button></div>
+        <div className={screenStyles.wrap}><button className={tabNec} onClick={setNec}>Piden traslado</button><button className={tabPaso} onClick={setPaso}>Pasan por ahí</button></div>
         {tabIsNec && (<>
           {pubs.items.filter((p) => p.tipo === "favor" && p.categoria === "Movilidad" && p.modo === "pido").map((p) => (<PostCard key={p.id} p={p} />))}
           {hasReq && (<><button className={screenStyles.card} onClick={() => nav.go("detalle")}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span><span className={screenStyles.badge}>{statusTxt}</span></div><h3 className="text-[19px]!">María necesita llegar al hospital</h3><p className={screenStyles.muted}>Desde {req.origen} (zona aproximada) · {req.cuando} · {req.plazas}</p></button></>)}
           {noReq && (<><div className={screenStyles.card} role="status"><p className="font-bold!">Aún no hay traslados pedidos</p><p className={screenStyles.muted}>Pide uno y tu junta recibirá el aviso primero.</p></div></>)}
         </>)}
-        {tabIsPaso && (<>{pubs.items.filter((p) => p.tipo === "favor" && p.categoria === "Movilidad" && p.modo === "ofrezco").map((p) => (<PostCard key={p.id} p={p} />))}<div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span><span className={screenStyles.badgeDemo}>Ejemplo</span></div><h3 className="text-[19px]!">Carlos pasa por el hospital mañana</h3><p className={screenStyles.muted}>Sale 8:45 a. m. · 2 plazas · Desde Campoy</p></div></>)}
+        {tabIsPaso && (<>{pubs.items.filter((p) => p.tipo === "favor" && p.categoria === "Movilidad" && p.modo === "ofrezco").map((p) => (<PostCard key={p.id} p={p} />))}<div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span></div><h3 className="text-[19px]!">Carlos pasa por el hospital mañana</h3><p className={screenStyles.muted}>Sale 8:45 a. m. · 2 plazas · Desde Campoy</p></div></>)}
         <button className={screenStyles.button} onClick={() => nav.go("nuevo")}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>Pedir un traslado</button>
         <button className={screenStyles.buttonSecondary} onClick={() => nav.go("junta")}>Mi junta vecinal</button>
         <Link className={screenStyles.buttonSecondary} href="/coordinaciones">Mis coordinaciones</Link>
@@ -154,7 +161,7 @@ export default function Movilidad() {
         {b_none && (<><div className={screenStyles.card} role="status"><p className="font-bold!">Aún no hay solicitud</p><button className={screenStyles.button} onClick={() => nav.go("nuevo")}>Pedir un traslado</button></div></>)}
       
         {b_avisada_m && (<>
-          <div className={screenStyles.card}><p className={screenStyles.label}>Aviso enviado a tu junta</p><div className="flex [&_.av]:ml-[-10px] [&_.av]:border-2 [&_.av]:border-white [&_.av]:w-10 [&_.av]:h-10 [&_.av]:text-[16px] [&_.av:first-child]:ml-0"><span className="w-11 h-11 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[18px] flex-none bg-[#f4d9c6] text-[#8a2b07] av" aria-hidden="true">C</span><span className="w-11 h-11 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[18px] flex-none bg-[#e6f0e4] text-[#2f5a2d] av" aria-hidden="true">R</span><span className="font-[Nunito,system-ui,sans-serif] m-0 leading-[1.15] tracking-[-.01em] w-11 h-11 rounded-[50%] grid place-items-center font-extrabold text-[18px] flex-none bg-[#ddf0f2] text-[#14505a] av" aria-hidden="true">L</span></div><p className={screenStyles.muted}>Miembros que recibieron el aviso de demostración (no se afirma entrega real).</p><span className={screenStyles.badgeDemo}>Simulación</span></div>
+          <div className={screenStyles.card}><p className={screenStyles.label}>Aviso enviado a tu junta</p><div className="flex [&_.av]:ml-[-10px] [&_.av]:border-2 [&_.av]:border-white [&_.av]:w-10 [&_.av]:h-10 [&_.av]:text-[16px] [&_.av:first-child]:ml-0"><span className="w-11 h-11 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[18px] flex-none bg-[#f4d9c6] text-[#8a2b07] av" aria-hidden="true">C</span><span className="w-11 h-11 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[18px] flex-none bg-[#e6f0e4] text-[#2f5a2d] av" aria-hidden="true">R</span><span className="font-[Nunito,system-ui,sans-serif] m-0 leading-[1.15] tracking-[-.01em] w-11 h-11 rounded-[50%] grid place-items-center font-extrabold text-[18px] flex-none bg-[#ddf0f2] text-[#14505a] av" aria-hidden="true">L</span></div><p className={screenStyles.muted}>Miembros de tu junta que recibieron el aviso.</p></div>
           {notAmpl && (<><button className={screenStyles.buttonOutline} onClick={ampliar}>Ampliar a mi comunidad</button></>)}
           {ampl && (<><p className={screenStyles.success} role="status">✓ Ampliaste el aviso a tu comunidad por decisión tuya.</p></>)}
           <p className={screenStyles.muted}>Cambia a «Carlos» arriba: es un vecino de tu junta que pasa por esa zona.</p>
@@ -190,11 +197,11 @@ export default function Movilidad() {
       
       {nav.is("junta") && (<>
       <div className={screenStyles.content}>
-        <div className={screenStyles.card}><div className={screenStyles.row}><span className="font-[Nunito,system-ui,sans-serif] m-0 leading-[1.15] tracking-[-.01em] w-11 h-11 rounded-[50%] grid place-items-center font-extrabold text-[18px] flex-none bg-[#ddf0f2] text-[#14505a] av" aria-hidden="true">J</span><div className={screenStyles.grow}><h2 className="text-[21px]!">Junta Vecinal Campoy Unido</h2><p className={screenStyles.muted}>Campoy · San Juan de Lurigancho</p></div></div><span className={screenStyles.badgeDemo}>Junta de demostración</span><p className={screenStyles.muted}>No tiene reconocimiento estatal real. Pertenecer no verifica a nadie.</p></div>
+        <div className={screenStyles.card}><div className={screenStyles.row}><span className="font-[Nunito,system-ui,sans-serif] m-0 leading-[1.15] tracking-[-.01em] w-11 h-11 rounded-[50%] grid place-items-center font-extrabold text-[18px] flex-none bg-[#ddf0f2] text-[#14505a] av" aria-hidden="true">J</span><div className={screenStyles.grow}><h2 className="text-[21px]!">Junta Vecinal Campoy Unido</h2><p className={screenStyles.muted}>Campoy · San Juan de Lurigancho</p></div></div><p className={screenStyles.muted}>Junta vecinal de tu zona. Unirte es voluntario.</p></div>
         {hasReq && (<><button className={`${screenStyles.card} border-(--color-brand)!`} onClick={() => nav.go("detalle")}><span className={screenStyles.badgeFavor}>Traslado prioritario</span><b>María necesita llegar al hospital</b><p className={screenStyles.muted}>{req.cuando} · {statusTxt}</p></button></>)}
         <h3 className="text-[19px]!">Avisos</h3>
-        <div className={screenStyles.card}><p className="font-bold!">Reunión vecinal el sábado</p><p className={screenStyles.muted}>Local comunal · 5:00 p. m. · Aviso de demostración</p></div>
-        <div className={screenStyles.card}><p className="font-bold!">Faena de limpieza del parque</p><p className={screenStyles.muted}>Domingo 8:00 a. m. · Aviso de demostración</p></div>
+        <div className={screenStyles.card}><p className="font-bold!">Reunión vecinal el sábado</p><p className={screenStyles.muted}>Local comunal · 5:00 p. m.</p></div>
+        <div className={screenStyles.card}><p className="font-bold!">Faena de limpieza del parque</p><p className={screenStyles.muted}>Domingo 8:00 a. m.</p></div>
         <h3 className="text-[19px]!">Miembros visibles</h3>
         <div className={screenStyles.card}><div className="flex [&_.av]:ml-[-10px] [&_.av]:border-2 [&_.av]:border-white [&_.av]:w-10 [&_.av]:h-10 [&_.av]:text-[16px] [&_.av:first-child]:ml-0"><span className="w-11 h-11 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[18px] flex-none bg-[#f4d9c6] text-[#8a2b07] av" aria-hidden="true">M</span><span className="w-11 h-11 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[18px] flex-none bg-[#e6f0e4] text-[#2f5a2d] av" aria-hidden="true">C</span><span className="font-[Nunito,system-ui,sans-serif] m-0 leading-[1.15] tracking-[-.01em] w-11 h-11 rounded-[50%] grid place-items-center font-extrabold text-[18px] flex-none bg-[#ddf0f2] text-[#14505a] av" aria-hidden="true">R</span></div><p className={screenStyles.muted}>Solo se muestran quienes dieron permiso. Nunca se muestran conversaciones privadas.</p></div>
         <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-3 text-left w-full items-start [&_input]:w-6.5 [&_input]:h-6.5 [&_input]:mt-0.5 [&_input]:accent-(--color-brand) [&_input]:flex-none flex-row!"><input id="av" type="checkbox" {...avisos.props} /><label htmlFor="av"><b>Recibir avisos de mi junta</b></label></div>

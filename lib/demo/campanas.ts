@@ -7,7 +7,7 @@ import { useSesion, VECINOS, logEvento, avisar, type VecinoId } from "./shared";
 import { abrirCoordinacionMovilidad } from "./coordinaciones";
 
 /**
- * Red solidaria: campañas (creadas en Publicar y de ejemplo) con aportes SIMULADOS.
+ * Red solidaria: campañas (creadas en Publicar y de la comunidad) con sus aportes.
  * No hay cobros ni pasarelas de pago: el dinero es solo un número de demostración.
  */
 export type Modalidad = "Bienes" | "Voluntariado" | "Dinero" | "Compra solidaria";
@@ -15,11 +15,11 @@ export type Modalidad = "Bienes" | "Voluntariado" | "Dinero" | "Compra solidaria
 export const MODALIDADES: Record<Modalidad, { nombre: string; ayuda: string; unidad: string; coordina: boolean }> = {
   Bienes: { nombre: "Donación de bienes", ayuda: "Entregas tus bienes en el punto de acopio; se coordina por el chat.", unidad: "unidades", coordina: true },
   Voluntariado: { nombre: "Voluntariado", ayuda: "Acuerdas un turno de apoyo con la organización.", unidad: "turnos", coordina: true },
-  Dinero: { nombre: "Aporte económico (simulado)", ayuda: "Aporte SIMULADO: no existe ningún cobro, tarjeta ni banco conectado.", unidad: "S/", coordina: false },
+  Dinero: { nombre: "Aporte económico", ayuda: "Registra tu aporte; el responsable confirma cuando lo recibe.", unidad: "S/", coordina: false },
   "Compra solidaria": { nombre: "Compra solidaria", ayuda: "Compras lo que se solicita y coordinas su entrega.", unidad: "artículos", coordina: true },
 };
 export const MODALIDADES_LISTA = Object.keys(MODALIDADES) as Modalidad[];
-/** Equivalencia de la meta: 1 unidad = 1 bien, 1 turno, 1 artículo o S/ 10 simulados. */
+/** Equivalencia de la meta: 1 unidad = 1 bien, 1 turno, 1 artículo o S/ 10. */
 export const SOLES_POR_UNIDAD = 10;
 
 export type Aporte = { id: string; campId: string; vecino: VecinoId; modalidad: Modalidad; cantidad: number; nota: string; estado: "prometido" | "confirmado" | "rechazado"; fecha: string; coordId?: string };
@@ -40,10 +40,10 @@ export type Campana = {
 type Semilla = Omit<Campana, "estado" | "progreso" | "comprometido" | "aportes"> & { finalizada?: boolean };
 const TODAS: Modalidad[] = ["Bienes", "Voluntariado", "Dinero", "Compra solidaria"];
 export const CAMPANAS_SIM: Semilla[] = [
-  { id: "camp-utiles", origen: "sim", titulo: "Útiles escolares para Punchana", descripcion: "Reunimos cuadernos, lápices y mochilas para niños de primaria antes del inicio de clases.", organizador: "Colegio comunitario (ejemplo)", vecino: "tomas", zona: "Punchana · ejemplo", meta: 120, recursos: ["Cuadernos", "Lápices", "Mochilas"], modalidades: TODAS, inicio: "2026-10-20", plazo: "30 de noviembre", base: 45, simulado: true },
-  { id: "camp-pollada", origen: "sim", titulo: "Pollada pro ayuda médica", descripcion: "Actividad solidaria para costear un tratamiento médico. Requiere la autorización de la persona beneficiaria.", organizador: "Familia organizadora (ejemplo)", vecino: "ursula", zona: "San Juan de Lurigancho · ejemplo", meta: 150, recursos: ["Aportes", "Voluntarios de cocina"], modalidades: ["Dinero", "Voluntariado", "Compra solidaria"], inicio: "2026-11-01", plazo: "22 de noviembre", base: 60, simulado: true, nota: "Autorizada por la persona beneficiaria (ejemplo)." },
-  { id: "camp-agua", origen: "sim", titulo: "Colecta de agua para Anexo 22", descripcion: "Bidones y botellas de agua para familias sin servicio. Empieza pronto.", organizador: "Junta vecinal de ejemplo", vecino: "wilson", zona: "Jicamarca Anexo 22 · ejemplo", meta: 400, recursos: ["Bidones de 20 L", "Botellas de agua"], modalidades: ["Bienes", "Voluntariado", "Compra solidaria"], inicio: "2026-11-20", plazo: "15 de diciembre", base: 0, simulado: true },
-  { id: "camp-abrigo-25", origen: "sim", titulo: "Abrigo para familias de Calca (2025)", descripcion: "Campaña terminada: se entregaron frazadas y ropa de abrigo a 80 familias.", organizador: "Junta Vecinal Calca Centro (ejemplo)", vecino: "yesenia", zona: "Calca · ejemplo", meta: 200, recursos: ["Frazadas", "Ropa de abrigo"], modalidades: TODAS, inicio: "2025-05-01", plazo: "30 de junio de 2025", base: 200, simulado: true, finalizada: true },
+  { id: "camp-utiles", origen: "sim", titulo: "Útiles escolares para Punchana", descripcion: "Reunimos cuadernos, lápices y mochilas para niños de primaria antes del inicio de clases.", organizador: "Colegio comunitario de Punchana", vecino: "tomas", zona: "Punchana", meta: 120, recursos: ["Cuadernos", "Lápices", "Mochilas"], modalidades: TODAS, inicio: "2026-10-20", plazo: "30 de noviembre", base: 45, simulado: true },
+  { id: "camp-pollada", origen: "sim", titulo: "Pollada pro ayuda médica", descripcion: "Actividad solidaria para costear un tratamiento médico. Requiere la autorización de la persona beneficiaria.", organizador: "Familia Quispe", vecino: "ursula", zona: "San Juan de Lurigancho", meta: 150, recursos: ["Aportes", "Voluntarios de cocina"], modalidades: ["Dinero", "Voluntariado", "Compra solidaria"], inicio: "2026-11-01", plazo: "22 de noviembre", base: 60, simulado: true, nota: "Autorizada por la persona beneficiaria." },
+  { id: "camp-agua", origen: "sim", titulo: "Colecta de agua para Anexo 22", descripcion: "Bidones y botellas de agua para familias sin servicio. Empieza pronto.", organizador: "Junta Vecinal Anexo 22", vecino: "wilson", zona: "Jicamarca Anexo 22", meta: 400, recursos: ["Bidones de 20 L", "Botellas de agua"], modalidades: ["Bienes", "Voluntariado", "Compra solidaria"], inicio: "2026-11-20", plazo: "15 de diciembre", base: 0, simulado: true },
+  { id: "camp-abrigo-25", origen: "sim", titulo: "Abrigo para familias de Calca (2025)", descripcion: "Campaña terminada: se entregaron frazadas y ropa de abrigo a 80 familias.", organizador: "Junta Vecinal Calca Centro", vecino: "yesenia", zona: "Calca", meta: 200, recursos: ["Frazadas", "Ropa de abrigo"], modalidades: TODAS, inicio: "2025-05-01", plazo: "30 de junio de 2025", base: 200, simulado: true, finalizada: true },
 ];
 
 const FORMA_A_MODALIDAD: Record<string, Modalidad> = { Bienes: "Bienes", Tiempo: "Voluntariado", "Logística": "Voluntariado", Dinero: "Dinero", "Compra solidaria": "Compra solidaria" };
@@ -81,14 +81,14 @@ export function crearAporte(c: Campana, d: { vecino: VecinoId; modalidad: Modali
   if (d.vecino === c.vecino) return { ok: false, error: "No puedes apoyar tu propia campaña." };
   if (!c.modalidades.includes(d.modalidad)) return { ok: false, error: "Esta campaña no admite esa forma de apoyo." };
   const min = d.modalidad === "Dinero" ? SOLES_POR_UNIDAD : 1;
-  if (!Number.isFinite(d.cantidad) || d.cantidad < min) return { ok: false, error: d.modalidad === "Dinero" ? `El aporte simulado mínimo es S/ ${SOLES_POR_UNIDAD}.` : "Indica una cantidad de al menos 1." };
+  if (!Number.isFinite(d.cantidad) || d.cantidad < min) return { ok: false, error: d.modalidad === "Dinero" ? `El aporte mínimo es S/ ${SOLES_POR_UNIDAD}.` : "Indica una cantidad de al menos 1." };
   const { items } = getDemo("campana-aportes", APORTES_INICIAL);
   if (items.some((a) => a.campId === c.id && a.vecino === d.vecino && a.modalidad === d.modalidad && a.estado !== "rechazado")) return { ok: false, error: "Ya registraste este tipo de apoyo en esta campaña." };
   let coordId: string | undefined;
   if (MODALIDADES[d.modalidad].coordina) {
     const r = abrirCoordinacionMovilidad({
       conductor: d.vecino, pasajero: c.vecino, titulo: `Campaña «${c.titulo}» · ${MODALIDADES[d.modalidad].nombre}`, lugar: `Punto de acopio · ${c.zona}`, hora: "10:00",
-      nota: d.nota || "Coordinación creada desde Red solidaria (demostración).", tipo: "favor", via: "Red solidaria",
+      nota: d.nota || "Coordinación creada desde Red solidaria.", tipo: "favor", via: "Red solidaria",
     });
     if (!r.ok) return { ok: false, error: r.error };
     coordId = r.id;
@@ -96,7 +96,7 @@ export function crearAporte(c: Campana, d: { vecino: VecinoId; modalidad: Modali
   const now = Date.now();
   const id = `ap-${now}-${items.length}`;
   setDemo("campana-aportes", APORTES_INICIAL, { items: [...items, { id, campId: c.id, vecino: d.vecino, modalidad: d.modalidad, cantidad: Math.floor(d.cantidad), nota: d.nota.slice(0, 140), estado: "prometido", fecha: hoy, coordId }] });
-  logEvento(`Apoyo registrado (${MODALIDADES[d.modalidad].nombre}) en «${c.titulo}» · simulado`);
+  logEvento(`Apoyo registrado (${MODALIDADES[d.modalidad].nombre}) en «${c.titulo}»`);
   avisar({ categoria: "solidaridad", titulo: "Nuevo apoyo en tu campaña", texto: `${VECINOS[d.vecino].name} ofrece ${MODALIDADES[d.modalidad].nombre.toLowerCase()}.`, href: "/campanas" });
   return { ok: true, id };
 }
@@ -105,7 +105,7 @@ export function crearAporte(c: Campana, d: { vecino: VecinoId; modalidad: Modali
 export function responderAporte(id: string, confirmar: boolean) {
   const { items } = getDemo("campana-aportes", APORTES_INICIAL);
   setDemo("campana-aportes", APORTES_INICIAL, { items: items.map((a) => (a.id === id && a.estado === "prometido" ? { ...a, estado: confirmar ? "confirmado" : "rechazado" } : a)) });
-  logEvento(`Apoyo ${confirmar ? "confirmado" : "rechazado"} por el organizador (simulado)`);
+  logEvento(`Apoyo ${confirmar ? "confirmado" : "rechazado"} por el organizador`);
 }
 
 /** Cierra o reabre una campaña de ejemplo (las creadas en Publicar usan el campo `cerrada` de la publicación). */

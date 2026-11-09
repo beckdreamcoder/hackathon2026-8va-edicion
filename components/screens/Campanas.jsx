@@ -13,7 +13,7 @@ import CampanaDetalle from "@/components/campanas/CampanaDetalle";
 
 const CAMP_INICIAL = { actor: "maria", estado: "Activa", intencion: false, picking: false, modoSel: "Bienes", modo: "Bienes", monto: "", aporte: "none", recibidoConservado: false, updates: [] };
 const MODOS = ["Bienes", "Dinero", "Tiempo", "Logística"];
-const MODE_HELP = { Bienes: "Entrega tus bienes en el centro de acopio.", Dinero: "Aporte simulado: no se cobra ni se conecta a ningún banco.", Tiempo: "Coordina con el responsable un turno de apoyo.", "Logística": "Ofrece transporte o almacenaje seguro para lo reunido." };
+const MODE_HELP = { Bienes: "Entrega tus bienes en el centro de acopio.", Dinero: "Registra tu aporte y coordina con el responsable cómo entregarlo.", Tiempo: "Coordina con el responsable un turno de apoyo.", "Logística": "Ofrece transporte o almacenaje seguro para lo reunido." };
 const CHIP_SOL_ON = "min-h-11 rounded-full border-[1.5px] border-[#1f6f7a] bg-[#1f6f7a] px-3.5 py-0 font-bold text-[15px] whitespace-nowrap text-white chip";
 const CHIP_SOL_OFF = "min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip";
 import { screenStyles } from "./screen-styles";
@@ -23,7 +23,7 @@ import { screenStyles } from "./screen-styles";
  * Los valores de demostración sustituyen a la lógica del prototipo (DCLogic), que no se migró.
  */
 export default function Campanas() {
-  const nav = useViewStack("lista");
+  const nav = useViewStack("lista", ["acopio", "apoyos"]);
   const [c, setC] = useDemoState("campana-abrigo", CAMP_INICIAL);
   const camps = useCampanas();
   const [sesion] = useSesion();
@@ -64,7 +64,7 @@ export default function Campanas() {
   const dineroActivo = c.modo === "Dinero" && hasIntent;
   const offered = 200 + (dineroActivo ? montoN : 0);
   const recv = 80 + (c.modo === "Dinero" && (c.aporte === "Recibido" || c.recibidoConservado) ? montoN : 0);
-  const montoTxt = c.modo === "Dinero" && montoN ? `· S/ ${montoN} (simulado)` : "";
+  const montoTxt = c.modo === "Dinero" && montoN ? `· S/ ${montoN}` : "";
   const aporteState = c.aporte === "none" ? "Pendiente" : c.aporte;
   const modes = MODOS.map((m) => ({ name: m, cls: m === c.modoSel ? CHIP_SOL_ON : CHIP_SOL_OFF, pick: () => setC({ modoSel: m }) }));
   const modeHelp = MODE_HELP[c.modoSel];
@@ -120,7 +120,6 @@ export default function Campanas() {
       {nav.is("lista") && (<>
       <div className={screenStyles.content}>
         <div className={screenStyles.wrap}><button className={listAct ? CHIP_SOL_ON : CHIP_SOL_OFF} onClick={() => setListFilter("Activas")}>Activas</button><button className={listFilter === "Próximas" ? CHIP_SOL_ON : CHIP_SOL_OFF} onClick={() => setListFilter("Próximas")}>Próximas</button><button className={listFilter === "Finalizadas" ? CHIP_SOL_ON : CHIP_SOL_OFF} onClick={() => setListFilter("Finalizadas")}>Finalizadas</button></div>
-        <span className={screenStyles.badgeDemo}>Campañas de ejemplo · dinero y compras simulados</span>
         {showMain && (<button className={screenStyles.card} onClick={() => nav.go("detalle")}><div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>Acopio</span><span className={screenStyles.badge}>{c.estado}</span></div><h3 className="text-[20px]!">Abrigo para familias de Calca</h3><p className={screenStyles.muted}>Responsable: Junta Vecinal Calca Centro · hasta el 30 de noviembre</p><p className="font-bold! text-[15px]!">{intent} personas quieren apoyar</p></button>)}
         {enLista.map((x) => (<CampanaTarjeta key={x.id} c={x} onAbrir={abrirCamp} />))}
         {enLista.length === 0 && !showMain && (<div className={screenStyles.card} role="status"><p className="font-bold!">No hay campañas {listFilter.toLowerCase()}</p><p className={screenStyles.muted}>Cambia el filtro o crea una campaña.</p></div>)}
@@ -137,19 +136,19 @@ export default function Campanas() {
 
       {nav.is("detalle") && (<>
       <div className={screenStyles.content}>
-        <div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>Acopio</span><span className={screenStyles.badge}>{c.estado}</span><span className={screenStyles.badgeDemo}>Ejemplo</span></div>
+        <div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>Acopio</span><span className={screenStyles.badge}>{c.estado}</span></div>
         <h2 className="text-[25px]!">Abrigo para familias de Calca</h2>
         <p>Recibimos frazadas, ropa de abrigo limpia y gorros para las familias de la zona alta antes de las heladas.</p>
-        <p className={screenStyles.muted}>Responsable: Junta Vecinal Calca Centro (demostración) · Plazo: 30 de noviembre · Autorizada por el responsable</p>
+        <p className={screenStyles.muted}>Responsable: Junta Vecinal Calca Centro · Plazo: 30 de noviembre · Autorizada por el responsable</p>
         <div className="grid grid-cols-2 gap-2.5 [&_div]:bg-[#f6f2ec] [&_div]:rounded-[14px] [&_div]:px-3 [&_div]:py-2.5 [&_div]:flex [&_div]:flex-col [&_div]:gap-0.5 [&_b]:font-[Nunito,system-ui,sans-serif] [&_b]:text-[22px]"><div><b>{intent}</b><span className={screenStyles.muted}>quieren apoyar (intención)</span></div><div><b>{received}</b><span className={screenStyles.muted}>aportes recibidos y confirmados</span></div></div>
-        <div className={screenStyles.card}><p className={screenStyles.label}>Dinero (simulado, no se cobra)</p><div className="grid grid-cols-2 gap-2.5 [&_div]:bg-[#f6f2ec] [&_div]:rounded-[14px] [&_div]:px-3 [&_div]:py-2.5 [&_div]:flex [&_div]:flex-col [&_div]:gap-0.5 [&_b]:font-[Nunito,system-ui,sans-serif] [&_b]:text-[22px]"><div><b>S/ {offered}</b><span className={screenStyles.muted}>ofrecido</span></div><div><b>S/ {recv}</b><span className={screenStyles.muted}>recibido</span></div></div><p className={screenStyles.muted}>Lo ofrecido no cuenta como recaudado hasta que el responsable confirme que lo recibió.</p></div>
+        <div className={screenStyles.card}><p className={screenStyles.label}>Aportes en dinero</p><div className="grid grid-cols-2 gap-2.5 [&_div]:bg-[#f6f2ec] [&_div]:rounded-[14px] [&_div]:px-3 [&_div]:py-2.5 [&_div]:flex [&_div]:flex-col [&_div]:gap-0.5 [&_b]:font-[Nunito,system-ui,sans-serif] [&_b]:text-[22px]"><div><b>S/ {offered}</b><span className={screenStyles.muted}>ofrecido</span></div><div><b>S/ {recv}</b><span className={screenStyles.muted}>recibido</span></div></div><p className={screenStyles.muted}>Lo ofrecido no cuenta como recaudado hasta que el responsable confirme que lo recibió.</p></div>
         <div className={screenStyles.card}><p className={screenStyles.label}>Actualizaciones</p>{c.updates.map((u, i) => (<p key={i} className={screenStyles.muted}>{u}</p>))}<p className={screenStyles.muted}>8 nov · Ya se reunieron 40 frazadas. Faltan gorros y ropa para niños.</p></div>
       
         {vM && (<>
           {noIntent && (<><button className={screenStyles.button} onClick={startIntent}>Quiero apoyar</button></>)}
           {picking && (<>
             <div className={screenStyles.card}><p className={screenStyles.label}>¿Cómo quieres apoyar?</p><div className={screenStyles.wrap}>{(modes ?? []).map((m, __i1) => (<Fragment key={__i1}><button className={m.cls} onClick={m.pick}>{m.name}</button></Fragment>))}</div>
-              {isDinero && (<><div className={screenStyles.field}><label htmlFor="mt">Monto (simulado)</label><input id="mt" className={screenStyles.input} inputMode="numeric" {...monto.props} />{!(Number(monto.value) > 0) && (<p className={screenStyles.muted}>Escribe un monto mayor a 0.</p>)}</div><span className={screenStyles.badgeDemo}>No se realiza ningún cobro</span></>)}
+              {isDinero && (<><div className={screenStyles.field}><label htmlFor="mt">Monto (S/)</label><input id="mt" className={screenStyles.input} inputMode="numeric" {...monto.props} />{!(Number(monto.value) > 0) && (<p className={screenStyles.muted}>Escribe un monto mayor a 0.</p>)}</div><span className={screenStyles.badgeDemo}>No se realiza ningún cobro</span></>)}
               <p className={screenStyles.muted}>{modeHelp}</p>
               <button className={screenStyles.button} onClick={confirmIntent}>Confirmar mi apoyo</button><button className={screenStyles.buttonSecondary} onClick={cancelPick}>Cancelar</button></div>
           </>)}
@@ -172,10 +171,10 @@ export default function Campanas() {
       
       {nav.is("acopio") && (<>
       <div className={screenStyles.content}>
-        <div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>Acopio</span><span className={screenStyles.badgeFavor}>Abierto ahora</span><span className={screenStyles.badgeDemo}>Ejemplo</span></div>
+        <div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>Acopio</span><span className={screenStyles.badgeFavor}>Abierto ahora</span></div>
         <h2 className="text-[24px]!">Local comunal de Calca Centro</h2>
-        <div className="relative h-32.5! rounded-[20px]! bg-[#efe8dd]! border! border-(--color-line)! overflow-hidden!"><svg viewBox="0 0 358 130" width="100%" height="130" aria-hidden="true"><path d="M0 70H358M120 0V130M250 0V130" stroke="#fff" strokeWidth="8" /><path d="M185 76s-11-10-11-18a11 11 0 0 1 22 0c0 8-11 18-11 18z" fill="#1F6F7A" /></svg><span className={`${screenStyles.badgeDemo} absolute! left-2! bottom-2!`}>Mapa de demostración</span></div>
-        <div className={screenStyles.card}><p className={screenStyles.label}>Dirección pública</p><p>Jr. Comercio 123, Calca (ejemplo ficticio)</p><p className={screenStyles.label}>Horario</p><p>Lunes a viernes · 9:00 a. m. a 5:00 p. m.</p><p className={screenStyles.label}>Recursos admitidos</p><p>Frazadas, ropa de abrigo limpia, gorros</p><p className={screenStyles.muted}>Actualizado hoy 8:00 a. m. · Información de demostración</p></div>
+        <div className="relative h-32.5! rounded-[20px]! bg-[#efe8dd]! border! border-(--color-line)! overflow-hidden!"><svg viewBox="0 0 358 130" width="100%" height="130" aria-hidden="true"><path d="M0 70H358M120 0V130M250 0V130" stroke="#fff" strokeWidth="8" /><path d="M185 76s-11-10-11-18a11 11 0 0 1 22 0c0 8-11 18-11 18z" fill="#1F6F7A" /></svg><span className={`${screenStyles.badgeDemo} absolute! left-2! bottom-2!`}>Ubicación del centro</span></div>
+        <div className={screenStyles.card}><p className={screenStyles.label}>Dirección pública</p><p>Jr. Comercio 123, Calca</p><p className={screenStyles.label}>Horario</p><p>Lunes a viernes · 9:00 a. m. a 5:00 p. m.</p><p className={screenStyles.label}>Recursos admitidos</p><p>Frazadas, ropa de abrigo limpia, gorros</p><p className={screenStyles.muted}>Actualizado hoy 8:00 a. m.</p></div>
         <button className={screenStyles.button} onClick={() => nav.go("detalle")}>Volver a la campaña</button>
       </div>
       </>)}

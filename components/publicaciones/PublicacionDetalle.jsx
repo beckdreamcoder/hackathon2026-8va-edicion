@@ -25,7 +25,7 @@ export function etiquetaAccion(vm) {
 }
 
 /**
- * Detalle exacto de cualquier publicación (favor, cachuelo o movilidad), creada en Publicar o de la comunidad simulada.
+ * Detalle exacto de cualquier publicación (favor, cachuelo o movilidad), creada en Publicar o de la comunidad del barrio.
  * La solicitud, el chat temporal, el acuerdo, el cierre y el sello usan el motor de coordinaciones existente.
  */
 export default function PublicacionDetalle({ vm }) {
@@ -86,7 +86,7 @@ export default function PublicacionDetalle({ vm }) {
         <div className={screenStyles.row}>
           <span className={vm.tipo === "cachuelo" ? screenStyles.badgeCachuelo : screenStyles.badgeFavor}>{vm.tipo === "cachuelo" ? vm.pago : "Gratis"}</span>
           <span className={vm.estado === "abierto" ? screenStyles.badge : cancelado ? screenStyles.badgeAlert : screenStyles.badgeSolidarity}>{ESTADOS_CAT[vm.estado]}</span>
-          {vm.simulado && (<span className={`${screenStyles.badgeDemo} ml-auto`}>Ejemplo</span>)}
+          
         </div>
         <p className={screenStyles.muted}>{TIPOS_CAT[vm.tipo]} · ID {vm.id}</p>
         <h2 className="text-[24px]!">{vm.titulo}</h2>
@@ -156,7 +156,7 @@ export default function PublicacionDetalle({ vm }) {
           </div>
         );
       })}
-      <p className={screenStyles.muted}>Interacciones simuladas, sin servicios reales. {vm.tipo === "cachuelo" ? "Los pagos no se hacen en la app: acuérdenlos en el chat." : "Acuerden fecha, hora y lugar en el chat de la coordinación."}</p>
+      <p className={screenStyles.muted}>{vm.tipo === "cachuelo" ? "Los pagos no se hacen en la app: acuérdenlos en el chat." : "Acuerden fecha, hora y lugar en el chat de la coordinación."}</p>
     </div>
   );
 }

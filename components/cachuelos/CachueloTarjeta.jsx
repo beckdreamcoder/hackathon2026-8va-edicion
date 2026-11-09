@@ -12,7 +12,7 @@ export default function CachueloTarjeta({ vm, onAbrir }) {
         <span className={screenStyles.badgeCachuelo}>{vm.pago}</span>
         <span className={vm.estado === "abierto" ? screenStyles.badge : screenStyles.badgeSolidarity}>{ESTADO_CACH[vm.estado]}</span>
         {vm.pendientes > 0 && (<span className={screenStyles.badgeAlert}>{vm.pendientes} {vm.pendientes === 1 ? "solicitud" : "solicitudes"}</span>)}
-        {vm.simulado && (<span className={`${screenStyles.badgeDemo} ml-auto`}>Ejemplo</span>)}
+        
       </div>
       <h3 className="text-[19px]!">{vm.titulo}</h3>
       <p className="text-[14px] line-clamp-2">{vm.descripcion}</p>

@@ -70,20 +70,19 @@ export default function Recursos() {
         <div className={screenStyles.field}><label htmlFor="rc">Cantidad</label><input id="rc" className={screenStyles.input} inputMode="numeric" {...cant.props} /></div>
         {err && (<p className={screenStyles.error} role="alert">{err}</p>)}
         {listo ? (<div className={screenStyles.card} role="status"><p className={screenStyles.success}>✓ Recurso publicado. Ya aparece en la lista, en Buscar y en el mapa.</p><button className={screenStyles.button} onClick={() => { setSelId(listo); setVista("lista"); }}>Ver mi recurso</button></div>) : (<button className={screenStyles.button} onClick={publicar}>Publicar recurso</button>)}
-        <p className={screenStyles.muted}>Los recursos son de demostración: no hay inventario ni entregas reales. La entrega se coordina por el chat de la coordinación.</p>
+        <p className={screenStyles.muted}>La entrega se coordina por el chat de la coordinación.</p>
       </ScreenShell>
     );
   }
 
   return (
     <ScreenShell title="Recursos comunitarios" onBack={() => router.back()}>
-      <span className={screenStyles.badgeDemo}>Recursos de demostración · sin entregas reales</span>
       <div className="flex gap-2" role="group" aria-label="Ofrecidos o solicitados">{[["ofrezco", "Ofrecidos"], ["pido", "Solicitados"]].map(([k, n]) => (<button key={k} className={chip(modo === k)} aria-pressed={modo === k} onClick={() => setModo(k)}>{n}</button>))}</div>
       <div className="flex gap-2 overflow-x-auto pb-0.5 [&>*]:shrink-0" role="group" aria-label="Clase">{[["todas", "Todas"], ...Object.entries(CLASES_RECURSO)].map(([k, n]) => (<button key={k} className={chip(clase === k)} aria-pressed={clase === k} onClick={() => setClase(k)}>{n}</button>))}</div>
       <p className={screenStyles.muted} role="status">{visibles.length} {visibles.length === 1 ? "recurso" : "recursos"}</p>
       {visibles.map((v) => (
         <button key={v.id} className={screenStyles.card} onClick={() => setSelId(v.id)} aria-label={`${v.titulo}, abrir recurso`}>
-          <div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>{v.categoria.replace("Recurso · ", "")}</span><span className={v.estado === "abierto" ? screenStyles.badge : screenStyles.badgeFavor}>{ESTADOS_CAT[v.estado]}</span>{v.simulado && (<span className={`${screenStyles.badgeDemo} ml-auto`}>Ejemplo</span>)}</div>
+          <div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>{v.categoria.replace("Recurso · ", "")}</span><span className={v.estado === "abierto" ? screenStyles.badge : screenStyles.badgeFavor}>{ESTADOS_CAT[v.estado]}</span></div>
           <h3 className="text-[19px]!">{v.titulo}</h3>
           <p className="text-[14px] line-clamp-2">{v.descripcion}</p>
           <p className="font-bold! text-[14px]!">{v.modo === "ofrezco" ? "Disponibles" : "Solicitados"}: {v.recurso.restante} de {v.recurso.cantidad} {v.recurso.unidad}</p>

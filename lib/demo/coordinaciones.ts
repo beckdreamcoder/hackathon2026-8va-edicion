@@ -326,7 +326,7 @@ export function fase(c: Coordinacion, hoy: string) {
 /** Reporte de demostración: queda en el registro de la consola, no avisa a nadie. */
 export function reportar(by: VecinoId, target: VecinoId, motivo: string): Resultado {
   if (by === target) return fallo("No puedes reportarte a ti mismo.");
-  logEvento(`Reporte de demostración de ${VECINOS[by].name} sobre ${VECINOS[target].name} · motivo: ${motivo}`);
+  logEvento(`Reporte de ${VECINOS[by].name} sobre ${VECINOS[target].name} · motivo: ${motivo}`);
   return { ok: true };
 }
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useSinConexion, useEnLinea } from "@/lib/demo/conexion";
+import { useSinConexion } from "@/lib/demo/conexion";
 import { useCola, procesarCola, pendientesCola } from "@/lib/demo/cola";
 import { usePublicaciones } from "@/lib/demo/publicaciones";
 import { useIncidentes } from "@/lib/demo/incidentes";
@@ -14,7 +14,6 @@ import { usePwa, aplicarActualizacion } from "@/lib/pwa";
  */
 export function Conexion() {
   const sinConexion = useSinConexion();
-  const enLinea = useEnLinea();
   const [cola] = useCola();
   const [pubs] = usePublicaciones();
   const [incs] = useIncidentes();
@@ -49,9 +48,8 @@ export function Conexion() {
     return () => clearTimeout(t);
   }, [aviso]);
 
-  const simulada = !sinConexion ? false : enLinea; // sin conexión «simulada» desde Offline o la consola
   const etiqueta = sinConexion
-    ? `Sin conexión${simulada ? " (simulada)" : ""} · tus datos guardados siguen disponibles${pendientes ? ` · ${pendientes} pendiente${pendientes === 1 ? "" : "s"}` : ""}`
+    ? `Sin conexión · tus datos guardados siguen disponibles${pendientes ? ` · ${pendientes} pendiente${pendientes === 1 ? "" : "s"}` : ""}`
     : pendientes ? `${pendientes} pendiente${pendientes === 1 ? "" : "s"} de enviar` : "";
 
   return (

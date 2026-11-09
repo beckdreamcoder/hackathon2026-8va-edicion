@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 /**
@@ -10,9 +10,19 @@ import { useRouter } from "next/navigation";
  *   usa el historial del navegador, así que nunca salta al inicio por defecto.
  * - `is(vista)` indica si la vista actual es esa.
  */
-export function useViewStack<T extends string>(initial: T) {
+export function useViewStack<T extends string>(initial: T, enlazables: readonly T[] = []) {
   const router = useRouter();
   const [stack, setStack] = useState<T[]>([initial]);
+
+  // Enlace directo a una vista interna (`?vista=sms`): solo vistas declaradas como enlazables.
+  // Se aplica después del montaje para no alterar el HTML prerenderizado; «Volver» regresa a la vista inicial.
+  const lista = enlazables.join(",");
+  useEffect(() => {
+    const v = new URLSearchParams(window.location.search).get("vista") as T | null;
+    if (!v || v === initial || !lista.split(",").includes(v)) return;
+    const t = setTimeout(() => setStack([initial, v]), 0);
+    return () => clearTimeout(t);
+  }, [initial, lista]);
 
   const current = stack[stack.length - 1];
 

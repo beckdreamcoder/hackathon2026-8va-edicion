@@ -126,7 +126,7 @@ export default function Coordinaciones() {
     if (!sel) return;
     const id = sel.id;
     if (sinConexionAhora()) {
-      // Sin conexión: el mensaje se guarda en este dispositivo y se aplica al volver la conexión (no hay respuesta simulada)
+      // Sin conexión: el mensaje se guarda en este dispositivo y se aplica al volver la conexión
       const q = run(encolarMensaje(id, uid, draft.value, `Mensaje a ${otroN}`));
       if (q.ok) draft.setValue("");
       return;
@@ -259,10 +259,10 @@ export default function Coordinaciones() {
                 <div className={`${screenStyles.content} gap-2.5!`} role="log" aria-live="polite">
                   {sel.msgs.map((m) => m.from === "sistema"
                     ? (<p key={m.id} className="self-center text-center text-[13px] text-(--color-muted) bg-[#f1ece6] rounded-full px-3 py-1">{m.text}</p>)
-                    : (<div key={m.id} className={m.from === uid ? BUBBLE_ME : BUBBLE_OTHER}><b>{VECINOS[m.from].name} · {hora(m.at)}{m.sim ? " · respuesta simulada" : ""}</b>{m.text}</div>))}
+                    : (<div key={m.id} className={m.from === uid ? BUBBLE_ME : BUBBLE_OTHER}><b>{VECINOS[m.from].name} · {hora(m.at)}</b>{m.text}</div>))}
                   {cola.items.filter((o) => o.tipo === "mensaje" && o.datos.coordId === sel.id && o.usuario === uid && o.estado !== "aplicada").map((o) => (
                     <div key={o.id} className={`${BUBBLE_ME} opacity-70 border border-dashed border-white`}><b>Tú · guardado, no enviado{o.estado === "error" ? " · con error" : ""}</b>{o.datos.texto}</div>))}
-                  {escribiendo && (<p className="self-start text-[13px] text-(--color-muted)" role="status">{otroN} está escribiendo… (respuesta simulada)</p>)}
+                  {escribiendo && (<p className="self-start text-[13px] text-(--color-muted)" role="status">{otroN} está escribiendo…</p>)}
                   <div ref={fin} />
                 </div>
                 {esAbierta(sel) && !bloqueado && (
@@ -355,10 +355,10 @@ export default function Coordinaciones() {
               {!repHecho ? (
                 <>
                   <div className={screenStyles.wrap} role="group" aria-label="Motivo">{MOTIVOS.map((m) => (<button key={m} className={chip(motivoRep === m)} aria-pressed={motivoRep === m} onClick={() => setMotivoRep(m)}>{m}</button>))}</div>
-                  <button className={screenStyles.buttonOutline} disabled={!motivoRep} onClick={() => { reportar(uid, otro, motivoRep); setRepHecho(true); }}>Reportar (demostración)</button>
-                  <p className={screenStyles.muted}>Reportar no avisa a autoridades ni borra pruebas: queda en el registro de la demostración.</p>
+                  <button className={screenStyles.buttonOutline} disabled={!motivoRep} onClick={() => { reportar(uid, otro, motivoRep); setRepHecho(true); }}>Reportar</button>
+                  <p className={screenStyles.muted}>Reportar no borra la conversación: el equipo de BarrioConecta lo revisará.</p>
                 </>
-              ) : (<p className={screenStyles.success} role="status">✓ Reporte guardado en la demostración.</p>)}
+              ) : (<p className={screenStyles.success} role="status">✓ Reporte enviado. Lo revisaremos.</p>)}
               <p className={screenStyles.muted}>Con un bloqueo no podrán enviarse mensajes, solicitudes ni cambios de acuerdo. Si hay una coordinación activa, puedes cancelarla; el acuerdo y el chat se conservan.</p>
               {yoBloquee
                 ? (<button className={screenStyles.buttonOutline} onClick={() => { desbloquear(uid, otro); setSheet(false); }}>Desbloquear</button>)

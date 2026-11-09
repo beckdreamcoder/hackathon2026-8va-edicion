@@ -28,6 +28,13 @@ export default function Favores() {
   const [pubs] = usePublicaciones();
   const draft = useTextInput("");
   const [f, setF] = useDemoState("favor-escalera", FAVOR_INICIAL);
+  // Enlace directo a una pestaña (`?tab=`), p. ej. al terminar de publicar
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    if (!(t === "nec" || t === "ofr")) return;
+    const id = setTimeout(() => setF({ tab: t }), 0);
+    return () => clearTimeout(id);
+  }, [setF]);
   const actor = f.actor;
   const other = actor === "maria" ? "luis" : "maria";
   const otherName = VECINOS[other].name;
@@ -187,17 +194,17 @@ export default function Favores() {
       
       {nav.is("muro") && (<>
       <div className={screenStyles.content}>
-        <div className={screenStyles.wrap}><button className={tabNec} onClick={setNec}>Necesito ayuda</button><button className={tabOfr} onClick={setOfr}>Ofrezco ayuda</button></div>
+        <div className={screenStyles.wrap}><button className={tabNec} onClick={setNec}>Piden ayuda</button><button className={tabOfr} onClick={setOfr}>Ofrecen ayuda</button></div>
         <div className="flex gap-2 overflow-x-auto pb-0.5 shrink-0 [&>*]:shrink-0" role="group" aria-label="Categor\u00eda"><button className="min-h-11 rounded-full border-[1.5px] border-(--color-brand) bg-(--color-brand) px-3.5 py-0 font-bold text-[15px] whitespace-nowrap text-white chip">Todos</button><button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip">Herramientas</button><button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip">Habilidades</button><button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip">Ayuda temporal</button><button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip">Movilidad</button></div>
         {tabIsNec && (<>
           {pubs.items.filter((p) => p.tipo === "favor" && p.modo === "pido").map((p) => (<PostCard key={p.id} p={p} />))}
           <button className={screenStyles.card} onClick={() => nav.go("detalle")}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span><span className={screenStyles.badge}>{statusTxt}</span><span className="flex-1 min-w-0 text-(--color-muted) text-[15px] text-right!">a 300 m</span></div><h3 className="text-[19px]!">Necesito una escalera de 3 metros prestada</h3><p className={screenStyles.muted}>Herramientas · Campoy Sector 2 · Disponible hoy por la tarde</p><div className={screenStyles.row}><span className="w-8 h-8 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[18px] flex-none bg-[#f4d9c6] text-[#8a2b07] text-[14px]!" aria-hidden="true">M</span><span className={screenStyles.muted}>María</span></div></button>
-          <div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span><span className={screenStyles.badgeDemo}>Ejemplo</span></div><h3 className="text-[19px]!">Alguien que me enseñe a usar WhatsApp</h3><p className={screenStyles.muted}>Habilidades · Campoy Sector 4 · Esta semana</p></div>
+          <div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span></div><h3 className="text-[19px]!">Alguien que me enseñe a usar WhatsApp</h3><p className={screenStyles.muted}>Habilidades · Campoy Sector 4 · Esta semana</p></div>
         </>)}
         {tabIsOfr && (<>
           {pubs.items.filter((p) => p.tipo === "favor" && p.modo === "ofrezco").map((p) => (<PostCard key={p.id} p={p} />))}
-          <div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span><span className={screenStyles.badgeDemo}>Ejemplo</span></div><h3 className="text-[19px]!">Ayudo con trámites digitales a adultos mayores</h3><p className={screenStyles.muted}>Habilidades · Rosa · Sábados por la mañana</p></div>
-          <div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span><span className={screenStyles.badgeDemo}>Ejemplo</span></div><h3 className="text-[19px]!">Presto herramientas de jardinería</h3><p className={screenStyles.muted}>Herramientas · Luis · Fines de semana</p></div>
+          <div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span></div><h3 className="text-[19px]!">Ayudo con trámites digitales a adultos mayores</h3><p className={screenStyles.muted}>Habilidades · Rosa · Sábados por la mañana</p></div>
+          <div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span></div><h3 className="text-[19px]!">Presto herramientas de jardinería</h3><p className={screenStyles.muted}>Herramientas · Luis · Fines de semana</p></div>
         </>)}
         <a className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" href="/publicar"><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>Publicar un favor</a>
       </div>
@@ -252,7 +259,7 @@ export default function Favores() {
       </div>
       </>)}
       {chatClosed && (<>
-      <div className="border-t border-t-(--color-line) px-4! py-3! bg-white! flex! flex-col! gap-2! flex-none!"><p className={screenStyles.muted} role="status">Chat en solo lectura por 30 días de demostración. El acuerdo y los estados se conservan.</p>{canSello && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={openCierre}>Agradecer y dar sello</button></>)}</div>
+      <div className="border-t border-t-(--color-line) px-4! py-3! bg-white! flex! flex-col! gap-2! flex-none!"><p className={screenStyles.muted} role="status">Chat en solo lectura por 30 días. El acuerdo y los estados se conservan.</p>{canSello && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={openCierre}>Agradecer y dar sello</button></>)}</div>
       </>)}
       </>)}
       
@@ -285,7 +292,7 @@ export default function Favores() {
           <p className={screenStyles.muted}>Reportar no borra pruebas ni avisa automáticamente a autoridades. Si hay una coordinación activa, podrás cerrarla o cancelarla; el acuerdo se conserva.</p>
           <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={doRep}>Confirmar reporte</button>
         </>)}
-        {repDone && (<><p className={screenStyles.success} role="status">✓ Reporte guardado en la demostración.</p></>)}
+        {repDone && (<><p className={screenStyles.success} role="status">✓ Reporte enviado. Lo revisaremos.</p></>)}
         <button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={closeSheet}>Cerrar</button>
       </div>
       </>)}

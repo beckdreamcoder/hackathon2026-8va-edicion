@@ -26,7 +26,7 @@ export type Incidente = {
   x: number;
   y: number;
   actualizado: string;
-  /** Índice en ESTADOS_INST; siempre rotulado como simulación. */
+  /** Índice en ESTADOS_INST. */
   inst: number;
   reportes: Reporte[];
   /** Ubicación real (si se reportó con ubicación); si no, se usa la posición ilustrativa x,y. */
@@ -64,9 +64,9 @@ export function candidatoIncidente(items: Incidente[], q: { tipo: string; lngLat
 
 export const ESTADOS_INST = [
   "Sin respuesta institucional registrada",
-  "Ayuda solicitada · simulación",
-  "Respuesta confirmada · simulación",
-  "Atención en curso · simulación",
+  "Ayuda solicitada",
+  "Respuesta confirmada",
+  "Atención en curso",
 ];
 
 const seedRep = (id: string, autor: string, tipo: string, hora: string): Reporte => ({

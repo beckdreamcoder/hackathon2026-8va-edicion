@@ -57,7 +57,7 @@ export const notificacionesTest: Notificacion[] = [
     id: "n6",
     categoria: "sistema",
     titulo: "Bienvenida a BarrioConecta",
-    texto: "Elige tu zona y, si quieres, únete a una junta. Todo es de demostración.",
+    texto: "Elige tu zona y, si quieres, únete a una junta.",
     hace: "hace 3 días",
     leida: true,
   },

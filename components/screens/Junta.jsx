@@ -55,12 +55,12 @@ export default function Junta() {
       <ScreenShell title={j ? "Explorar juntas" : "Mi junta vecinal"} onBack={() => (j ? setVista("mi") : router.back())}>
         {!j && (<div className={screenStyles.card} role="status"><p className="font-bold!">Aún no perteneces a una junta</p><p className={screenStyles.muted}>Sumarte es voluntario. Puedes usar toda la app, incluidas las emergencias, sin junta.</p></div>)}
         {ok && (<p className={screenStyles.success} role="status">{ok}</p>)}
-        <p className={screenStyles.muted}>Solo puedes unirte a juntas de tu departamento ({sesion.departamento}). Son juntas de demostración.</p>
+        <p className={screenStyles.muted}>Solo puedes unirte a juntas de tu departamento ({sesion.departamento}).</p>
         {Object.entries(JUNTAS).map(([jid, jj]) => {
           const aqui = jj.dep === sesion.departamento;
           return (
             <div key={jid} className={screenStyles.card}>
-              <div className={screenStyles.row}><b className="flex-1">{jj.name}</b><span className={screenStyles.badgeDemo}>Demostración</span></div>
+              <div className={screenStyles.row}><b className="flex-1">{jj.name}</b></div>
               <p className={screenStyles.muted}>{jj.zona} · {(MIEMBROS[jid] ?? []).length} miembros visibles · coordina {jj.coord}</p>
               {id === jid ? (<span className={screenStyles.badgeFavor}>Tu junta actual</span>) : aqui ? (<button className={screenStyles.button} onClick={() => unirme(jid)}>{id ? "Cambiarme a esta junta" : "Unirme"}</button>) : (<p className={screenStyles.muted}>Fuera de tu zona ({jj.dep}): no disponible para unirte.</p>)}
             </div>
@@ -90,7 +90,7 @@ export default function Junta() {
         {!aviso ? (<div className={screenStyles.card} role="status"><p className="font-bold!">Este aviso ya no está disponible</p><button className={screenStyles.button} onClick={() => setVista("mi")}>Volver a la junta</button></div>) : (<>
           {ok && (<p className={screenStyles.success} role="status">{ok}</p>)}
           <div className={screenStyles.card}>
-            <div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>Aviso comunitario</span><span className={screenStyles.badgeDemo}>Demostración</span></div>
+            <div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>Aviso comunitario</span></div>
             {editando ? (<>
               <div className={screenStyles.field}><label htmlFor="et">Título</label><input id="et" className={screenStyles.input} maxLength={80} {...titulo.props} /></div>
               <div className={screenStyles.field}><label htmlFor="ex">Aviso</label><textarea id="ex" className="min-h-26 border-[1.5px] border-[#cfc7bf] rounded-[16px] px-3.5 py-3 bg-white w-full resize-none" maxLength={400} {...texto.props}></textarea></div>
@@ -105,7 +105,7 @@ export default function Junta() {
           {mio && !editando && (confirmar
             ? (<div className={screenStyles.card} role="alertdialog" aria-label="Confirmar eliminación"><p className="font-bold!">¿Eliminar este aviso?</p><div className="grid-cols-2 grid! gap-2!"><button className={screenStyles.buttonSecondary} onClick={() => setConfirmar(false)}>No</button><button className={screenStyles.button} onClick={borrar}>Sí, eliminar</button></div></div>)
             : (<div className="grid-cols-2 grid! gap-2!"><button className={screenStyles.buttonOutline} onClick={abrirEdicion}>Editar</button><button className={screenStyles.buttonSecondary} onClick={() => setConfirmar(true)}>Eliminar</button></div>))}
-          {!mio && (<p className={screenStyles.muted}>{aviso.semilla ? "Aviso de ejemplo: no se puede editar." : "Solo quien lo publicó puede editarlo o eliminarlo."}</p>)}
+          {!mio && (<p className={screenStyles.muted}>{aviso.semilla ? "Aviso de la junta: no se puede editar." : "Solo quien lo publicó puede editarlo o eliminarlo."}</p>)}
           {err && (<p className={screenStyles.error} role="alert">{err}</p>)}
         </>)}
       </ScreenShell>
@@ -118,7 +118,6 @@ export default function Junta() {
       <div className={screenStyles.card}>
         <h2 className="text-[21px]!">{j.name}</h2>
         <p className={screenStyles.muted}>{j.zona}</p>
-        <span className={screenStyles.badgeDemo}>Junta de demostración</span>
         <p className={screenStyles.muted}>No tiene reconocimiento estatal real. Pertenecer no verifica a nadie. Tu rol demo: {sesion.rol}.</p>
       </div>
       {mov.stage !== "none" && mov.stage !== "cancel" && (
@@ -130,7 +129,7 @@ export default function Junta() {
       {lista.length === 0 && (<div className={screenStyles.card} role="status"><p className="font-bold!">Aún no hay avisos</p></div>)}
       {lista.map((a) => (
         <button key={a.id} className={screenStyles.card} onClick={() => abrirAviso(a)} aria-label={`${a.titulo}, abrir aviso`}>
-          <div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>Comunitario</span>{!a.semilla && (<span className={screenStyles.badgeFavor}>Nuevo</span>)}{a.semilla && (<span className={screenStyles.badgeDemo}>Ejemplo</span>)}</div>
+          <div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>Comunitario</span>{!a.semilla && (<span className={screenStyles.badgeFavor}>Nuevo</span>)}</div>
           <p className="font-bold!">{a.titulo}</p>
           <p className="text-[14px] line-clamp-2">{a.texto}</p>
           <p className={screenStyles.muted}>{nombreDe(a.autor, datos)} · {a.fecha}</p>

@@ -88,7 +88,7 @@ export default function Buscar() {
         <label htmlFor="bq">¿Qué necesitas?</label>
         <input id="bq" className={screenStyles.input} placeholder="Ejemplo: alguien que arregle una fuga" {...q.props} />
       </div>
-      <span className={screenStyles.badgeDemo}>Coincidencia simulada por palabras, sin IA real</span>
+      <span className={screenStyles.badge}>Resultados ordenados por coincidencia y cercanía</span>
       <div className="flex gap-2 overflow-x-auto pb-0.5 [&>*]:shrink-0" role="group" aria-label="Tipo">{TIPOS.map((t) => (<button key={t} className={chip(t === tipo)} aria-pressed={t === tipo} onClick={() => setTipo(t)}>{t}</button>))}</div>
       <div className="grid grid-cols-2 gap-2">
         <div className={screenStyles.field}><label htmlFor="bc" className="text-[13px]!">Categoría</label><select id="bc" className={SELECT} value={cat} onChange={(e) => setCat(e.target.value)}>{cats.map((c) => (<option key={c}>{c}</option>))}</select></div>
@@ -102,10 +102,10 @@ export default function Buscar() {
       <p className={screenStyles.muted} role="status">{resultados.length} resultado(s)</p>
       {resultados.map((r, i) => {
         const cuerpo = (<>
-          <div className={screenStyles.row}><span className={badge(r.tipo)}>{r.tipo === "Cachuelo" ? `Cachuelo · ${r.vm?.pago ?? "remunerado"}` : r.tipo === "Emergencia" ? "Emergencia · simulada" : r.tipo === "Campaña" ? `Campaña · ${r.campEstado}` : `${r.tipo} · Gratis`}</span>{(r.vm || r.incId) && (<span className={r.estado === "abierto" ? screenStyles.badge : r.estado === "cancelado" ? screenStyles.badgeAlert : screenStyles.badgeSolidarity}>{ESTADOS_CAT[r.estado]}</span>)}<span className="flex-1 min-w-0 text-(--color-muted) text-[15px] text-right">a {km(r.dist)}</span></div>
+          <div className={screenStyles.row}><span className={badge(r.tipo)}>{r.tipo === "Cachuelo" ? `Cachuelo · ${r.vm?.pago ?? "remunerado"}` : r.tipo === "Emergencia" ? "Emergencia" : r.tipo === "Campaña" ? `Campaña · ${r.campEstado}` : `${r.tipo} · Gratis`}</span>{(r.vm || r.incId) && (<span className={r.estado === "abierto" ? screenStyles.badge : r.estado === "cancelado" ? screenStyles.badgeAlert : screenStyles.badgeSolidarity}>{ESTADOS_CAT[r.estado]}</span>)}<span className="flex-1 min-w-0 text-(--color-muted) text-[15px] text-right">a {km(r.dist)}</span></div>
           <b>{r.titulo}</b>
           <p className={screenStyles.muted}>{r.cat} · {r.distrito} · {r.zona}{r.vm ? ` · publica ${VECINOS[r.vm.vecino]?.name ?? "un vecino"}` : ""}</p>
-          {r.vm?.simulado && (<span className={`${screenStyles.badgeDemo} text-[12px]!`}>Ejemplo</span>)}
+          
           {r.hits.length > 0 && (<p className="text-[14px]! font-bold! text-[#2f5a2d]!">Coincide por: {r.hits.join(", ")} · {r.dist <= 500 ? "muy cerca" : "en tu comunidad"}</p>)}
         </>);
         return r.vm

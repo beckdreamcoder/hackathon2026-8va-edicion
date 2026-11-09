@@ -8,7 +8,7 @@ import { useEstadoAlmacen } from "@/lib/demo/store";
 import { screenStyles } from "./screen-styles";
 
 const TEMAS = [["claro", "tema.claro"], ["oscuro", "tema.oscuro"], ["auto", "tema.auto"]];
-const VERSION = "1.0 (demostración)";
+const VERSION = "1.0";
 
 /** Configuración: apariencia, idioma, ayuda (tutorial) e información de la aplicación. */
 export default function Configuracion() {

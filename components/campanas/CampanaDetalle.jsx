@@ -14,7 +14,7 @@ const PRUEBA = ["maria", "luis", "pedro", "carlos"];
 
 /**
  * Detalle exacto de una campaña (de ejemplo o creada en Publicar): objetivo, organizador, progreso y formas de apoyo.
- * Todo es simulado: no existe ningún cobro. La entrega y el voluntariado se coordinan en «Mis coordinaciones».
+ * No existe ningún cobro dentro de la app. La entrega y el voluntariado se coordinan en «Mis coordinaciones».
  */
 export default function CampanaDetalle({ c }) {
   const router = useRouter();
@@ -55,7 +55,7 @@ export default function CampanaDetalle({ c }) {
         <img src={c.imagen} alt={`Imagen de la campaña ${c.titulo}`} className="w-full max-h-52 object-cover rounded-[18px]" />
       )}
       <div className={screenStyles.card}>
-        <div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>Campaña</span><span className={c.estado === "activa" ? screenStyles.badgeFavor : screenStyles.badge}>{ESTADO_CAMPANA[c.estado]}</span>{c.simulado && (<span className={`${screenStyles.badgeDemo} ml-auto`}>Ejemplo</span>)}</div>
+        <div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>Campaña</span><span className={c.estado === "activa" ? screenStyles.badgeFavor : screenStyles.badge}>{ESTADO_CAMPANA[c.estado]}</span></div>
         <p className={screenStyles.muted}>ID {c.id}</p>
         <h2 className="text-[24px]!">{c.titulo}</h2>
         <p>{c.descripcion}</p>
@@ -67,7 +67,7 @@ export default function CampanaDetalle({ c }) {
       <div className={screenStyles.card}>
         <p className={screenStyles.label}>Objetivo y progreso</p>
         <Progreso c={c} />
-        <p className="text-[12px] text-(--color-muted)">Meta: {c.meta} unidades (1 unidad = 1 bien, 1 turno, 1 artículo o S/ {SOLES_POR_UNIDAD} simulados). Solo cuentan los apoyos confirmados por la organización.</p>
+        <p className="text-[12px] text-(--color-muted)">Meta: {c.meta} unidades (1 unidad = 1 bien, 1 turno, 1 artículo o S/ {SOLES_POR_UNIDAD}). Solo cuentan los apoyos confirmados por la organización.</p>
         {c.recursos.length > 0 && (<div className="flex flex-wrap gap-1.5" aria-label="Recursos solicitados">{c.recursos.map((r) => (<span key={r} className={screenStyles.badge}>{r}</span>))}</div>)}
         <div className="flex flex-wrap gap-1.5" aria-label="Formas de apoyo">{c.modalidades.map((m) => (<span key={m} className={screenStyles.badgeSolidarity}>{MODALIDADES[m].nombre}</span>))}</div>
       </div>
@@ -76,7 +76,7 @@ export default function CampanaDetalle({ c }) {
         <div className={screenStyles.card}>
           <p className={screenStyles.label}>¿Cómo quieres apoyar?</p>
           <div className={screenStyles.wrap} role="group" aria-label="Forma de apoyo">{c.modalidades.map((m) => (<button key={m} className={chip(modActual === m)} aria-pressed={modActual === m} onClick={() => { setMod(m); setMsg({ ok: true, t: "" }); }}>{MODALIDADES[m].nombre}</button>))}</div>
-          <div className={screenStyles.field}><label htmlFor="ap-c">{modActual === "Dinero" ? "Monto simulado (S/)" : `Cantidad (${info.unidad})`}</label><input id="ap-c" className={screenStyles.input} inputMode="numeric" value={cant} onChange={(e) => setCant(e.target.value)} /></div>
+          <div className={screenStyles.field}><label htmlFor="ap-c">{modActual === "Dinero" ? "Monto (S/)" : `Cantidad (${info.unidad})`}</label><input id="ap-c" className={screenStyles.input} inputMode="numeric" value={cant} onChange={(e) => setCant(e.target.value)} /></div>
           <div className={screenStyles.field}><label htmlFor="ap-n">Nota (opcional)</label><input id="ap-n" className={screenStyles.input} maxLength={140} value={nota} onChange={(e) => setNota(e.target.value)} /></div>
           {modActual === "Dinero" && (<span className={`${screenStyles.badgeDemo} w-fit`}>No se realiza ningún cobro</span>)}
           <p className={screenStyles.muted}>{info.ayuda}</p>
@@ -89,18 +89,18 @@ export default function CampanaDetalle({ c }) {
 
       {!soyOrg && mias.length > 0 && (<>
         <h3 className="text-[18px]!">Mis apoyos</h3>
-        {mias.map((a) => (<div key={a.id} className={screenStyles.card}><div className={screenStyles.row}><b className="flex-1">{MODALIDADES[a.modalidad].nombre}</b><span className={a.estado === "confirmado" ? screenStyles.badgeFavor : a.estado === "rechazado" ? screenStyles.badgeAlert : screenStyles.badge}>{a.estado === "prometido" ? "Por confirmar" : a.estado === "confirmado" ? "Confirmado" : "Rechazado"}</span></div><p className={screenStyles.muted}>{a.modalidad === "Dinero" ? `S/ ${a.cantidad} (simulado, sin cobro)` : `${a.cantidad} ${MODALIDADES[a.modalidad].unidad}`}</p>{a.coordId && (<button className={`${screenStyles.buttonOutline} min-h-11!`} onClick={() => abrirCoord(a.coordId)}>Abrir coordinación de la entrega</button>)}</div>))}
+        {mias.map((a) => (<div key={a.id} className={screenStyles.card}><div className={screenStyles.row}><b className="flex-1">{MODALIDADES[a.modalidad].nombre}</b><span className={a.estado === "confirmado" ? screenStyles.badgeFavor : a.estado === "rechazado" ? screenStyles.badgeAlert : screenStyles.badge}>{a.estado === "prometido" ? "Por confirmar" : a.estado === "confirmado" ? "Confirmado" : "Rechazado"}</span></div><p className={screenStyles.muted}>{a.modalidad === "Dinero" ? `S/ ${a.cantidad}` : `${a.cantidad} ${MODALIDADES[a.modalidad].unidad}`}</p>{a.coordId && (<button className={`${screenStyles.buttonOutline} min-h-11!`} onClick={() => abrirCoord(a.coordId)}>Abrir coordinación de la entrega</button>)}</div>))}
       </>)}
 
       {soyOrg && (<>
         <h3 className="text-[18px]!">Apoyos recibidos ({c.aportes.length})</h3>
         {c.aportes.length === 0 && (<div className={screenStyles.card} role="status"><p className={screenStyles.muted}>Aún nadie ha registrado un apoyo.</p></div>)}
-        {c.aportes.map((a) => (<div key={a.id} className={screenStyles.card}><div className={screenStyles.row}><b className="flex-1">{VECINOS[a.vecino]?.name ?? "Vecino"} · {MODALIDADES[a.modalidad].nombre}</b><span className={a.estado === "confirmado" ? screenStyles.badgeFavor : a.estado === "rechazado" ? screenStyles.badgeAlert : screenStyles.badge}>{a.estado === "prometido" ? "Por confirmar" : a.estado === "confirmado" ? "Confirmado" : "Rechazado"}</span></div><p className={screenStyles.muted}>{a.modalidad === "Dinero" ? `S/ ${a.cantidad} (simulado, sin cobro)` : `${a.cantidad} ${MODALIDADES[a.modalidad].unidad}`}{a.nota ? ` · ${a.nota}` : ""}</p>
+        {c.aportes.map((a) => (<div key={a.id} className={screenStyles.card}><div className={screenStyles.row}><b className="flex-1">{VECINOS[a.vecino]?.name ?? "Vecino"} · {MODALIDADES[a.modalidad].nombre}</b><span className={a.estado === "confirmado" ? screenStyles.badgeFavor : a.estado === "rechazado" ? screenStyles.badgeAlert : screenStyles.badge}>{a.estado === "prometido" ? "Por confirmar" : a.estado === "confirmado" ? "Confirmado" : "Rechazado"}</span></div><p className={screenStyles.muted}>{a.modalidad === "Dinero" ? `S/ ${a.cantidad}` : `${a.cantidad} ${MODALIDADES[a.modalidad].unidad}`}{a.nota ? ` · ${a.nota}` : ""}</p>
           {a.estado === "prometido" && (<div className="grid-cols-2 grid! gap-2!"><button className={`${screenStyles.buttonSecondary} min-h-11!`} onClick={() => responderAporte(a.id, false)}>Rechazar</button><button className={`${screenStyles.button} min-h-11!`} onClick={() => responderAporte(a.id, true)}>Confirmar recepción</button></div>)}
           {a.coordId && (<button className={`${screenStyles.buttonOutline} min-h-11!`} onClick={() => abrirCoord(a.coordId)}>Abrir coordinación</button>)}</div>))}
         <button className={screenStyles.buttonSecondary} onClick={alternar}>{c.estado === "finalizada" ? "Reactivar campaña" : "Finalizar campaña"}</button>
       </>)}
-      <p className={screenStyles.muted}>Campañas y aportes de demostración. La popularidad no acredita la legitimidad de una campaña.</p>
+      <p className={screenStyles.muted}>Verifica quién organiza antes de aportar. La popularidad no acredita la legitimidad de una campaña.</p>
     </div>
   );
 }

@@ -32,7 +32,7 @@ export type AvisoJunta = { id: string; juntaId: string; titulo: string; texto: s
 
 export const AVISOS_SEMILLA: AvisoJunta[] = [
   { id: "sem-reunion", juntaId: "campoy", titulo: "Reunión vecinal el sábado", texto: "Local comunal · 5:00 p. m. Revisaremos la limpieza del parque y el rol de turnos de vigilancia vecinal.", autor: "carmen", fecha: "2026-11-05", semilla: true },
-  { id: "sem-faena", juntaId: "campoy", titulo: "Faena de limpieza del parque", texto: "Domingo 8:00 a. m. Traer guantes y bolsas. Aviso de demostración.", autor: "carmen", fecha: "2026-11-04", semilla: true },
+  { id: "sem-faena", juntaId: "campoy", titulo: "Faena de limpieza del parque", texto: "Domingo 8:00 a. m. Traer guantes y bolsas.", autor: "carmen", fecha: "2026-11-04", semilla: true },
 ];
 
 export const AVISOS_INICIAL = { items: [] as AvisoJunta[] };

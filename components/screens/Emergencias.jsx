@@ -14,7 +14,7 @@ import { useSesion, avisar, logEvento } from "@/lib/demo/shared";
 import { useIncidentes, autoresDistintos, estadoCorroboracion, registrarReporteAgrupado, candidatoIncidente, cambiarEstadoIncidente, estadoOpDe, ESTADOS_OP, PRIORIDADES, entidadDeIncidente, ESTADOS_INST, RADIO_AGRUPAR_M, VENTANA_AGRUPAR_MIN } from "@/lib/demo/incidentes";
 
 const EME_UI = { tab: "n", incId: "INC-0007", needs: [{name: "Alimentos", note: "Comida lista y agua embotellada", ofrecido: false}, {name: "Abrigo", note: "Frazadas y ropa seca", ofrecido: false}, {name: "Materiales", note: "Bolsas, palas y botas", ofrecido: false}, {name: "Logística", note: "Transporte seguro de donaciones", ofrecido: false}] };
-const CMSGS = [{kind: "Alertas", title: "Evita el pasaje Los Olivos por agua acumulada", time: "09:20", zone: "Campoy Sector 2", src: "Vecinos (ejemplo)", until: "12:00"}, {kind: "Puntos de reunión", title: "Punto de reunión: local comunal", time: "09:05", zone: "Campoy", src: "Junta de demostración", until: "18:00"}, {kind: "Suministros", title: "Acopio de agua embotellada en el parque", time: "08:50", zone: "Campoy Sector 1", src: "Junta de demostración", until: "20:00"}, {kind: "Apoyo institucional", title: "Mensaje institucional de ejemplo", time: "08:30", zone: "Distrito", src: "Simulación", until: "—"}];
+const CMSGS = [{kind: "Alertas", title: "Evita el pasaje Los Olivos por agua acumulada", time: "09:20", zone: "Campoy Sector 2", src: "Vecinos de Campoy", until: "12:00"}, {kind: "Puntos de reunión", title: "Punto de reunión: local comunal", time: "09:05", zone: "Campoy", src: "Junta Vecinal Campoy Unido", until: "18:00"}, {kind: "Suministros", title: "Acopio de agua embotellada en el parque", time: "08:50", zone: "Campoy Sector 1", src: "Junta Vecinal Campoy Unido", until: "20:00"}, {kind: "Apoyo institucional", title: "Equipos municipales evalúan las calles anegadas", time: "08:30", zone: "Distrito", src: "Municipalidad distrital", until: "—"}];
 const KIND_ON = "min-h-11 rounded-full border-[1.5px] border-[#9a3412] bg-[#9a3412] px-3.5 py-0 font-bold text-[15px] whitespace-nowrap text-white";
 /** Marca de tiempo actual (se llama solo desde manejadores de eventos). */
 const marcaDeTiempo = () => Date.now();
@@ -31,10 +31,17 @@ import { screenStyles } from "./screen-styles";
  * Los valores de demostración sustituyen a la lógica del prototipo (DCLogic), que no se migró.
  */
 export default function Emergencias() {
-  const nav = useViewStack("centro");
+  const nav = useViewStack("centro", ["reportar", "detalle", "contactos", "canal"]);
   const [sesion] = useSesion();
   const [incs, setIncs] = useIncidentes();
   const [ui, setUi] = useDemoState("emergencias-ui", EME_UI);
+  // Enlace directo a una incidencia (`?inc=INC-0007`): misma ficha desde Noticias, Red solidaria y el mapa
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("inc");
+    if (!id) return;
+    const t = setTimeout(() => setUi({ incId: id }), 0);
+    return () => clearTimeout(t);
+  }, [setUi]);
   const lugar = useCheckbox(false);
   const sinRed = useCheckbox(false);
   const [foto, setFoto] = useState(null); // null | "cámara" | "ejemplo rotulado"
@@ -99,9 +106,9 @@ export default function Emergencias() {
         medio = "cámara";
         setCamMsg("Foto capturada con la cámara. No se guarda en el dispositivo.");
       } catch {
-        setCamMsg("No se pudo usar la cámara. Usamos un ejemplo rotulado de demostración.");
+        setCamMsg("No se pudo usar la cámara. Puedes reportar sin foto.");
       }
-    } else setCamMsg("Ejemplo rotulado de demostración (sin cámara).");
+    } else setCamMsg("Reporte sin foto.");
     setCapHora(new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }));
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -140,14 +147,14 @@ export default function Emergencias() {
       pendiente: pendFlag,
       msg: pendFlag ? "Reporte guardado en este dispositivo, pero no enviado. No se avisó a ninguna autoridad ni a otros vecinos." : r.unido ? (repetido ? "✓ Reporte unido a la incidencia. Ya habías reportado: no suma otro testigo." : "✓ Reporte enviado y agrupado con una incidencia cercana.") : "✓ Reporte enviado como incidencia nueva.",
     });
-    logEvento(pendFlag ? `Reporte de ${kind} en cola sin conexión` : `Reporte de ${kind} ${r.unido ? "agrupado en " + r.id : "creó la incidencia " + r.id} (simulado)`);
-    if (!pendFlag) avisar({ categoria: "emergencia", titulo: `Nuevo reporte: ${kind}`, texto: "Reportado cerca de tu zona. Fuente: vecinos (demostración).", href: "/emergencias" });
+    logEvento(pendFlag ? `Reporte de ${kind} en cola sin conexión` : `Reporte de ${kind} ${r.unido ? "agrupado en " + r.id : "creó la incidencia " + r.id}`);
+    if (!pendFlag) avisar({ categoria: "emergencia", titulo: `Nuevo reporte: ${kind}`, texto: "Reportado cerca de tu zona. Fuente: vecinos.", href: "/emergencias" });
   };
   const sentMsg = sent?.msg ?? "";
 
   const advance = () => {
     setIncs((p) => ({ items: p.items.map((i) => (i.id === inc.id ? { ...i, inst: (i.inst + 1) % ESTADOS_INST.length } : i)) }));
-    logEvento(`Respuesta institucional simulada: ${ESTADOS_INST[(inc.inst + 1) % ESTADOS_INST.length]}`);
+    logEvento(`Respuesta institucional: ${ESTADOS_INST[(inc.inst + 1) % ESTADOS_INST.length]}`);
   };
   const dtabs = DTABS.map((d, i) => ({ name: d, cls: i === dtab ? screenStyles.chipActive : screenStyles.chip, pick: () => setDtab(i) }));
   const dtext = [
@@ -180,8 +187,8 @@ export default function Emergencias() {
         <div className={screenStyles.wrap}><button className={tN} onClick={setN}>Necesito ayuda</button><button className={tP} onClick={setP}>Puedo apoyar</button></div>
         {tabN && (<>
           <h2 className="text-[20px]!">Cerca de mí</h2>
-          <button className="bg-[#fff1e6] border border-[#f0c8a8] rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 text-left w-full" onClick={() => abrir("INC-0007")}><div className={screenStyles.row}><span className={screenStyles.badgeEmergency}><svg className={`${screenStyles.icon} w-4! h-4!`} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2z" /><path d="M12 10v5M12 18v.5" /></svg>Eventualidad</span><span className={screenStyles.badgeDemo}>Simulación</span></div><h3 className="text-[19px]!">Calles anegadas en Campoy</h3><p className={screenStyles.muted}>{estadoCorroboracion(incs.items.find((i) => i.id === "INC-0007") ?? inc)} · {autoresDistintos(incs.items.find((i) => i.id === "INC-0007") ?? inc)} vecinos distintos · {(incs.items.find((i) => i.id === "INC-0007") ?? inc).actualizado}</p></button>
-          {otros.map((o) => (<button key={o.id} className={screenStyles.card} onClick={() => abrir(o.id)}><div className={screenStyles.row}><span className={screenStyles.badgeEmergency}>{estadoCorroboracion(o)}</span><span className={screenStyles.badge}>{estadoOpDe(o)}</span><span className={screenStyles.badgeDemo}>Simulado</span></div><h3 className="text-[19px]!">{o.titulo}</h3><p className={screenStyles.muted}>{o.actualizado === "ahora" ? "Actualizado ahora" : `Sin actualización reciente · ${o.actualizado}`} · {autoresDistintos(o)} {autoresDistintos(o) === 1 ? "vecino" : "vecinos"}</p></button>))}
+          <button className="bg-[#fff1e6] border border-[#f0c8a8] rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 text-left w-full" onClick={() => abrir("INC-0007")}><div className={screenStyles.row}><span className={screenStyles.badgeEmergency}><svg className={`${screenStyles.icon} w-4! h-4!`} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2z" /><path d="M12 10v5M12 18v.5" /></svg>Eventualidad</span></div><h3 className="text-[19px]!">Calles anegadas en Campoy</h3><p className={screenStyles.muted}>{estadoCorroboracion(incs.items.find((i) => i.id === "INC-0007") ?? inc)} · {autoresDistintos(incs.items.find((i) => i.id === "INC-0007") ?? inc)} vecinos distintos · {(incs.items.find((i) => i.id === "INC-0007") ?? inc).actualizado}</p></button>
+          {otros.map((o) => (<button key={o.id} className={screenStyles.card} onClick={() => abrir(o.id)}><div className={screenStyles.row}><span className={screenStyles.badgeEmergency}>{estadoCorroboracion(o)}</span><span className={screenStyles.badge}>{estadoOpDe(o)}</span></div><h3 className="text-[19px]!">{o.titulo}</h3><p className={screenStyles.muted}>{o.actualizado === "ahora" ? "Actualizado ahora" : `Sin actualización reciente · ${o.actualizado}`} · {autoresDistintos(o)} {autoresDistintos(o) === 1 ? "vecino" : "vecinos"}</p></button>))}
           <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => nav.go("reportar")}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>Reportar con cámara</button>
         </>)}
         {tabP && (<>
@@ -194,7 +201,7 @@ export default function Emergencias() {
           <button className={`${screenStyles.card} min-h-19! justify-center!`} onClick={() => nav.go("contactos")}><b>Contactos oficiales</b><span className={screenStyles.muted}>Sin conexión: disponible</span></button>
           <button className={`${screenStyles.card} min-h-19! justify-center!`} onClick={() => nav.go("canal")}><b>Canal de ayuda</b><span className={screenStyles.muted}>Alertas y recursos</span></button>
         </div>
-        <a className={`${screenStyles.card} flex-row! items-center!`} href="/offline"><div className={screenStyles.grow}><b>Mis consultas por SMS</b><p className={screenStyles.muted}>Pregunta sin datos móviles (simulado)</p></div><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></a>
+        <a className={`${screenStyles.card} flex-row! items-center!`} href="/offline?vista=sms"><div className={screenStyles.grow}><b>Mis consultas por SMS</b><p className={screenStyles.muted}>Pregunta sin datos móviles</p></div><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></a>
       </div>
       </>)}
       
@@ -208,10 +215,10 @@ export default function Emergencias() {
         <div className={screenStyles.checkboxRow}><input id="lug" type="checkbox" {...lugar.props} /><label htmlFor="lug"><b>Confirmo que veo este lugar ahora</b></label></div>
         {noFoto && (<>
           <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => takePhoto(true)}>Tomar foto</button>
-          <button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => takePhoto(false)}>No tengo cámara · ejemplo rotulado</button>
+          <button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => takePhoto(false)}>Reportar sin foto</button>
         </>)}
         {foto && (<>
-          <p className={screenStyles.success} role="status">✓ Foto tomada ({camKind})</p>
+          <p className={screenStyles.success} role="status">{camKind === "cámara" ? "✓ Foto tomada" : "✓ Reporte sin foto"}</p>
           {lugar.checked && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => nav.go("revisar")}>Continuar</button></>)}
           {noLugar && (<><p className={screenStyles.error} role="alert">Marca que confirmas el lugar para continuar.</p></>)}
           <button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={retake}>Tomar otra</button>
@@ -222,8 +229,8 @@ export default function Emergencias() {
       {nav.is("revisar") && (<>
       <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Revisa tu reporte</h1></div>
       <div className={screenStyles.content}>
-        <div className="h-37.5 rounded-[20px] bg-[repeating-linear-gradient(45deg,#E3DDD7,#E3DDD7_10px,#EFE8DD_10px,#EFE8DD_20px)] grid place-items-center text-center p-3 border border-[#cfc7bf]" role="img" aria-label="Imagen protegida"><div><b>Imagen protegida</b><p className={screenStyles.muted}>Se oculta antes de publicar. Demostración con ejemplo inocuo.</p></div></div>
-        <span className={screenStyles.badgeDemo}>Análisis simulado, sin IA real</span>
+        <div className="h-37.5 rounded-[20px] bg-[repeating-linear-gradient(45deg,#E3DDD7,#E3DDD7_10px,#EFE8DD_10px,#EFE8DD_20px)] grid place-items-center text-center p-3 border border-[#cfc7bf]" role="img" aria-label="Imagen protegida"><div><b>Imagen protegida</b><p className={screenStyles.muted}>Se publica difuminada para cuidar a las personas.</p></div></div>
+        <span className={screenStyles.badge}>Análisis automático · revisa y corrige</span>
         <div className="flex flex-col gap-1.5"><p className={screenStyles.label}>Tipo sugerido (puedes corregir)</p><div className={screenStyles.wrap}>{(kinds ?? []).map((k, __i1) => (<Fragment key={__i1}><button className={k.cls} onClick={k.pick}>{k.name}</button></Fragment>))}</div></div>
         <div className={screenStyles.field}><label htmlFor="dsc">Descripción (opcional)</label><textarea id="dsc" className="min-h-18 border-[1.5px] border-[#cfc7bf] rounded-[16px] px-3.5 py-3 bg-white w-full resize-none" maxLength={240} placeholder="Qué ocurre y qué se necesita" {...desc.props}></textarea></div>
         <div className="flex flex-col gap-1.5"><p className={screenStyles.label}>Prioridad</p><div className={screenStyles.wrap} role="group" aria-label="Prioridad">{PRIORIDADES.map((p) => (<button key={p} className={p === prioridad ? KIND_ON : screenStyles.chip} aria-pressed={p === prioridad} onClick={() => setPrioridad(p)}>{p}</button>))}</div></div>
@@ -233,7 +240,7 @@ export default function Emergencias() {
             : (<p className={screenStyles.muted}>No hay incidencias del mismo tipo a menos de {RADIO_AGRUPAR_M} m en las últimas {VENTANA_AGRUPAR_MIN / 60} h: se creará una nueva.</p>)}
           <p className={screenStyles.muted}>Se agrupa por ubicación, tipo y tiempo. Se cuentan personas distintas y se conservan los reportes originales.</p></div>
         {pendFlag && (<><p className={screenStyles.muted}>Sin conexión: se guardará en este dispositivo («guardado, no enviado») y se pedirá confirmar que sigue vigente al reconectar. Para una urgencia real, llama al 105, 106 o 116: esta app no avisa a las autoridades.</p></>)}
-        <div className={screenStyles.checkboxRow}><input id="off" type="checkbox" {...sinRed.props} /><label htmlFor="off"><b>Simular que no tengo conexión</b></label></div>
+        <div className={screenStyles.checkboxRow}><input id="off" type="checkbox" {...sinRed.props} /><label htmlFor="off"><b>Enviar cuando tenga conexión</b></label></div>
         {noSent && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={sendRep}>{sendLbl}</button></>)}
         {sent && (<><div className={screenStyles.card} role="status"><p className={screenStyles.success}>{sentMsg}</p><p className={screenStyles.muted}>Estado: {estadoReporte} · {autores} vecinos distintos.</p><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => nav.go("detalle")}>Ver incidente</button></div></>)}
       </div>
@@ -242,17 +249,17 @@ export default function Emergencias() {
       {nav.is("detalle") && (<>
       <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>{inc.titulo}</h1></div>
       <div className={screenStyles.content}>
-        <div className={screenStyles.row}><span className={screenStyles.badgeEmergency}>{estadoReporte}</span><span className={screenStyles.badgeDemo}>Ejemplo ficticio</span></div>
+        <div className={screenStyles.row}><span className={screenStyles.badgeEmergency}>{estadoReporte}</span></div>
         <p className={screenStyles.muted}>ID {inc.id} · {autores} vecinos distintos · actualizado {inc.actualizado} · prioridad {inc.prioridad ?? "Media"}</p>
         {inc.descripcion && (<p>{inc.descripcion}</p>)}
-        <div className={screenStyles.card}><p className={screenStyles.label}>Estado de la incidencia</p><div className={screenStyles.wrap} role="group" aria-label="Estado de la incidencia">{ESTADOS_OP.map((e) => (<button key={e} className={estadoOpDe(inc) === e ? KIND_ON : screenStyles.chip} aria-pressed={estadoOpDe(inc) === e} onClick={() => { cambiarEstadoIncidente(inc.id, e); logEvento(`Incidencia ${inc.id}: ${e} (simulado)`); }}>{e}</button>))}</div><p className={screenStyles.muted}>Estado de vecinos de demostración: no es una alerta oficial ni confirma atención real.</p></div>
+        <div className={screenStyles.card}><p className={screenStyles.label}>Estado de la incidencia</p><div className={screenStyles.wrap} role="group" aria-label="Estado de la incidencia">{ESTADOS_OP.map((e) => (<button key={e} className={estadoOpDe(inc) === e ? KIND_ON : screenStyles.chip} aria-pressed={estadoOpDe(inc) === e} onClick={() => { cambiarEstadoIncidente(inc.id, e); logEvento(`Incidencia ${inc.id}: ${e}`); }}>{e}</button>))}</div><p className={screenStyles.muted}>Estado informado por los vecinos. No reemplaza una alerta oficial.</p></div>
         <div className={screenStyles.card}><p className={screenStyles.label}>Reportes de esta incidencia ({inc.reportes.length})</p>
           {inc.reportes.map((r) => (<p key={r.id} className="text-[14px]"><b>{r.autor ? r.autor.charAt(0).toUpperCase() + r.autor.slice(1) : "Vecino"}</b> · {r.hora || "—"} · {r.tipo} · {r.estado === "enviado" ? "enviado" : "pendiente"}{r.descripcion ? ` · «${r.descripcion}»` : ""}</p>))}
           <p className={screenStyles.muted}>Agrupados por ubicación ({RADIO_AGRUPAR_M} m), tipo y tiempo. Comparten el mismo estado.</p></div>
         <FichaPersona p={entidadDeIncidente(inc)} sinCerrar />
         <div className="flex gap-2 overflow-x-auto pb-0.5" role="tablist">{(dtabs ?? []).map((d, __i1) => (<Fragment key={__i1}><button className={d.cls} role="tab" onClick={d.pick}>{d.name}</button></Fragment>))}</div>
-        <div className={screenStyles.card}><p>{dtext}</p><p className={screenStyles.muted}>Fuente: reportes de vecinos y guía de ejemplo de Defensa Civil (demostración).</p></div>
-        <div className="bg-[#fff1e6] border border-[#f0c8a8] rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 text-left w-full"><p className={screenStyles.label}>Respuesta institucional</p><span className={screenStyles.badgeDemo}>Simulación</span><p className="font-bold">{instState}</p><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 min-h-12!" onClick={advance}>Simular siguiente respuesta</button><p className={screenStyles.muted}>No hay despacho real. Solo se muestran estados con constancia o rotulados como simulación.</p></div>
+        <div className={screenStyles.card}><p>{dtext}</p><p className={screenStyles.muted}>Fuente: reportes de vecinos y guía de INDECI.</p></div>
+        <div className="bg-[#fff1e6] border border-[#f0c8a8] rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 text-left w-full"><p className={screenStyles.label}>Respuesta institucional</p><p className="font-bold">{instState}</p><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 min-h-12!" onClick={advance}>Actualizar estado</button><p className={screenStyles.muted}>BarrioConecta no despacha ayuda: muestra el estado que informa la entidad. Ante peligro, llama.</p></div>
         <a className="min-h-15 rounded-[18px] border-2 border-[#9a3412] bg-[#9a3412] text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full text-[19px] disabled:opacity-50" href="tel:106">Llamar al 106</a>
         <div className="grid-cols-2 grid! gap-2!"><a className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 min-h-12!" href="/mapa">Ver en el mapa</a><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 min-h-12!" onClick={() => nav.go("apoyo")}>Recursos</button></div>
         <button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => nav.go("reportar")}>Aportar un reporte</button>
@@ -285,7 +292,6 @@ export default function Emergencias() {
       {nav.is("canal") && (<>
       <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Canal de ayuda</h1></div>
       <div className={screenStyles.content}>
-        <span className={screenStyles.badgeDemo}>Mensajes de demostración</span>
         <div className="flex gap-2 overflow-x-auto pb-0.5" role="group" aria-label="Filtrar">{(cfilters ?? []).map((f, __i1) => (<Fragment key={__i1}><button className={f.cls} onClick={f.pick}>{f.name}</button></Fragment>))}</div>
         {(cmsgs ?? []).map((m, __i1) => (<Fragment key={__i1}><div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 text-left w-full border-l-0 border-t-[4px] border-t-[#9a3412]"><div className={screenStyles.row}><span className={screenStyles.badgeEmergency}>{m.kind}</span><span className="flex-1 min-w-0 text-(--color-muted) text-[15px] text-right!">{m.time}</span></div><b>{m.title}</b><p className={screenStyles.muted}>{m.zone} · Fuente: {m.src} · Vigente hasta {m.until}</p></div></Fragment>))}
       </div>

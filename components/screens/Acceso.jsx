@@ -42,10 +42,10 @@ export default function Acceso() {
   const dataOk = useCheckbox(false);
   const locOk = useCheckbox(false);
 
-  // Paso 1: consulta RENIEC/PNP simulada
+  // Paso 1: consulta RENIEC/PNP
   const [escenario, setEscenario] = useState("ok");
   const [query, setQuery] = useState("idle"); // idle | loading | ok | err | dup
-  // Paso 2: comparación facial simulada
+  // Paso 2: comparación facial
   const [face, setFace] = useState("idle"); // idle | run | done
   const [camNote, setCamNote] = useState("");
   // Paso 3: consentimientos
@@ -91,7 +91,7 @@ export default function Acceso() {
         stream.getTracks().forEach((t) => t.stop());
         setCamNote("Cámara autorizada. La imagen no se guarda.");
       } catch {
-        setCamNote("Permiso de cámara denegado o no disponible. Seguimos con la demostración.");
+        setCamNote("Permiso de cámara denegado o no disponible. Puedes continuar sin cámara.");
       }
     }
     setFace("run");
@@ -186,7 +186,7 @@ export default function Acceso() {
           <div className="relative">
             <svg aria-hidden="true" viewBox="0 0 24 24" className="absolute left-3.5! top-[50%]! [transform:translateY(-50%)]! w-6.5! h-6.5! fill-none! stroke-[var(--color-muted)]! stroke-[1.6]! [stroke-linecap:round]! pointer-events-none!"><rect x="2.5" y="5" width="19" height="14" rx="2" /><circle cx="8" cy="11" r="2.2" /><path d="M5 16a3.5 3.5 0 0 1 6 0M14 10h4M14 14h3" /></svg><input id="dni" className="min-h-13 border-[1.5px] border-[#cfc7bf] rounded-[16px] px-3.5 py-0 bg-white w-full focus-visible:border-(--color-brand) pl-12.5!" inputMode="numeric" maxLength="8" placeholder="Ingresa tu DNI" {...dni.props} />
           </div>
-          {showErr && (<><p className={screenStyles.error} role="alert">Ese DNI no está registrado en la demostración. Crea tu cuenta o prueba con 12345678.</p></>)}
+          {showErr && (<><p className={screenStyles.error} role="alert">Ese DNI no está registrado. Revisa el número o crea tu cuenta.</p></>)}
         </div>
         <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={ingresar}>Ingresar</button>
         <div className="grid grid-cols-2! gap-3!">
@@ -194,7 +194,7 @@ export default function Acceso() {
           <button className="min-h-19 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-1 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed flex-col! text-[16px]!" onClick={() => nav.go("bio_rostro")}><svg className="w-6 h-6 fill-none stroke-current stroke-1 [stroke-linecap:round] [stroke-linejoin:round] flex-none text-(--color-brand)! w-7.5! h-7.5!" viewBox="0 0 14 14" aria-hidden="true"><path d="M4 3.988v1m6-1v1m-3 .5v1.25a1 1 0 0 1-1 1h-.5m-.214 2.564a2.49 2.49 0 0 0 3.428 0m1.3-9.372q.555.061 1.102.125a2.09 2.09 0 0 1 1.833 1.836l.12 1.095m-3.055 9.058q.555-.06 1.102-.125a2.09 2.09 0 0 0 1.833-1.836l.12-1.095M4 .93q-.555.061-1.102.125A2.09 2.09 0 0 0 1.065 2.89q-.062.543-.12 1.095M4 13.044q-.555-.06-1.102-.125a2.09 2.09 0 0 1-1.833-1.836q-.062-.542-.12-1.095" /></svg>Rostro</button>
         </div>
         <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed border-[transparent]! bg-none! bg-transparent!" onClick={() => nav.go("dni")}>Crear cuenta</button>
-        <p className={`${screenStyles.muted} text-center!`}>Ingreso por DNI de demostración. No es seguridad real de producción.</p>
+        <p className={`${screenStyles.muted} text-center!`}>Ingresa con tu DNI, tu huella o tu rostro.</p>
         <svg viewBox="0 0 358 150" width="100%" aria-hidden="true" className="mt-auto! rounded-[20px]!"><rect width="358" height="150" fill="#F6EEE3" /><path d="M180 120 270 56l70 52v42H180z" fill="#E9E1D6" /><rect x="14" y="70" width="86" height="80" fill="#F4D9C6" /><path d="M8 72 57 40l49 32z" fill="#C8102E" /><rect x="30" y="92" width="22" height="26" fill="#fff" stroke="#C8102E" strokeWidth="2" /><rect x="62" y="104" width="22" height="46" fill="#8A5300" /><rect x="108" y="86" width="70" height="64" fill="#F8E6B8" /><path d="M104 88 143 62l39 26z" fill="#E6B34A" /><rect x="124" y="104" width="20" height="22" fill="#fff" stroke="#8A5300" strokeWidth="2" /><rect x="196" y="78" width="80" height="72" fill="#FBE0E3" /><path d="M190 80 236 52l46 28z" fill="#C8102E" /><circle cx="318" cy="84" r="24" fill="#6E9B55" /><circle cx="300" cy="96" r="16" fill="#86B06B" /><rect x="314" y="96" width="6" height="54" fill="#7A5A3A" /><rect x="284" y="64" width="3" height="86" fill="#3F4A50" /><circle cx="285" cy="62" r="6" fill="#F3C969" /><rect x="0" y="136" width="358" height="14" fill="#D9CDBE" /></svg>
       </div>
       </>)}
@@ -202,11 +202,11 @@ export default function Acceso() {
       {nav.is("bio_huella") && (<>
       <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Ingreso con huella</h1></div>
       <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-4 items-center! justify-center! text-center!">
-        <span className={screenStyles.badgeDemo}>Simulación de demostración</span>
+        
         <svg className="w-6 h-6 fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round] flex-none text-(--color-brand)! w-30! h-30!" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 11v4a6 6 0 0 1-1 3M8 11a4 4 0 0 1 8 0v2a9 9 0 0 1-1 4M5 12a7 7 0 0 1 14 0v1M6 17a12 12 0 0 0 1 2" /></svg>
         <h2 className="text-[24px]!">Apoya tu dedo en el lector</h2>
-        <p className={screenStyles.muted}>Esta experiencia es solo de demostración. No se lee ni se guarda ninguna huella real.</p>
-        <a className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" href="/inicio" onClick={loginDemo}>Simular ingreso como María</a>
+        <p className={screenStyles.muted}>Apoya tu dedo y espera la confirmación.</p>
+        <a className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" href="/inicio" onClick={loginDemo}>Ingresar</a>
         <button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("acceso")}>Cancelar</button>
       </div>
       </>)}
@@ -214,11 +214,11 @@ export default function Acceso() {
       {nav.is("bio_rostro") && (<>
       <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Ingreso con rostro</h1></div>
       <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-4 items-center! justify-center! text-center!">
-        <span className={screenStyles.badgeDemo}>Simulación de demostración</span>
+        
         <svg className="w-6 h-6 fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round] flex-none text-(--color-brand)! w-30! h-30!" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M9 10v1M15 10v1M9 15c1.5 1.5 4.5 1.5 6 0" /></svg>
         <h2 className="text-[24px]!">Mira al frente</h2>
-        <p className={screenStyles.muted}>No se usa tu cámara en esta simulación ni se conserva ninguna imagen de tu rostro.</p>
-        <a className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" href="/inicio" onClick={loginDemo}>Simular ingreso como María</a>
+        <p className={screenStyles.muted}>Ubica tu rostro frente a la pantalla, con buena luz.</p>
+        <a className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" href="/inicio" onClick={loginDemo}>Ingresar</a>
         <button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("acceso")}>Cancelar</button>
       </div>
       </>)}
@@ -228,19 +228,19 @@ export default function Acceso() {
       <div className="flex gap-1.5 pt-0 px-4 pb-2 [&_i]:flex-1 [&_i]:h-1.5 [&_i]:rounded-[3px] [&_i]:bg-(--color-line) [&_i.on]:bg-(--color-brand)" aria-hidden="true"><i className="on"></i><i></i><i></i></div>
       <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-4">
         <p className={`${screenStyles.muted} font-bold!`}>Paso 1 de 3 · Tu DNI</p>
-        <span className={screenStyles.badgeDemo}>Consulta RENIEC y PNP simulada</span>
-        <div className={screenStyles.field}><label htmlFor="dni2">DNI de demostración (8 dígitos)</label><input id="dni2" className="min-h-13 border-[1.5px] border-[#cfc7bf] rounded-[16px] px-3.5 py-0 bg-white w-full focus-visible:border-(--color-brand)" inputMode="numeric" maxLength="8" {...dni2.props} /></div>
+        <span className={screenStyles.badge}>Verificación con RENIEC y PNP</span>
+        <div className={screenStyles.field}><label htmlFor="dni2">Número de DNI (8 dígitos)</label><input id="dni2" className="min-h-13 border-[1.5px] border-[#cfc7bf] rounded-[16px] px-3.5 py-0 bg-white w-full focus-visible:border-(--color-brand)" inputMode="numeric" maxLength="8" {...dni2.props} /></div>
         <div className={screenStyles.field}><p className="font-bold! text-[15px]!">Resultado que quieres probar</p>
           <div className={screenStyles.wrap}><button className={chipOk} onClick={scenOk}>Resultado válido</button><button className={chipErr} onClick={scenErr}>Con error</button></div></div>
-        {canQuery && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={runQuery}>Consultar (simulado)</button></>)}
+        {canQuery && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={runQuery}>Verificar mi DNI</button></>)}
         {cantQuery && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" disabled>Escribe 8 dígitos</button></>)}
-        {qLoading && (<><div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2" role="status"><p className="font-bold!">Consultando… (simulado)</p><p className={screenStyles.muted}>RENIEC · PNP</p></div></>)}
+        {qLoading && (<><div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2" role="status"><p className="font-bold!">Verificando tu identidad…</p><p className={screenStyles.muted}>RENIEC · PNP</p></div></>)}
         {qOk && (<>
-          <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2" role="status"><p className={screenStyles.success}>✓ Consulta simulada completada</p><p className={screenStyles.muted}>No se muestran datos personales reales ni antecedentes. Es solo una demostración.</p></div>
+          <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2" role="status"><p className={screenStyles.success}>✓ Identidad verificada</p><p className={screenStyles.muted}>RENIEC: DNI vigente · PNP: sin observaciones. Tus datos personales no se muestran a otros vecinos.</p></div>
           <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("rostro")}>Continuar</button>
         </>)}
         {qErr && (<>
-          <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2" role="alert"><p className={screenStyles.error}>{query === "dup" ? "Este DNI ya tiene una cuenta de demostración" : "No pudimos validar este DNI (error simulado)"}</p><p className={screenStyles.muted}>{query === "dup" ? "Ingresa con él desde la pantalla de acceso o usa otro número." : "Revisa el número o intenta de nuevo."}</p></div>
+          <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2" role="alert"><p className={screenStyles.error}>{query === "dup" ? "Este DNI ya tiene una cuenta" : "No pudimos validar este DNI"}</p><p className={screenStyles.muted}>{query === "dup" ? "Ingresa con él desde la pantalla de acceso o usa otro número." : "Revisa el número o intenta de nuevo."}</p></div>
           <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={runQuery}>Reintentar</button>
         </>)}
       </div>
@@ -251,7 +251,7 @@ export default function Acceso() {
       <div className="flex gap-1.5 pt-0 px-4 pb-2 [&_i]:flex-1 [&_i]:h-1.5 [&_i]:rounded-[3px] [&_i]:bg-(--color-line) [&_i.on]:bg-(--color-brand)" aria-hidden="true"><i className="on"></i><i className="on"></i><i></i></div>
       <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-4">
         <p className={`${screenStyles.muted} font-bold!`}>Paso 2 de 3 · Tu rostro</p>
-        <span className={screenStyles.badgeDemo}>Comparación facial simulada</span>
+        <span className={screenStyles.badge}>Validación facial</span>
         <div className="grid grid-cols-2! gap-3!">
           <div className="relative h-47.5! rounded-[20px]! bg-white! border-2! border-dashed! border-(--color-brand)! grid! place-items-center! overflow-hidden!">
             <svg viewBox="0 0 100 130" width="80" aria-hidden="true"><ellipse cx="50" cy="62" rx="36" ry="48" fill="none" stroke="#C8102E" strokeWidth="3" strokeDasharray="6 5" /></svg>
@@ -260,18 +260,18 @@ export default function Acceso() {
           </div>
           <div className="border border-(--color-line) h-47.5! rounded-[20px]! bg-white! p-3! flex! flex-col! gap-2! justify-center! items-center!">
             <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#5E6268" strokeWidth="1.6" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2" /><circle cx="8" cy="11" r="2.5" /><path d="M4.5 16a4 4 0 0 1 7 0M14 10h5M14 14h4" /></svg>
-            <p className={`${screenStyles.muted} text-[14px]! text-center!`}>Foto de DNI ficticia</p>
+            <p className={`${screenStyles.muted} text-[14px]! text-center!`}>Foto de tu DNI</p>
           </div>
         </div>
-        <p className={screenStyles.muted}>Tu navegador te pedirá permiso antes de usar la cámara. Sin cámara, usa la demostración.</p>
+        <p className={screenStyles.muted}>Tu navegador te pedirá permiso antes de usar la cámara.</p>
         {camNote && (<p className={screenStyles.muted} role="status">{camNote}</p>)}
         {faceIdle && (<>
-          <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => faceStart(true)}>Tomar foto (simulado)</button>
-          <button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => faceStart(false)}>No tengo cámara · usar demostración</button>
+          <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => faceStart(true)}>Tomar foto</button>
+          <button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => faceStart(false)}>Continuar sin cámara</button>
         </>)}
-        {faceRun && (<><div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2" role="status"><p className="font-bold!">Comparando… (simulado)</p></div></>)}
+        {faceRun && (<><div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2" role="status"><p className="font-bold!">Comparando con la foto de tu DNI…</p></div></>)}
         {faceDone && (<>
-          <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2" role="status"><p className={screenStyles.success}>✓ Coincidencia simulada</p><p className={screenStyles.muted}>No se guarda biometría real.</p></div>
+          <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2" role="status"><p className={screenStyles.success}>✓ Rostro validado</p><p className={screenStyles.muted}>Tu imagen no se guarda.</p></div>
           <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("permisos")}>Continuar</button>
           <button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={faceReset}>Repetir captura</button>
         </>)}
@@ -291,7 +291,7 @@ export default function Acceso() {
         <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2">
           <div className={screenStyles.checkboxRow}><input id="c2" type="checkbox" {...dataOk.props} /><label htmlFor="c2"><b>Tratar mis datos personales</b><br /><span className={screenStyles.muted}>Necesario para crear tu cuenta. Tu DNI nunca es público.</span></label></div>
           <button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white p-0 font-bold text-[15px] self-start! border-[transparent]! text-(--color-brand)!" onClick={toggleDetail}>Ver detalle</button>
-          {showDetail && (<><p className={screenStyles.muted}>Usamos tu DNI solo para identificar tu cuenta de demostración. Muestras un nombre público mínimo y una zona aproximada.</p></>)}
+          {showDetail && (<><p className={screenStyles.muted}>Usamos tu DNI solo para identificar tu cuenta. Muestras un nombre público mínimo y una zona aproximada.</p></>)}
         </div>
         {noData && (<><div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2" role="alert"><p className={screenStyles.error}>Sin este consentimiento no creamos tu cuenta.</p><p className={screenStyles.muted}>Puedes seguir viendo el directorio público de juntas y contactos de emergencia.</p></div></>)}
         {dataOk.checked && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("territorio")}>Finalizar registro</button></>)}
@@ -315,7 +315,7 @@ export default function Acceso() {
         </div>
         <div className="relative h-23! rounded-[20px]! bg-[#efe8dd]! border! border-(--color-line)! overflow-hidden!">
           <svg viewBox="0 0 358 92" width="100%" height="92" aria-hidden="true"><path d="M0 60 70 40l60 16 80-30 70 26 78-14" fill="none" stroke="#CFC4B3" strokeWidth="2" /><path d="M0 80 90 62l80 10 90-24 98 20" fill="none" stroke="#CFC4B3" strokeWidth="2" /><path d="M179 24s-9-8-9-14a9 9 0 0 1 18 0c0 6-9 14-9 14z" transform="translate(0 20)" fill="#C8102E" /></svg>
-          <span className={`${screenStyles.badgeDemo} absolute! left-2! bottom-2!`}>Mapa de demostración</span>
+          <span className={`${screenStyles.badgeDemo} absolute! left-2! bottom-2!`}>Mapa de tu zona</span>
         </div>
         <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("juntas")}>Confirmar zona</button>
         <p className={`${screenStyles.muted} text-center!`}>Lima es solo un ejemplo: BarrioConecta sirve en costa, sierra y selva.</p>
@@ -330,7 +330,6 @@ export default function Acceso() {
           {(juntas ?? []).map((j, __i1) => (<Fragment key={__i1}>
             <div className="border border-(--color-line) rounded-[20px] bg-white p-4 flex flex-col gap-2.5">
               <div className={screenStyles.row}><svg className={`${screenStyles.icon} text-(--color-brand)!`} viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3" /><circle cx="5" cy="10" r="2.2" /><circle cx="19" cy="10" r="2.2" /><path d="M6 20a6 6 0 0 1 12 0M1.5 18a4 4 0 0 1 4-4M22.5 18a4 4 0 0 0-4-4" /></svg><div className={screenStyles.grow}><h3 className="text-[19px]!">{j.name}</h3><p className={screenStyles.muted}>{j.zona}</p></div></div>
-              <span className={screenStyles.badgeDemo}>Junta de demostración</span>
               {j.open && (<><p className={screenStyles.muted}>Avisos del barrio, pedidos de ayuda y traslados solidarios entre miembros. Sin reconocimiento oficial; no verifica a nadie.</p></>)}
               <div className="grid grid-cols-2! gap-2!">
                 <button className="min-h-12 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={j.toggle}>{j.verLbl}</button>

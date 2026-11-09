@@ -26,7 +26,7 @@ export default function CampanaTarjeta({ c, onAbrir }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={c.imagen} alt={`Imagen de la campaña ${c.titulo}`} className="w-full h-28 object-cover rounded-[14px]" />
       )}
-      <div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>Campaña</span><span className={claseEstado(c.estado)}>{ESTADO_CAMPANA[c.estado]}</span>{c.simulado && (<span className={`${screenStyles.badgeDemo} ml-auto`}>Ejemplo</span>)}</div>
+      <div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>Campaña</span><span className={claseEstado(c.estado)}>{ESTADO_CAMPANA[c.estado]}</span></div>
       <h3 className="text-[20px]!">{c.titulo}</h3>
       <p className={screenStyles.muted}>{c.organizador} · {c.zona}</p>
       <Progreso c={c} />

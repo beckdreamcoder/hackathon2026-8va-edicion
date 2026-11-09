@@ -16,7 +16,7 @@ const CATS = ["Herramientas", "Habilidades", "Ayuda temporal", "Movilidad"];
 const DISTRITOS = ["San Juan de Lurigancho", "Jicamarca Anexo 22", "El Agustino", "Cercado de Lima", "San Borja", "Ate", "Santa Anita", "La Victoria", "Rímac", "Otro distrito de Lima"];
 const CACH_CATS = ["Reparación de computadoras", "Pintura de viviendas", "Instalación eléctrica", "Gasfitería", "Mudanzas pequeñas", "Limpieza", "Reparación de electrodomésticos", "Apoyo con entregas", "Otros"];
 const FORMAS = ["Bienes", "Dinero", "Compra solidaria", "Tiempo", "Logística"];
-/** Reglas de la sugerencia automática simulada (sin modelo de IA). */
+/** Reglas de la sugerencia automática (sin modelo de IA). */
 const SUGERENCIAS = [
   [["escalera", "taladro", "herramienta", "martillo", "carretilla", "prest"], "Herramientas"],
   [["enseñ", "clase", "whatsapp", "trámite", "tramite", "celular"], "Habilidades"],
@@ -97,7 +97,7 @@ export default function Publicar() {
   const setJunta = () => setAlcance("junta");
   const setCom = () => setAlcance("comunidad");
 
-  const tipoNombre = esFavor ? `Favor gratuito · ${modo === "pido" ? "Necesito ayuda" : "Ofrezco ayuda"}` : esCach ? `Cachuelo · ${modo === "pido" ? "Necesito un servicio" : "Busco trabajo"}` : "Campaña de apoyo";
+  const tipoNombre = esMov ? `Movilidad solidaria · ${modo === "pido" ? "Necesito un traslado" : "Puedo llevar a alguien"}` : esFavor ? `Favor gratuito · ${modo === "pido" ? "Necesito ayuda" : "Ofrezco ayuda"}` : esCach ? `Cachuelo · ${modo === "pido" ? "Necesito un servicio" : "Ofrezco mi servicio"}` : "Campaña de apoyo";
   const placeholder = esFavor ? "Ejemplo: necesito una escalera prestada para el sábado" : esCach ? "Ejemplo: necesito arreglar una fuga en el baño" : "Ejemplo: colecta de abrigo para familias de la parte alta";
 
   const suggest = () => {
@@ -158,7 +158,7 @@ export default function Publicar() {
   const resTag = esFavor ? "Gratis" : esCach ? precio.value.trim() || "A convenir" : "Solidaridad";
   const resTagCls = esFavor ? screenStyles.badgeFavor : esCach ? screenStyles.badgeCachuelo : screenStyles.badgeSolidarity;
   const resTitle = title.value.trim() || "Mi publicación";
-  const muroHref = listo === "pendiente" ? "/offline" : esMov ? "/movilidad" : esCach ? "/cachuelos" : esCamp ? "/campanas" : "/favores";
+  const muroHref = listo === "pendiente" ? "/offline?vista=pend" : esMov ? `/movilidad?tab=${modo === "pido" ? "nec" : "paso"}` : esCach ? `/cachuelos?tab=${modo === "pido" ? "trab" : "serv"}` : esCamp ? "/campanas" : `/favores?tab=${modo === "pido" ? "nec" : "ofr"}`;
   const reset = () => window.location.reload();
   return (
     <div className="m-0 bg-white text-(--color-ink) font-[Nunito,system-ui,sans-serif] text-[17px] leading-[1.4] [&_h1]:font-[Nunito,system-ui,sans-serif] [&_h1]:m-0 [&_h1]:leading-[1.15] [&_h1]:tracking-[-.01em] [&_h2]:font-[Nunito,system-ui,sans-serif] [&_h2]:m-0 [&_h2]:leading-[1.15] [&_h2]:tracking-[-.01em] [&_h3]:font-[Nunito,system-ui,sans-serif] [&_h3]:m-0 [&_h3]:leading-[1.15] [&_h3]:tracking-[-.01em] [&_h4]:font-[Nunito,system-ui,sans-serif] [&_h4]:m-0 [&_h4]:leading-[1.15] [&_h4]:tracking-[-.01em] [&_.t]:font-[Nunito,system-ui,sans-serif] [&_.t]:m-0 [&_.t]:leading-[1.15] [&_.t]:tracking-[-.01em] [&_p]:m-0 [&_button]:cursor-pointer [&_:focus-visible]:outline-3 [&_:focus-visible]:outline-(--color-ink) [&_:focus-visible]:outline-offset-2 [&_textarea.in]:px-3.5 [&_textarea.in]:py-3 [&_textarea.in]:min-h-26 [&_textarea.in]:resize-none">
@@ -173,11 +173,11 @@ export default function Publicar() {
           <button className={t.cls} onClick={t.pick}><div className={screenStyles.grow}><b>{t.name}</b><span className={screenStyles.muted}>{t.sub}</span></div><span className={t.tagCls}>{t.tag}</span></button>
         </Fragment>))}
         {esFavor && (<>
-          <div className={screenStyles.field}><p className={screenStyles.label}>¿Pides o ofreces?</p><div className={screenStyles.wrap}><button className={chipPido} onClick={setPido}>Necesito ayuda</button><button className={chipOfrezco} onClick={setOfrezco}>Ofrezco ayuda</button></div>
+          <div className={screenStyles.field}><p className={screenStyles.label}>¿Pides o ofreces?</p><div className={screenStyles.wrap}><button className={chipPido} onClick={setPido}>{esCach ? "Necesito un servicio" : "Necesito ayuda"}</button><button className={chipOfrezco} onClick={setOfrezco}>{esCach ? "Ofrezco mi servicio" : "Ofrezco ayuda"}</button></div>
           <p className={screenStyles.muted}>Movilidad solidaria es un tipo de favor: la eliges en el siguiente paso.</p></div>
         </>)}
         {esEmerg && (<>
-          <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 bg-[#fff1e6]! border-[#f0c8a8]!"><p className="font-bold!">Para una emergencia, primero llama</p><p className={screenStyles.muted}>Policía 105 · Bomberos 116 · SAMU 106. La evidencia nueva se toma con la cámara, no desde la galería.</p><a className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" href="/emergencias">Reportar con cámara</a></div>
+          <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 bg-[#fff1e6]! border-[#f0c8a8]!"><p className="font-bold!">Para una emergencia, primero llama</p><p className={screenStyles.muted}>Policía 105 · Bomberos 116 · SAMU 106. La evidencia nueva se toma con la cámara, no desde la galería.</p><a className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" href="/emergencias?vista=reportar">Reportar con cámara</a></div>
         </>)}
         {noEmerg && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("datos")}>Continuar</button></>)}
       </div>
@@ -190,7 +190,7 @@ export default function Publicar() {
         <p className={`${screenStyles.muted} font-bold!`}>Paso 2 de 3 · {tipoNombre}</p>
         <div className={screenStyles.field}><label htmlFor="desc">Descripción</label><textarea id="desc" className="min-h-26 border-[1.5px] border-[#cfc7bf] rounded-[16px] px-3.5 py-3 bg-white w-full resize-none" placeholder={`${placeholder ?? ""}`} {...desc.props}></textarea></div>
         <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={suggest}><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" /></svg>Sugerencia automática</button>
-        <span className={`${screenStyles.badgeDemo} mt-[-8px]!`}>Simulada · no se envía sola</span>
+        <span className={`${screenStyles.badge} mt-[-8px]!`}>Sugerencia automática · revísala antes de publicar</span>
         {hasSug && (<>
           <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 border-(--color-brand)!"><p className={screenStyles.label}>Propuesta (puedes editarla)</p><label htmlFor="tit" className="absolute left-[-9999px]!">Título</label><input id="tit" className={screenStyles.input} {...title.props} /><p className={screenStyles.muted}>Categoría sugerida: {catSug}</p></div>
         </>)}
@@ -204,7 +204,7 @@ export default function Publicar() {
           <div className={screenStyles.field}><label htmlFor="precio">Precio referencial</label><input id="precio" className={screenStyles.input} placeholder="S/ o \u00abA convenir\u00bb" {...precio.props} /><p className={screenStyles.muted}>Los pagos no se hacen en la app: el precio se acuerda entre ustedes.</p></div>
         </>)}
         {esCamp && (<>
-          <div className={screenStyles.field}><label htmlFor="meta">Meta de la campaña (unidades)</label><input id="meta" className={screenStyles.input} inputMode="numeric" {...meta.props} /><p className={screenStyles.muted}>1 unidad = 1 bien, 1 turno, 1 artículo o S/ 10 simulados.</p></div>
+          <div className={screenStyles.field}><label htmlFor="meta">Meta de la campaña (unidades)</label><input id="meta" className={screenStyles.input} inputMode="numeric" {...meta.props} /><p className={screenStyles.muted}>1 unidad = 1 bien, 1 turno, 1 artículo o S/ 10.</p></div>
           <div className={screenStyles.field}><label htmlFor="ini">Fecha de inicio (opcional)</label><input id="ini" type="date" className={screenStyles.input} value={inicio} onChange={(e) => setInicio(e.target.value)} /><p className={screenStyles.muted}>Si es posterior a hoy, la campaña aparece como «Próxima».</p></div>
           <div className={screenStyles.field}><label htmlFor="img">Imagen de la campaña (opcional)</label><input id="img" type="file" accept="image/*" className={screenStyles.input} onChange={elegirImagen} />{imgMsg && (<p className={screenStyles.muted} role="status">{imgMsg}</p>)}{imagen && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -212,7 +212,7 @@ export default function Publicar() {
           )}</div>
           <div className={screenStyles.field}><label htmlFor="resp">Responsable</label><input id="resp" className={screenStyles.input} placeholder="Nombre de la persona u organizaci\u00f3n" {...responsable.props} /></div>
           <div className={screenStyles.field}><label htmlFor="plazo">Plazo</label><input id="plazo" className={screenStyles.input} placeholder="Fecha l\u00edmite" {...plazo.props} /></div>
-          <div className={screenStyles.field}><p className={screenStyles.label}>Formas de apoyo</p><div className={screenStyles.wrap}>{(formas ?? []).map((f, __i1) => (<Fragment key={__i1}><button className={f.cls} onClick={f.pick}>{f.name}</button></Fragment>))}</div><span className={screenStyles.badgeDemo}>Dinero y compras simulados</span></div>
+          <div className={screenStyles.field}><p className={screenStyles.label}>Formas de apoyo</p><div className={screenStyles.wrap}>{(formas ?? []).map((f, __i1) => (<Fragment key={__i1}><button className={f.cls} onClick={f.pick}>{f.name}</button></Fragment>))}</div></div>
           <div className={screenStyles.checkboxRow}><input id="benef" type="checkbox" {...benef.props} /><label htmlFor="benef"><b>La persona beneficiaria autorizó esta campaña</b><br /><span className={screenStyles.muted}>Obligatorio si la campaña es sobre otra persona.</span></label></div>
         </>)}
         {falta && (<><p className={screenStyles.error} role="alert">{faltaMsg}</p></>)}
@@ -229,7 +229,7 @@ export default function Publicar() {
         <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2"><p className={screenStyles.label}>Zona aproximada</p><div className={screenStyles.row}><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic text-(--color-brand)!" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></svg><p>{sesion.localidad} · zona aproximada <span className={screenStyles.muted}>(no se muestra tu dirección exacta)</span></p></div></div>
         <div className={screenStyles.field}><p className={screenStyles.label}>Distrito</p><div className="flex gap-2 overflow-x-auto pb-0.5 [&>*]:shrink-0" role="group" aria-label="Distrito">{DISTRITOS.map((d) => (<button key={d} className={chip(distrito === d)} aria-pressed={distrito === d} onClick={() => setDistrito(d)}>{d}</button>))}</div></div>
         <div className={screenStyles.field}><p className={screenStyles.label}>¿Quién lo verá?</p><div className={screenStyles.wrap}><button className={alJunta} onClick={setJunta}>Mi junta primero</button><button className={alCom} onClick={setCom}>Mi comunidad</button></div></div>
-        <div className={screenStyles.checkboxRow}><input id="off" type="checkbox" {...sinRed.props} /><label htmlFor="off"><b>Simular que no tengo conexión</b><br /><span className={screenStyles.muted}>Se guardará como pendiente y se enviará al reconectar.</span></label></div>
+        <div className={screenStyles.checkboxRow}><input id="off" type="checkbox" {...sinRed.props} /><label htmlFor="off"><b>Publicar cuando tenga conexión</b><br /><span className={screenStyles.muted}>Se guarda como pendiente y se envía al reconectar.</span></label></div>
         {limite && (<><p className={screenStyles.error} role="alert">Llegaste al límite de 3 solicitudes de cachuelos por día. Puedes seguir respondiendo mensajes. Vuelve mañana para publicar otra.</p></>)}
         <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={publish}>{pubLabel}</button>
         <p className={`${screenStyles.muted} text-center!`}>Nada se publica hasta que tú confirmes.</p>
