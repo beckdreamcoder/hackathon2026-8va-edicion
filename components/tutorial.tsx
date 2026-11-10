@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n";
 import { useTutorial, TUTORIAL_INICIAL, iniciarTutorial } from "@/lib/demo/tutorial";
+import { hidratar } from "@/lib/demo/store";
 
 type Paso = { id: number; ruta: string; sel: string; texto?: RegExp };
 
@@ -15,8 +16,8 @@ const PASOS: Paso[] = [
   { id: 4, ruta: "/mapa", sel: "button", texto: /^RutaJuntos$/ },
   { id: 5, ruta: "/publicar", sel: "button", texto: /Favor gratuito|Free favor/ },
   { id: 6, ruta: "/buscar", sel: "#bq" },
-  { id: 7, ruta: "/favores", sel: "button", texto: /^(Ofrezco ayuda|I offer help)$/ },
-  { id: 8, ruta: "/cachuelos", sel: "button", texto: /^(Necesito un servicio|I need a service)$/ },
+  { id: 7, ruta: "/favores", sel: "button", texto: /^(Ofrecen ayuda|Ofrezco ayuda|I offer help)$/ },
+  { id: 8, ruta: "/cachuelos", sel: "button", texto: /^(Ofrecen servicios|Necesito un servicio|I need a service)$/ },
   { id: 9, ruta: "/coordinaciones", sel: "button", texto: /^(Pendientes|Pending)\b/ },
   { id: 10, ruta: "/emergencias", sel: "button", texto: /Reportar con cámara|Report with camera/ },
   { id: 11, ruta: "/solidaria", sel: 'a[href="/campanas"]' },
@@ -24,6 +25,7 @@ const PASOS: Paso[] = [
   { id: 13, ruta: "/perfil", sel: "button", texto: /^(Editar perfil|Edit profile)$/ },
 ];
 
+const MARCA_INGRESO = "bc:ingreso-tutorial";
 const BTN = "min-h-11 rounded-[14px] px-4 font-bold text-[15px] border-2";
 const reducir = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
@@ -55,6 +57,26 @@ export function Tutorial() {
   const ultimo = tut.paso >= PASOS.length - 1;
 
   const cerrar = useCallback((estado: "completado" | "omitido") => setTut({ ...TUTORIAL_INICIAL, estado }), [setTut]);
+
+  // Cada ingreso a una cuenta (pasar por Acceso «/» y llegar a Inicio) abre el tutorial desde el primer paso,
+  // sin importar si ya se completó u omitió antes. La marca vive en sessionStorage para sobrevivir a la recarga
+  // que hace el enlace de ingreso.
+  useEffect(() => {
+    try {
+      if (pathname === "/") { window.sessionStorage.setItem(MARCA_INGRESO, "1"); return undefined; }
+      if (pathname !== "/inicio" || window.sessionStorage.getItem(MARCA_INGRESO) !== "1") return undefined;
+    } catch {
+      return undefined; // sin sessionStorage (modo privado estricto): no se fuerza el tutorial
+    }
+    // Se espera a que carguen los datos guardados: antes de eso cualquier escritura se descarta
+    let vivo = true;
+    hidratar().then(() => {
+      if (!vivo) return;
+      try { window.sessionStorage.removeItem(MARCA_INGRESO); } catch { /* nada */ }
+      iniciarTutorial();
+    });
+    return () => { vivo = false; };
+  }, [pathname]);
 
   // Al cambiar de paso se abre su pantalla (si la persona navega a mano, el progreso se conserva)
   useEffect(() => {
