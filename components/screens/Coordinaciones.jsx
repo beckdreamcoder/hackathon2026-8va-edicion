@@ -256,7 +256,7 @@ export default function Coordinaciones() {
             {sel.estado !== "solicitada" && tab === "chat" && (
               <>
                 <div className="px-4 pb-1 flex-none"><p className="text-[13px] text-(--color-muted)" role="status">Chat temporal · {esAbierta(sel) && !bloqueado ? "activo" : "solo lectura"} · historial de esta coordinación</p></div>
-                <div className={`${screenStyles.content} gap-2.5!`} role="log" aria-live="polite">
+                <div className={`${screenStyles.content} gap-2.5! pb-3!`} role="log" aria-live="polite">
                   {sel.msgs.map((m) => m.from === "sistema"
                     ? (<p key={m.id} className="self-center text-center text-[13px] text-(--color-muted) bg-[#f1ece6] rounded-full px-3 py-1">{m.text}</p>)
                     : (<div key={m.id} className={m.from === uid ? BUBBLE_ME : BUBBLE_OTHER}><b>{VECINOS[m.from].name} · {hora(m.at)}</b>{m.text}</div>))}
@@ -266,14 +266,14 @@ export default function Coordinaciones() {
                   <div ref={fin} />
                 </div>
                 {esAbierta(sel) && !bloqueado && (
-                  <div className="border-t border-t-(--color-line) pt-2! px-4! pb-2! flex! flex-col! gap-2! bg-white! flex-none!">
+                  <div className="border-t border-t-(--color-line) pt-2! px-4! pb-24! flex! flex-col! gap-2! bg-white! flex-none!">
                     <div className="flex gap-2 overflow-x-auto pb-0.5 [&>*]:shrink-0">{QUICK.map((q) => (<button key={q} className={`${chip(false)} chip`} onClick={() => draft.setValue(q)}>{q}</button>))}</div>
                     <div className={screenStyles.row}><label htmlFor="msg" className="absolute left-[-9999px]!">Mensaje</label><input id="msg" className={screenStyles.input} placeholder="Escribe un mensaje" {...draft.props} onKeyDown={(e) => { if (e.key === "Enter") enviar(); }} /><button className="w-12 h-12 grid place-items-center border-0 bg-(--color-brand) rounded-[16px] text-white" aria-label="Enviar" onClick={enviar}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l16-8-6 16-3-7z" /></svg></button></div>
                     {err && (<p className={screenStyles.error} role="alert">{err}</p>)}
                   </div>
                 )}
                 {(!esAbierta(sel) || bloqueado) && (
-                  <div className="border-t border-t-(--color-line) px-4! py-3! bg-white! flex-none!"><p className={screenStyles.muted} role="status">{bloqueado && esAbierta(sel) ? "Hay un bloqueo entre ustedes: el chat quedó en solo lectura. Puedes cancelar la coordinación." : "Chat temporal en solo lectura. El historial y el acuerdo se conservan."}</p></div>
+                  <div className="border-t border-t-(--color-line) px-4! pt-3! pb-24! bg-white! flex-none!"><p className={screenStyles.muted} role="status">{bloqueado && esAbierta(sel) ? "Hay un bloqueo entre ustedes: el chat quedó en solo lectura. Puedes cancelar la coordinación." : "Chat temporal en solo lectura. El historial y el acuerdo se conservan."}</p></div>
                 )}
               </>
             )}

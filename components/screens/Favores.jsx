@@ -248,18 +248,18 @@ export default function Favores() {
       
       {nav.is("chat") && (<>
       <div className="pt-0! px-4! pb-2! flex-none!"><div className={`${screenStyles.card} px-3.5! py-2.5! flex-row! items-center! gap-2.5!`}><span className={screenStyles.badge}>{statusTxt}</span><p className="flex-1 min-w-0 text-(--color-muted) text-[15px] font-bold!">Siguiente: {nextStep}</p></div></div>
-      <div className={`${screenStyles.content} gap-2.5!`} role="log" aria-live="polite">
+      <div className={`${screenStyles.content} gap-2.5! pb-3!`} role="log" aria-live="polite">
         {(msgs ?? []).map((m, __i1) => (<Fragment key={__i1}><div className={m.cls}><b>{m.who}</b>{m.text}</div></Fragment>))}
       </div>
       {chatOpen && (<>
-      <div className="border-t border-t-(--color-line) pt-2! px-4! pb-2! flex! flex-col! gap-2! bg-white! flex-none!">
+      <div className="border-t border-t-(--color-line) pt-2! px-4! pb-24! flex! flex-col! gap-2! bg-white! flex-none!">
         <div className="flex gap-2 overflow-x-auto pb-0.5">{(quick ?? []).map((q, __i1) => (<Fragment key={__i1}><button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip" onClick={q.pick}>{q.t}</button></Fragment>))}</div>
         <div className={screenStyles.row}><label htmlFor="msg" className="absolute left-[-9999px]!">Mensaje</label><input id="msg" className={screenStyles.input} placeholder="Escribe un mensaje" {...draft.props} /><button className="w-12 h-12 grid place-items-center border-0 bg-(--color-brand) rounded-[16px] text-(--color-ink) text-white! rounded-[16px]!" aria-label="Enviar" onClick={send}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l16-8-6 16-3-7z" /></svg></button></div>
         <div className="grid-cols-2 grid! gap-2!"><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed min-h-12!" onClick={openCierre}>Completar favor</button><button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed min-h-12!" onClick={doCancel}>Cancelar</button></div>
       </div>
       </>)}
       {chatClosed && (<>
-      <div className="border-t border-t-(--color-line) px-4! py-3! bg-white! flex! flex-col! gap-2! flex-none!"><p className={screenStyles.muted} role="status">Chat en solo lectura por 30 días. El acuerdo y los estados se conservan.</p>{canSello && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={openCierre}>Agradecer y dar sello</button></>)}</div>
+      <div className="border-t border-t-(--color-line) px-4! pt-3! pb-24! bg-white! flex! flex-col! gap-2! flex-none!"><p className={screenStyles.muted} role="status">Chat en solo lectura por 30 días. El acuerdo y los estados se conservan.</p>{canSello && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={openCierre}>Agradecer y dar sello</button></>)}</div>
       </>)}
       </>)}
       
