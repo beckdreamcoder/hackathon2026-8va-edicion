@@ -7,7 +7,7 @@ import { useTextInput } from "@/lib/hooks/use-text-input";
 import { Fragment, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useDemoState, setDemo } from "@/lib/demo/store";
+import { useDemoState, setDemo, resetDemo } from "@/lib/demo/store";
 import { useBloqueos, bloquear, desbloquear, cambiarUsuarioDemo, useCoordinaciones } from "@/lib/demo/coordinaciones";
 import { useSesion, useAvisos, useSellos, sellosDe, logEvento, VECINOS } from "@/lib/demo/shared";
 import { usePublicaciones } from "@/lib/demo/publicaciones";
@@ -110,6 +110,14 @@ export default function Perfil() {
     pick: () => cambiarUsuarioDemo(s.id),
   }));
   const cerrarSesion = () => { setSesion({ registrada: false }); logEvento("Sesión cerrada"); };
+  // Reiniciar la app: borra la actividad guardada en este dispositivo y vuelve a los ejemplos iniciales
+  const [confirmReinicio, setConfirmReinicio] = useState(false);
+  const [reiniciando, setReiniciando] = useState(false);
+  const reiniciarApp = async () => {
+    setReiniciando(true);
+    await resetDemo();
+    window.location.href = "/";
+  };
 
   const estaticos = NOTES_BASE.map((n) => ({ ...n, unread: !pf.leidos.includes(n.id), read: () => setPf((p) => ({ leidos: [...new Set([...p.leidos, n.id])] })) }));
   const generados = avisos.items.map((a) => ({ id: a.id, kind: KIND[a.categoria] ?? "Aviso", title: a.titulo, time: a.hace, href: a.href, unread: !a.leida, read: () => setAvisos((p) => ({ items: p.items.map((x) => (x.id === a.id ? { ...x, leida: true } : x)) })) }));
@@ -365,6 +373,15 @@ export default function Perfil() {
           {misBloqueos.map((b) => (<div key={b.target} className={screenStyles.row}><span className={screenStyles.grow}><b>{VECINOS[b.target].name}</b></span><button className={screenStyles.chip} onClick={() => desbloquear(sesion.userId, b.target)}>Desbloquear</button></div>))}</div>
         <div className={screenStyles.card} role="note"><p className={screenStyles.label}>Datos privados</p><p className={screenStyles.muted}>DNI {enmascarar(sesion.dni ?? "") || "sin registrar"} · Celular {pf.phone === "ok" ? enmascarar(pf.numero) : "sin vincular"}. Solo tú los ves.</p></div>
         <Link className={screenStyles.buttonSecondary} href="/" onClick={cerrarSesion}>Cerrar sesión</Link>
+        <div className={screenStyles.card}><p className={screenStyles.label}>Reiniciar la app</p>
+          <p className={screenStyles.muted}>Borra la actividad guardada en este dispositivo (coordinaciones, chats, avisos, publicaciones y apoyos) y vuelve a los ejemplos iniciales. La configuración del mapa se conserva.</p>
+          {!confirmReinicio ? (<button className={screenStyles.buttonOutline} onClick={() => setConfirmReinicio(true)}>Reiniciar la app</button>) : (
+            <div className="flex flex-col gap-2" role="alertdialog" aria-label="Confirmar reinicio de la app">
+              <p className="font-bold">¿Reiniciar la app? No se puede deshacer y tendrás que volver a ingresar.</p>
+              <div className="grid grid-cols-2 gap-2"><button className={screenStyles.buttonSecondary} disabled={reiniciando} onClick={() => setConfirmReinicio(false)}>Cancelar</button><button className={screenStyles.button} disabled={reiniciando} onClick={reiniciarApp}>{reiniciando ? "Reiniciando…" : "Sí, reiniciar"}</button></div>
+            </div>
+          )}
+        </div>
         
       </div>
       </>)}

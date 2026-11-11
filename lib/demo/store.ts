@@ -257,16 +257,21 @@ export function hayDemo(key: string): boolean {
   return hayWindow() && estado.motor !== "indexeddb" ? legado(key) != null : false;
 }
 
-/** Borra todos los datos de la demostración y vuelve a la semilla. */
+/** Borra los datos guardados y vuelve a los ejemplos iniciales (conserva la configuración del mapa). */
 export async function resetDemo() {
   sucias.clear();
   if (temporizador) { clearTimeout(temporizador); temporizador = null; }
+  const conservadas = ((await idb.leerTodo()) ?? []).filter((f) => CLAVES_CONSERVADAS.includes(f.key));
   cache.clear();
   crudo.clear();
   await idb.limpiarKv();
+  for (const f of conservadas) { await idb.guardar(f); crudo.set(f.key, f.value); }
   try {
     const borrar: string[] = [];
-    for (let i = 0; i < window.localStorage.length; i++) { const k = window.localStorage.key(i); if (k && k.startsWith(PREFIX)) borrar.push(k); }
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const k = window.localStorage.key(i);
+      if (k && k.startsWith(PREFIX) && !CLAVES_CONSERVADAS.includes(k.slice(PREFIX.length))) borrar.push(k);
+    }
     borrar.forEach((k) => window.localStorage.removeItem(k));
   } catch { /* nada que borrar */ }
   listeners.forEach((s) => s.forEach((l) => l()));
