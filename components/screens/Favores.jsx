@@ -265,7 +265,7 @@ export default function Favores() {
       
       {sheetCierre && (<>
       <div className={screenStyles.scrim} aria-hidden="true"></div>
-      <div className="absolute left-0 right-0 bottom-0 bg-white rounded-[24px_24px_0_0] border-t border-t-(--color-line) shadow-[0_-8px_24px_rgba(32,33,36,.15)] pt-5 px-4 pb-5 flex flex-col gap-3 z-5" role="dialog" aria-label="Cierre del favor">
+      <div className="absolute left-0 right-0 bottom-0 bg-white rounded-[24px_24px_0_0] border-t border-t-(--color-line) shadow-[0_-8px_24px_rgba(32,33,36,.15)] pt-5 px-4 pb-5 flex flex-col gap-3 z-40" role="dialog" aria-label="Cierre del favor">
         <h2 className="text-[22px]!">{cierreTitle}</h2>
         {cierrePend && (<>
           <p className={screenStyles.muted}>El favor se completa cuando ambas personas confirman.</p>
@@ -285,7 +285,7 @@ export default function Favores() {
       
       {sheetRep && (<>
       <div className={screenStyles.scrim} aria-hidden="true"></div>
-      <div className="absolute left-0 right-0 bottom-0 bg-white rounded-[24px_24px_0_0] border-t border-t-(--color-line) shadow-[0_-8px_24px_rgba(32,33,36,.15)] pt-5 px-4 pb-5 flex flex-col gap-3 z-5" role="dialog" aria-label="Reportar o bloquear">
+      <div className="absolute left-0 right-0 bottom-0 bg-white rounded-[24px_24px_0_0] border-t border-t-(--color-line) shadow-[0_-8px_24px_rgba(32,33,36,.15)] pt-5 px-4 pb-5 flex flex-col gap-3 z-40" role="dialog" aria-label="Reportar o bloquear">
         <h2 className="text-[22px]!">Reportar o bloquear</h2>
         {repOpen && (<>
           <div className={screenStyles.wrap}><button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip">Mensajes molestos</button><button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip">No cumplió</button><button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-3.5 py-0 font-bold text-[15px] whitespace-nowrap chip">Otro motivo</button></div>

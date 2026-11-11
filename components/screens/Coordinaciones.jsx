@@ -23,7 +23,7 @@ const BUBBLE_ME = "self-end max-w-[82%] rounded-[18px] rounded-br-[6px] bg-(--co
 const BUBBLE_OTHER = "self-start max-w-[82%] rounded-[18px] rounded-bl-[6px] bg-[#f1ece6] text-(--color-ink) px-3.5 py-2 flex flex-col gap-0.5 [&_b]:text-[13px] [&_b]:text-(--color-muted)";
 const QUICK = ["¿A qué hora puedes?", "Estoy en camino", "Necesito reprogramar"];
 const PASOS = ["Solicitud", "Aceptación", "Acuerdo", "Cierre", "Sello"];
-const SHEET = "absolute left-0 right-0 bottom-0 max-h-[85%] overflow-y-auto bg-white rounded-[24px_24px_0_0] border-t border-t-(--color-line) shadow-[0_-8px_24px_rgba(32,33,36,.15)] pt-5 px-4 pb-5 flex flex-col gap-3 z-5";
+const SHEET = "absolute left-0 right-0 bottom-0 max-h-[85%] overflow-y-auto bg-white rounded-[24px_24px_0_0] border-t border-t-(--color-line) shadow-[0_-8px_24px_rgba(32,33,36,.15)] pt-5 px-4 pb-5 flex flex-col gap-3 z-40";
 
 const FILTROS = [
   { id: "pendientes", name: "Pendientes", test: (c) => c.estado === "solicitada" },

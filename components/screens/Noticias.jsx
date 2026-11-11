@@ -114,7 +114,7 @@ export default function Noticias() {
       
       {sheetV && (<>
       <div className={screenStyles.scrim} aria-hidden="true"></div>
-      <div className="absolute left-0 right-0 bottom-0 max-h-[88%] overflow-y-auto bg-white rounded-[24px_24px_0_0] border-t border-t-(--color-line) shadow-[0_-8px_24px_rgba(32,33,36,.15)] px-4 py-5 flex flex-col gap-3 z-5" role="dialog" aria-label="Vecino del mes">
+      <div className="absolute left-0 right-0 bottom-0 max-h-[88%] overflow-y-auto bg-white rounded-[24px_24px_0_0] border-t border-t-(--color-line) shadow-[0_-8px_24px_rgba(32,33,36,.15)] px-4 py-5 flex flex-col gap-3 z-40" role="dialog" aria-label="Vecino del mes">
         <div className={screenStyles.row}><h2 className={`${screenStyles.grow} text-[23px]!`}>Vecino del mes</h2><button className={screenStyles.iconButton} aria-label="Cerrar" onClick={closeVecino}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button></div>
         <p className={screenStyles.muted}>Campoy · {monthLbl}</p>
         {open && (<><span className={screenStyles.badgeDemo}>Avance del mes · no es ganador definitivo</span></>)}

@@ -27,7 +27,7 @@ export const screenStyles = {
   navigation: "absolute left-3 right-3 bottom-3 z-10 flex bg-white px-1.5 py-2 border border-[#ede9e6] rounded-[28px] shadow-[0_8px_24px_rgba(32,33,36,.14)] [&_a]:flex-1 [&_a]:min-h-14 [&_a]:flex [&_a]:flex-col [&_a]:items-center [&_a]:justify-center [&_a]:gap-0.5 [&_a]:text-[13px] [&_a]:text-(--color-muted) [&_a]:rounded-[14px]",
   row: "flex items-center gap-3",
   screen: "m-0 bg-white text-(--color-ink) font-[Nunito,system-ui,sans-serif] text-[17px] leading-[1.4] [&_:is(h1,h2,h3,h4,.t)]:leading-[1.15] [&_:is(h1,h2,h3,h4,.t)]:tracking-[-.01em] [&_button]:cursor-pointer [&_:focus-visible]:outline-3 [&_:focus-visible]:outline-(--color-ink) [&_:focus-visible]:outline-offset-2",
-  scrim: "absolute inset-0 bg-[rgba(32,33,36,.35)] z-4",
+  scrim: "absolute inset-0 bg-[rgba(32,33,36,.35)] z-30",
   success: "text-[#2f5a2d] font-bold",
   wrap: "flex flex-wrap gap-2",
 };

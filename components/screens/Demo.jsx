@@ -111,7 +111,7 @@ export default function Demo() {
       
       {sheetReset && (<>
       <div className={screenStyles.scrim} aria-hidden="true"></div>
-      <div className="absolute left-0 right-0 bottom-0 bg-white rounded-[24px_24px_0_0] border-t border-t-(--color-line) shadow-[0_-8px_24px_rgba(32,33,36,.15)] px-4 py-5 flex flex-col gap-3 z-5" role="dialog" aria-label="Restablecer datos"><h2 className="text-[22px]!">¿Restablecer los datos de ejemplo?</h2><p className={screenStyles.muted}>Se borrarán los cambios de esta demostración y volverán las semillas originales.</p><button className={screenStyles.button} onClick={doReset}>Sí, restablecer</button><button className={screenStyles.buttonSecondary} onClick={closeReset}>Cancelar</button></div>
+      <div className="absolute left-0 right-0 bottom-0 bg-white rounded-[24px_24px_0_0] border-t border-t-(--color-line) shadow-[0_-8px_24px_rgba(32,33,36,.15)] px-4 py-5 flex flex-col gap-3 z-40" role="dialog" aria-label="Restablecer datos"><h2 className="text-[22px]!">¿Restablecer los datos de ejemplo?</h2><p className={screenStyles.muted}>Se borrarán los cambios de esta demostración y volverán las semillas originales.</p><button className={screenStyles.button} onClick={doReset}>Sí, restablecer</button><button className={screenStyles.buttonSecondary} onClick={closeReset}>Cancelar</button></div>
       </>)}
       </div>
     </div>

@@ -387,7 +387,7 @@ export default function Perfil() {
       
       {sheetRep && (<>
       <div className={screenStyles.scrim} aria-hidden="true" onClick={closeRep}></div>
-      <div className="absolute left-0 right-0 bottom-0 max-h-[90%] overflow-y-auto bg-white rounded-[24px_24px_0_0] border-t border-t-(--color-line) shadow-[0_-8px_24px_rgba(32,33,36,.15)] px-4 py-5 flex flex-col gap-3 z-5" role="dialog" aria-label="Reportar o bloquear">
+      <div className="absolute left-0 right-0 bottom-0 max-h-[90%] overflow-y-auto bg-white rounded-[24px_24px_0_0] border-t border-t-(--color-line) shadow-[0_-8px_24px_rgba(32,33,36,.15)] px-4 py-5 flex flex-col gap-3 z-40" role="dialog" aria-label="Reportar o bloquear">
         <h2 className="text-[22px]!">Reportar o bloquear</h2>
         {!repDone && (<>
           {!repFijo && (<div className={screenStyles.field}><p className={screenStyles.label}>Vecino</p><div className="flex gap-2 overflow-x-auto pb-0.5 [&>*]:shrink-0">{posibles.map((v) => (<button key={v.id} className={v.id === targetId ? CHIP_ON : screenStyles.chip} aria-pressed={v.id === targetId} onClick={() => setTarget(v.id)}>{v.name}</button>))}</div></div>)}
