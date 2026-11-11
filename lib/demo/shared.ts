@@ -1,6 +1,7 @@
 "use client";
 
 import { getDemo, setDemo, useDemoState } from "./store";
+import { SELLOS_EJEMPLO, AVISOS_EJEMPLO } from "./ejemplos";
 
 /** Vecinos ficticios de la demostración. */
 export const VECINOS = {
@@ -132,7 +133,7 @@ function seedSellos(): Sello[] {
   return out;
 }
 
-export const SELLOS_INICIAL = { items: seedSellos() };
+export const SELLOS_INICIAL = { items: [...seedSellos(), ...SELLOS_EJEMPLO] };
 
 export function useSellos() {
   return useDemoState("sellos", SELLOS_INICIAL);
@@ -179,7 +180,7 @@ export function useEventos() {
 /* ---------- Avisos generados por la actividad de la demo ---------- */
 
 export type AvisoDemo = { id: string; categoria: string; titulo: string; texto: string; href: string; leida: boolean; hace: string };
-export const AVISOS_INICIAL = { items: [] as AvisoDemo[] };
+export const AVISOS_INICIAL = { items: AVISOS_EJEMPLO };
 
 export function avisar(a: Omit<AvisoDemo, "id" | "leida" | "hace">) {
   const { items } = getDemo("avisos", AVISOS_INICIAL);

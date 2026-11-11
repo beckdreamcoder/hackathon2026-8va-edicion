@@ -90,7 +90,7 @@ export default function Coordinaciones() {
   const bloqueado = sel ? estaBloqueado(sel.solicitante, sel.receptor) : false;
   const yoBloquee = otro ? bloqueos.items.some((x) => x.by === uid && x.target === otro) : false;
   const infoPub = (c) => catalogo.find((v) => v.id === c.pubId);
-  const categoriaDe = (c) => infoPub(c)?.categoria ?? (c.legado ? "Flujo guiado" : ETIQUETA_TIPO[c.tipo]);
+  const categoriaDe = (c) => infoPub(c)?.categoria ?? c.categoria ?? (c.legado ? "Flujo guiado" : ETIQUETA_TIPO[c.tipo]);
   const usuarios = [...USUARIOS, ...(USUARIOS.includes(uid) ? [] : [uid]), ...(otro && !USUARIOS.includes(otro) && otro !== uid ? [otro] : [])];
 
   useEffect(() => {

@@ -14,6 +14,13 @@ import * as idb from "./idb";
  */
 const PREFIX = "bc:";
 export const ESQUEMA = 1;
+/**
+ * Versión de los datos de ejemplo. Al subirla, cada dispositivo borra una vez la actividad guardada
+ * (coordinaciones, chats, avisos, publicaciones…) y arranca con los ejemplos de `ejemplos.ts`.
+ */
+export const VERSION_DATOS = 2;
+/** Claves que sobreviven a ese reinicio: la configuración del mapa no se toca. */
+const CLAVES_CONSERVADAS = ["mapa-ui"];
 
 type Listener = () => void;
 const listeners = new Map<string, Set<Listener>>();
@@ -36,6 +43,27 @@ function legado(key: string): unknown | null {
     return raw != null ? JSON.parse(raw) : null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Borra la actividad antigua guardada en localStorage (`bc:*`, salvo las claves conservadas) si aún no se
+ * hizo para esta versión de datos. Devuelve true si borró algo.
+ */
+function reiniciarLegado(): boolean {
+  try {
+    const ls = window.localStorage;
+    if (ls.getItem("bc-version-datos") === String(VERSION_DATOS)) return false;
+    const borrar: string[] = [];
+    for (let i = 0; i < ls.length; i++) {
+      const k = ls.key(i);
+      if (k && k.startsWith(PREFIX) && !CLAVES_CONSERVADAS.includes(k.slice(PREFIX.length))) borrar.push(k);
+    }
+    borrar.forEach((k) => ls.removeItem(k));
+    ls.setItem("bc-version-datos", String(VERSION_DATOS));
+    return borrar.length > 0;
+  } catch {
+    return false;
   }
 }
 
@@ -138,11 +166,23 @@ export function hidratar(): Promise<EstadoAlmacen> {
   if (hidratando) return hidratando;
   hidratando = (async () => {
     if (!hayWindow()) return estado;
-    const filas = await idb.leerTodo();
+    let filas = await idb.leerTodo();
     if (filas === null) {
+      reiniciarLegado(); // datos anteriores de localStorage descartados una vez
       cambiarEstado({ motor: "localstorage", hidratado: true, error: "IndexedDB no está disponible en este navegador: se usa localStorage." });
       listeners.forEach((s) => s.forEach((l) => l()));
       return estado;
+    }
+    // Nueva versión de los datos de ejemplo: se descarta una sola vez la actividad guardada antes
+    // (se conserva la configuración del mapa) para arrancar con los ejemplos listos.
+    if ((await idb.metaLeer<number>("version-datos")) !== VERSION_DATOS) {
+      await idb.limpiarKv();
+      const conservadas = filas.filter((f) => CLAVES_CONSERVADAS.includes(f.key));
+      for (const f of conservadas) await idb.guardar(f);
+      filas = conservadas;
+      reiniciarLegado();
+      await idb.metaGuardar("migracion-localstorage", { fecha: Date.now(), migrados: 0, esquema: ESQUEMA });
+      await idb.metaGuardar("version-datos", VERSION_DATOS);
     }
     const porClave = new Map(filas.map((f) => [f.key, f]));
     let migrados = 0;

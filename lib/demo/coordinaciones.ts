@@ -3,6 +3,7 @@
 import { getDemo, hayDemo, setDemo, useDemoState } from "./store";
 import { VECINOS, SESION_INICIAL, avisar, logEvento, emitirSello, type VecinoId } from "./shared";
 import type { PublicacionDemo } from "./publicaciones";
+import { COORDINACIONES_EJEMPLO } from "./ejemplos";
 
 /**
  * Motor de coordinación genérico (favores, cachuelos, movilidad y publicaciones nuevas).
@@ -32,6 +33,8 @@ export type Coordinacion = {
   cierre: VecinoId[];
   sellos: VecinoId[];
   cerradaPor?: VecinoId;
+  /** Categoría a mostrar cuando la publicación de origen no está en el catálogo (ejemplos). */
+  categoria?: string;
   /** Motivo opcional al cancelar. */
   motivo?: string;
   /** Coordinación de un flujo fijo: se gestiona en su pantalla `href`. */
@@ -39,7 +42,7 @@ export type Coordinacion = {
   href?: string;
 };
 
-export const COORD_INICIAL = { items: [] as Coordinacion[] };
+export const COORD_INICIAL = { items: COORDINACIONES_EJEMPLO };
 export const BLOQUEOS_INICIAL = { items: [] as { by: VecinoId; target: VecinoId }[] };
 
 export function useCoordinaciones() {

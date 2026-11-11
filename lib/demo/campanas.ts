@@ -5,6 +5,7 @@ import { getDemo, setDemo, useDemoState } from "./store";
 import { usePublicaciones, type PublicacionDemo } from "./publicaciones";
 import { useSesion, VECINOS, logEvento, avisar, type VecinoId } from "./shared";
 import { abrirCoordinacionMovilidad } from "./coordinaciones";
+import { APORTES_EJEMPLO } from "./ejemplos";
 
 /**
  * Red solidaria: campañas (creadas en Publicar y de la comunidad) con sus aportes.
@@ -23,7 +24,7 @@ export const MODALIDADES_LISTA = Object.keys(MODALIDADES) as Modalidad[];
 export const SOLES_POR_UNIDAD = 10;
 
 export type Aporte = { id: string; campId: string; vecino: VecinoId; modalidad: Modalidad; cantidad: number; nota: string; estado: "prometido" | "confirmado" | "rechazado"; fecha: string; coordId?: string };
-export const APORTES_INICIAL = { items: [] as Aporte[] };
+export const APORTES_INICIAL = { items: APORTES_EJEMPLO };
 export const FINALIZADAS_INICIAL = { ids: [] as string[] };
 
 export const valorAporte = (a: Pick<Aporte, "modalidad" | "cantidad">) => (a.modalidad === "Dinero" ? a.cantidad / SOLES_POR_UNIDAD : a.cantidad);
