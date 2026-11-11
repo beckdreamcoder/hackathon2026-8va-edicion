@@ -15,9 +15,9 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { PostCard } from "./post-card";
 
-const MOV_INICIAL = { actor: "maria", tab: "nec", stage: "none", ampliado: false, conf: [], sellos: [], coordId: "", req: { origen: "Campoy", destino: "Hospital de la zona", cuando: "Mañana 9:00 a. m.", plazas: "1 plaza", urgente: false } };
+const MOV_INICIAL = { actor: "maria", tab: "nec", stage: "none", ampliado: false, conf: [], sellos: [], coordId: "", req: { origen: "Campoy", destino: "Hospital de la zona", cuando: "Mañana 9:00 a. m.", plazas: "1 asiento", urgente: false } };
 const CUANDO = ["Mañana 9:00 a. m.", "Hoy 4:00 p. m."];
-const PLAZAS = ["1 plaza", "2 plazas"];
+const ASIENTOS = ["1 asiento", "2 asientos"];
 import { screenStyles } from "./screen-styles";
 
 /**
@@ -40,7 +40,7 @@ export default function Movilidad() {
   const actor = m.actor;
   const other = actor === "maria" ? "carlos" : "maria";
   const [cuando, setCuando] = useState(CUANDO[0]);
-  const [plazas, setPlazas] = useState(PLAZAS[0]);
+  const [plazas, setPlazas] = useState(ASIENTOS[0]);
   const avisos = useCheckbox(true);
   const urg = useCheckbox(false);
   const req = m.req;
@@ -86,7 +86,7 @@ export default function Movilidad() {
     nav.go("detalle");
   };
   const ampliar = () => { setM({ ampliado: true }); logEvento("María amplió el aviso de traslado a su comunidad"); };
-  const offer = () => { if (st === "avisada" && !bloq) { setM({ stage: "oferta" }); logEvento("Carlos ofreció plaza: «Puedo llevarte»"); } };
+  const offer = () => { if (st === "avisada" && !bloq) { setM({ stage: "oferta" }); logEvento("Carlos ofreció un asiento: «Puedo llevarte»"); } };
   const acceptOffer = () => { if (st === "oferta" && !bloq) { setM({ stage: "ficha", conf: [], coordId: `mov-${Date.now()}` }); logEvento("María aceptó a Carlos · ficha de traslado abierta"); } };
   const cM = m.conf.includes("maria") ? "confirmó" : "pendiente";
   const cC = m.conf.includes("carlos") ? "confirmó" : "pendiente";
@@ -131,10 +131,10 @@ export default function Movilidad() {
         <div className={screenStyles.wrap}><button className={tabNec} onClick={setNec}>Piden traslado</button><button className={tabPaso} onClick={setPaso}>Pasan por ahí</button></div>
         {tabIsNec && (<>
           {pubs.items.filter((p) => p.tipo === "favor" && p.categoria === "Movilidad" && p.modo === "pido").map((p) => (<PostCard key={p.id} p={p} />))}
-          {hasReq && (<><button className={screenStyles.card} onClick={() => nav.go("detalle")}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span><span className={screenStyles.badge}>{statusTxt}</span></div><h3 className="text-[19px]!">María necesita llegar al hospital</h3><p className={screenStyles.muted}>Desde {req.origen} (zona aproximada) · {req.cuando} · {req.plazas}</p></button></>)}
+          {hasReq && (<><button className={screenStyles.card} onClick={() => nav.go("detalle")}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span><span className={screenStyles.badge}>{statusTxt}</span></div><h3 className="text-[19px]!">María necesita llegar al hospital</h3><p className={screenStyles.muted}>Desde {req.origen} (zona aproximada) · {req.cuando} · {String(req.plazas).replace(/plaza/g, "asiento")}</p></button></>)}
           {noReq && (<><div className={screenStyles.card} role="status"><p className="font-bold!">Aún no hay traslados pedidos</p><p className={screenStyles.muted}>Pide uno y tu junta recibirá el aviso primero.</p></div></>)}
         </>)}
-        {tabIsPaso && (<>{pubs.items.filter((p) => p.tipo === "favor" && p.categoria === "Movilidad" && p.modo === "ofrezco").map((p) => (<PostCard key={p.id} p={p} />))}<div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span></div><h3 className="text-[19px]!">Carlos pasa por el hospital mañana</h3><p className={screenStyles.muted}>Sale 8:45 a. m. · 2 plazas · Desde Campoy</p></div></>)}
+        {tabIsPaso && (<>{pubs.items.filter((p) => p.tipo === "favor" && p.categoria === "Movilidad" && p.modo === "ofrezco").map((p) => (<PostCard key={p.id} p={p} />))}<div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span></div><h3 className="text-[19px]!">Carlos pasa por el hospital mañana</h3><p className={screenStyles.muted}>Sale 8:45 a. m. · 2 asientos · Desde Campoy</p></div></>)}
         <button className={screenStyles.button} onClick={() => nav.go("nuevo")}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>Pedir un traslado</button>
         <button className={screenStyles.buttonSecondary} onClick={() => nav.go("junta")}>Mi junta vecinal</button>
         <Link className={screenStyles.buttonSecondary} href="/coordinaciones">Mis coordinaciones</Link>
@@ -148,7 +148,7 @@ export default function Movilidad() {
         <div className={screenStyles.field}><label htmlFor="o">Origen aproximado</label><input id="o" className={screenStyles.input} {...origen.props} /></div>
         <div className={screenStyles.field}><label htmlFor="d">Destino</label><input id="d" className={screenStyles.input} {...destino.props} /></div>
         <div className={screenStyles.field}><p className={screenStyles.label}>¿Cuándo?</p><div className={screenStyles.wrap}><button className={chip(cuando === "Mañana 9:00 a. m.")} onClick={() => setCuando("Mañana 9:00 a. m.")}>Mañana 9:00 a. m.</button><button className={chip(cuando === "Hoy 4:00 p. m.")} onClick={() => setCuando("Hoy 4:00 p. m.")}>Hoy 4:00 p. m.</button></div></div>
-        <div className={screenStyles.field}><p className={screenStyles.label}>Personas</p><div className={screenStyles.wrap}><button className={chip(plazas === "1 plaza")} onClick={() => setPlazas("1 plaza")}>1 plaza</button><button className={chip(plazas === "2 plazas")} onClick={() => setPlazas("2 plazas")}>2 plazas</button></div></div>
+        <div className={screenStyles.field}><p className={screenStyles.label}>Personas</p><div className={screenStyles.wrap}><button className={chip(plazas === "1 asiento")} onClick={() => setPlazas("1 asiento")}>1 asiento</button><button className={chip(plazas === "2 asientos")} onClick={() => setPlazas("2 asientos")}>2 asientos</button></div></div>
         <div className={screenStyles.card}><p className={screenStyles.label}>Destinatarios</p><p>Mi junta primero</p><p className={screenStyles.muted}>Tu punto exacto se comparte solo en privado, después de aceptar.</p></div>
         <button className={screenStyles.button} onClick={sendReq}>Enviar a mi junta</button>
       </div>
@@ -156,7 +156,7 @@ export default function Movilidad() {
       
       {nav.is("detalle") && (<>
       <div className={screenStyles.content}>
-        <div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span><span className={screenStyles.badge}>{statusTxt}</span></div><h2 className="text-[22px]!">María necesita llegar al hospital</h2><p className={screenStyles.muted}>Desde {req.origen} (zona aproximada) · {req.cuando} · {req.plazas} · {req.urgente ? "Marcado urgente: llama al 106" : "No urgente"}</p></div>
+        <div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span><span className={screenStyles.badge}>{statusTxt}</span></div><h2 className="text-[22px]!">María necesita llegar al hospital</h2><p className={screenStyles.muted}>Desde {req.origen} (zona aproximada) · {req.cuando} · {String(req.plazas).replace(/plaza/g, "asiento")} · {req.urgente ? "Marcado urgente: llama al 106" : "No urgente"}</p></div>
       
         {b_none && (<><div className={screenStyles.card} role="status"><p className="font-bold!">Aún no hay solicitud</p><button className={screenStyles.button} onClick={() => nav.go("nuevo")}>Pedir un traslado</button></div></>)}
       
@@ -173,7 +173,7 @@ export default function Movilidad() {
         </>)}
       
         {b_oferta_m && (<>
-          <div className={screenStyles.card}><div className={screenStyles.row}><span className="w-11 h-11 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[18px] flex-none bg-[#e6f0e4] text-[#2f5a2d] av" aria-hidden="true">C</span><div className={screenStyles.grow}><b>Carlos puede llevarte</b><p className={screenStyles.muted}>Miembro de tu junta · 6 referencias vecinas</p></div></div><p className={screenStyles.muted}>Sale 8:45 a. m. · 2 plazas · pasa por el hospital</p></div>
+          <div className={screenStyles.card}><div className={screenStyles.row}><span className="w-11 h-11 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[18px] flex-none bg-[#e6f0e4] text-[#2f5a2d] av" aria-hidden="true">C</span><div className={screenStyles.grow}><b>Carlos puede llevarte</b><p className={screenStyles.muted}>Miembro de tu junta · 6 referencias vecinas</p></div></div><p className={screenStyles.muted}>Sale 8:45 a. m. · 2 asientos · pasa por el hospital</p></div>
           <button className={screenStyles.button} onClick={acceptOffer}>Aceptar a Carlos</button><button className={screenStyles.buttonSecondary} onClick={cancel}>Rechazar</button>
         </>)}
         {b_oferta_c && (<><div className={screenStyles.card} role="status"><p className={screenStyles.success}>✓ Oferta enviada</p><p className={screenStyles.muted}>Esperando que María acepte. Cambia a «María» arriba.</p></div></>)}
