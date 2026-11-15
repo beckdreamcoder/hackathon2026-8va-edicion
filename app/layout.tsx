@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "tailwindcss/index.css";
 import "./tema.css";
 import { SwRegister } from "@/components/sw-register";
@@ -32,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <head>
         {/* Aplica el tema guardado antes de pintar, para evitar el parpadeo */}
-        <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA }} />
+        <Script id="tema-guardado" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA }} />
         <style>{`*{scrollbar-width:none;-ms-overflow-style:none}*::-webkit-scrollbar{display:none;width:0;height:0}nav[aria-label="Principal"]{max-width:26rem;margin-inline:auto}`}</style>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
