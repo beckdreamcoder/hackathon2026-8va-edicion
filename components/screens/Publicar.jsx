@@ -6,7 +6,7 @@ import { useCheckbox } from "@/lib/hooks/use-checkbox";
 import { useTextInput } from "@/lib/hooks/use-text-input";
 
 import { Fragment, useState } from "react";
-import { useSesion, chip, logEvento } from "@/lib/demo/shared";
+import { useSesion, chip, logEvento, ubicacionCorta } from "@/lib/demo/shared";
 import { usePublicaciones, LIMITE_CACHUELOS } from "@/lib/demo/publicaciones";
 
 const TIPOS = [{id: "favor", name: "Favor gratuito", sub: "Préstamos, habilidades, ayuda temporal y movilidad", tag: "Gratis", tagCls: screenStyles.badgeFavor}, {id: "cachuelo", name: "Cachuelo", sub: "Trabajo o servicio remunerado", tag: "Con precio", tagCls: screenStyles.badgeCachuelo}, {id: "emergencia", name: "Emergencia", sub: "Reporte con cámara y ubicación", tag: "Urgente", tagCls: screenStyles.badgeEmergency}, {id: "campana", name: "Campaña de apoyo", sub: "Causas solidarias con responsable y plazo", tag: "Solidaridad", tagCls: screenStyles.badgeSolidarity}];
@@ -140,7 +140,7 @@ export default function Publicar() {
       categoria: esFavor ? cat : esCach ? catCach : "Campaña",
       disponibilidad: disp, precio: esCach ? precio.value.trim() || "A convenir" : null,
       responsable: responsable.value.trim(), plazo: plazo.value.trim(), formas: forma,
-      alcance, zona: `${sesion.localidad} · zona aproximada`, distrito,
+      alcance, zona: `${ubicacionCorta(sesion)} · zona aproximada`, distrito,
       ...(esCamp ? { meta: Math.floor(Number(meta.value)), inicio: inicio || hoy, imagen: imagen || undefined } : {}),
       estado: pendiente ? "pendiente" : "publicado",
     };

@@ -10,7 +10,7 @@ import { enLima, CAMPOY } from "@/lib/map/geo";
 import { ANEXO_22 } from "@/lib/map/comunidad";
 import { FichaPersona } from "@/components/map/FichasMapa";
 import { useDemoState } from "@/lib/demo/store";
-import { useSesion, avisar, logEvento } from "@/lib/demo/shared";
+import { useSesion, avisar, logEvento, ubicacionCorta } from "@/lib/demo/shared";
 import { useIncidentes, autoresDistintos, estadoCorroboracion, registrarReporteAgrupado, candidatoIncidente, cambiarEstadoIncidente, estadoOpDe, ESTADOS_OP, PRIORIDADES, entidadDeIncidente, ESTADOS_INST, RADIO_AGRUPAR_M, VENTANA_AGRUPAR_MIN } from "@/lib/demo/incidentes";
 
 const EME_UI = { tab: "n", incId: "INC-0007", needs: [{name: "Alimentos", note: "Comida lista y agua embotellada", ofrecido: false}, {name: "Abrigo", note: "Frazadas y ropa seca", ofrecido: false}, {name: "Materiales", note: "Bolsas, palas y botas", ofrecido: false}, {name: "Logística", note: "Transporte seguro de donaciones", ofrecido: false}] };
@@ -211,7 +211,7 @@ export default function Emergencias() {
         <div className="bg-[#fff1e6] border border-[#f0c8a8] rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 text-left w-full" role="note"><p><b>¿Hay peligro ahora?</b> Llama primero. No necesitas foto para pedir ayuda.</p><a className="min-h-15 rounded-[18px] border-2 border-[#9a3412] bg-[#9a3412] text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full text-[19px] disabled:opacity-50 min-h-13!" href="tel:106">Llamar al 106</a></div>
         <div className="relative h-62.5 rounded-[20px] bg-[#2b2b2b] grid place-items-center text-white overflow-hidden [&_.fr]:absolute [&_.fr]:inset-4.5 [&_.fr]:border-2 [&_.fr]:border-dashed [&_.fr]:border-[rgba(255,255,255,.7)] [&_.fr]:rounded-[16px]"><div className="fr"></div><p className="text-center px-10! py-0!">{camMsg}</p></div>
         <p className={screenStyles.muted}>La foto se toma con la cámara; no se sube desde la galería. Tu navegador pedirá permiso.</p>
-        <div className={screenStyles.card}><p className={screenStyles.label}>Ubicación y hora (de tu dispositivo)</p><p>{sesion.localidad} · precisión {precision} · {capHora || "se registra al tomar la foto"}</p><p className={screenStyles.muted}>Tu ubicación no prueba por sí sola dónde ocurrió el hecho.</p></div>
+        <div className={screenStyles.card}><p className={screenStyles.label}>Ubicación y hora (de tu dispositivo)</p><p>{ubicacionCorta(sesion)} · precisión {precision} · {capHora || "se registra al tomar la foto"}</p><p className={screenStyles.muted}>Tu ubicación no prueba por sí sola dónde ocurrió el hecho.</p></div>
         <div className={screenStyles.checkboxRow}><input id="lug" type="checkbox" {...lugar.props} /><label htmlFor="lug"><b>Confirmo que veo este lugar ahora</b></label></div>
         {noFoto && (<>
           <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => takePhoto(true)}>Tomar foto</button>

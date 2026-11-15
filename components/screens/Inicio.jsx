@@ -2,7 +2,7 @@
 
 import { Fragment } from "react";
 import { screenStyles } from "./screen-styles";
-import { useSesion, useAvisos, VECINOS } from "@/lib/demo/shared";
+import { useSesion, useAvisos, VECINOS, ubicacionCorta } from "@/lib/demo/shared";
 import { useDemoState } from "@/lib/demo/store";
 
 /**
@@ -23,7 +23,7 @@ export default function Inicio() {
       <div className={screenStyles.frame}>
       <div className="pt-3 pr-3 pb-1 pl-4 flex! items-center! gap-3! min-h-16! flex-none!">
         <span className="w-13 h-13 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[22px] flex-none bg-[#f4d9c6] text-[#8a2b07] border-2 border-white shadow-[0_0_0_1px_#E3DDD7]" aria-hidden="true">{nombre.charAt(0)}</span>
-        <div className="min-w-0 flex-1!"><h1 className="text-[24px]!">Hola, {nombre}</h1><p className={`${screenStyles.muted} flex! items-center! gap-1!`}><svg className="w-6 h-6 fill-current stroke-none stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic w-4.5! h-4.5! text-(--color-brand)!" viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M10 2.009c-2.762 0-5 2.229-5 4.99c0 4.774 5 11 5 11s5-6.227 5-11c0-2.76-2.238-4.99-5-4.99m0 7.751a2.7 2.7 0 1 1 0-5.4a2.7 2.7 0 0 1 0 5.4" /></svg>{sesion.localidad}{sesion.juntaId ? "" : " · sin junta"}</p></div>
+        <div className="min-w-0 flex-1!"><h1 className="text-[24px]!">Hola, {nombre}</h1><p className={`${screenStyles.muted} flex! items-center! gap-1!`}><svg className="w-6 h-6 fill-current stroke-none stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic w-4.5! h-4.5! text-(--color-brand)!" viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M10 2.009c-2.762 0-5 2.229-5 4.99c0 4.774 5 11 5 11s5-6.227 5-11c0-2.76-2.238-4.99-5-4.99m0 7.751a2.7 2.7 0 1 1 0-5.4a2.7 2.7 0 0 1 0 5.4" /></svg>{ubicacionCorta(sesion)}{sesion.juntaId ? "" : " · sin junta"}</p></div>
         <a className="w-12 h-12 grid place-items-center rounded-[16px] text-(--color-ink) relative" href="/notificaciones" aria-label={`Avisos, ${sinLeer} sin leer`}><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4" /></svg>{sinLeer > 0 && (<i className="absolute top-2.5 right-[11px] w-2.5 h-2.5 rounded-[50%] bg-(--color-brand) border-2 border-white"></i>)}</a>
       </div>
       <div className={`${screenStyles.content} gap-3.5!`}>

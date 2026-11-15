@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useDemoState, setDemo, resetDemo } from "@/lib/demo/store";
 import { useBloqueos, bloquear, desbloquear, cambiarUsuarioDemo, useCoordinaciones } from "@/lib/demo/coordinaciones";
-import { useSesion, useAvisos, useSellos, sellosDe, logEvento, VECINOS } from "@/lib/demo/shared";
+import { useSesion, useAvisos, useSellos, sellosDe, logEvento, VECINOS, ubicacionCorta } from "@/lib/demo/shared";
 import { usePublicaciones } from "@/lib/demo/publicaciones";
 import { useCatalogo, ESTADOS_CAT, TIPOS_CAT } from "@/lib/demo/catalogo";
 import { useCampanas, ESTADO_CAMPANA, APORTES_INICIAL } from "@/lib/demo/campanas";
@@ -224,7 +224,8 @@ export default function Perfil() {
         {msg && (<p className={screenStyles.success} role="status">{msg}</p>)}
         <div className={`${screenStyles.card} flex-row! items-center!`}>
           <Avatar datos={datos.items} id={uid} nombre={miNombre} />
-          <div className={screenStyles.grow}><h2 className="text-[24px]!">{miNombre}</h2><p className={screenStyles.muted}>{miDistrito} · {sesion.localidad}</p><p className={screenStyles.muted}>{junta ? junta.name : "Sin junta vecinal"}</p>
+          <div className={screenStyles.grow}><h2 className="text-[24px]!">{miNombre}</h2><p className={screenStyles.muted}>{miDistrito} · {ubicacionCorta(sesion)}</p><p className={screenStyles.muted}>{junta ? junta.name : "Sin junta vecinal"}</p>
+            {sesion.direccion && (<p className={screenStyles.muted}>Dirección de referencia: {sesion.direccion}</p>)}
             <div className="flex flex-wrap gap-1.5"><span className={screenStyles.badge}>{refLbl}</span><span className={screenStyles.badgeDemo}>{sesion.registrada && sesion.dni ? "Identidad validada con RENIEC" : "Sin validar"}</span></div></div>
         </div>
         {miDatos.bio && (<p>{miDatos.bio}</p>)}

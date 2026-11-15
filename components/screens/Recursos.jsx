@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { screenStyles } from "./screen-styles";
 import { ScreenShell } from "./screen-shell";
 import { useTextInput } from "@/lib/hooks/use-text-input";
-import { chip, useSesion, VECINOS, logEvento } from "@/lib/demo/shared";
+import { chip, useSesion, VECINOS, logEvento, ubicacionCorta } from "@/lib/demo/shared";
 import { usePublicaciones } from "@/lib/demo/publicaciones";
 import { useCatalogo, ESTADOS_CAT, DISTRITO_PROPIO } from "@/lib/demo/catalogo";
 import { CLASES_RECURSO } from "@/lib/map/recursos-sim";
@@ -45,7 +45,7 @@ export default function Recursos() {
     const item = {
       id: `pub-${now}`, clientActionId: `ca-${now}`, tipo: "favor", modo: nModo, autor: sesion.userId, fecha: sesion.fecha, titulo: titulo.value.trim(), descripcion: desc.value.trim(),
       categoria: `Recurso · ${CLASES_RECURSO[nClase]}`, disponibilidad: "Según la entrega acordada", precio: null, responsable: "", plazo: "", formas: [], alcance: "comunidad",
-      zona: `${sesion.localidad} · zona aproximada`, distrito: DISTRITO_PROPIO, estado: "publicado", recurso: { clase: nClase, cantidad: n, unidad },
+      zona: `${ubicacionCorta(sesion)} · zona aproximada`, distrito: DISTRITO_PROPIO, estado: "publicado", recurso: { clase: nClase, cantidad: n, unidad },
     };
     setPubs((p) => ({ items: [item, ...p.items] }));
     logEvento(`Recurso publicado: «${item.titulo}» (${nModo === "ofrezco" ? "ofrecido" : "solicitado"})`);
