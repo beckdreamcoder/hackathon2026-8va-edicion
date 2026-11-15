@@ -10,6 +10,7 @@ import { VECINOS, chip, avisar, logEvento, emitirSello, useSesion, ubicacionCort
 import { MenuFiltro } from "./menu-filtro";
 import { useBloqueos, registrarLegado, cambiarUsuarioDemo, bloquear, desbloquear } from "@/lib/demo/coordinaciones";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import CachueloTarjeta from "@/components/cachuelos/CachueloTarjeta";
 import CachueloDetalle from "@/components/cachuelos/CachueloDetalle";
@@ -24,6 +25,7 @@ import { screenStyles } from "./screen-styles";
  * Los valores de demostración sustituyen a la lógica del prototipo (DCLogic), que no se migró.
  */
 export default function Cachuelos() {
+  const router = useRouter();
   const nav = useViewStack("lista");
   const lista = useCachuelos();
   const [selId, setSelId] = useState("");
@@ -161,7 +163,7 @@ export default function Cachuelos() {
     <div className="m-0 bg-white text-(--color-ink) font-[Nunito,system-ui,sans-serif] text-[17px] leading-[1.4] [&_h1]:font-[Nunito,system-ui,sans-serif] [&_h1]:m-0 [&_h1]:leading-[1.15] [&_h1]:tracking-[-.01em] [&_h2]:font-[Nunito,system-ui,sans-serif] [&_h2]:m-0 [&_h2]:leading-[1.15] [&_h2]:tracking-[-.01em] [&_h3]:font-[Nunito,system-ui,sans-serif] [&_h3]:m-0 [&_h3]:leading-[1.15] [&_h3]:tracking-[-.01em] [&_h4]:font-[Nunito,system-ui,sans-serif] [&_h4]:m-0 [&_h4]:leading-[1.15] [&_h4]:tracking-[-.01em] [&_.t]:font-[Nunito,system-ui,sans-serif] [&_.t]:m-0 [&_.t]:leading-[1.15] [&_.t]:tracking-[-.01em] [&_p]:m-0 [&_button]:cursor-pointer [&_:focus-visible]:outline-3 [&_:focus-visible]:outline-(--color-ink) [&_:focus-visible]:outline-offset-2 [&_textarea.in]:px-3.5 [&_textarea.in]:py-3 [&_textarea.in]:min-h-21 [&_textarea.in]:resize-none [&_details_summary]:min-h-11 [&_details_summary]:flex [&_details_summary]:items-center [&_details_summary]:cursor-pointer [&_details_summary]:font-bold [&_details_summary]:text-(--color-brand)">
       <div className={screenStyles.frame}>
       
-      {nav.is("lista") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Cachuelos</h1></div></>)}
+      {nav.is("lista") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={() => (nav.is("lista") || nav.is("muro") ? router.push("/comunidad") : nav.back())}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Cachuelos</h1></div></>)}
       {nav.is("detalle") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Detalle del servicio</h1></div></>)}
       {nav.is("perfil") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Perfil de vecino</h1></div></>)}
       {nav.is("acuerdo") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Ficha de acuerdo</h1></div></>)}
@@ -180,9 +182,9 @@ export default function Cachuelos() {
         </>)}
         {tabIsTrab && (<>
           {listaJsx}
-          {sinFiltro && (<><div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full border-l-0 border-t-[5px] border-t-[#8a5300]"><div className={screenStyles.row}><span className={screenStyles.badgeCachuelo}>S/ 60 referencial</span></div><h3 className="text-[19px]!">Necesito pintar un cuarto pequeño</h3><p className={screenStyles.muted}>Campoy Sector 2 · Fin de semana</p></div></>)}
+          {sinFiltro && (<><div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full border-l-0 border-t-[5px] border-t-[#8a5300]"><div className={screenStyles.row}><span className={screenStyles.badgeCachuelo}>S/ 60 referencial</span></div><h3 className="text-[19px]!">Necesito pintar un cuarto pequeño</h3><p className={screenStyles.muted}>{zonaRef} · Fin de semana</p></div></>)}
         </>)}
-        <a className={screenStyles.button} href="/publicar"><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>Publicar cachuelo</a>
+        <a className="fixed right-5 bottom-24 z-40 w-14 h-14 rounded-full bg-(--color-brand) text-white shadow-[0_6px_16px_rgba(200,16,46,.4)] grid place-items-center" href={`/publicar?vista=datos&tipo=cachuelo&modo=${tabIsServ ? "ofrezco" : "pido"}&desde=/cachuelos`} aria-label="Publicar un cachuelo"><svg className="w-7 h-7 fill-none stroke-current stroke-[2.5] [stroke-linecap:round]" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></a>
         <Link className={screenStyles.buttonSecondary} href="/coordinaciones">Mis coordinaciones</Link>
       </div>
       </>)}
@@ -195,7 +197,7 @@ export default function Cachuelos() {
 
       {nav.is("detalle") && (<>
       <div className={screenStyles.content}>
-        <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full border-l-0 border-t-[5px] border-t-[#8a5300]"><div className={screenStyles.row}><span className={screenStyles.badgeCachuelo}>A convenir</span><span className={screenStyles.badge}>{statusTxt}</span></div><h2 className="text-[24px]!">Arreglo fugas de agua en cocina y baño</h2><p>Llevo mis herramientas. Primero reviso y te digo el precio antes de empezar.</p><p className={screenStyles.muted}>Gasfitería · Campoy Sector 3 · Esta semana, por las tardes</p></div>
+        <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full border-l-0 border-t-[5px] border-t-[#8a5300]"><div className={screenStyles.row}><span className={screenStyles.badgeCachuelo}>A convenir</span><span className={screenStyles.badge}>{statusTxt}</span></div><h2 className="text-[24px]!">Arreglo fugas de agua en cocina y baño</h2><p>Llevo mis herramientas. Primero reviso y te digo el precio antes de empezar.</p><p className={screenStyles.muted}>Gasfitería · {zonaRef} · Esta semana, por las tardes</p></div>
         <button className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full flex-row! items-center!" onClick={() => nav.go("perfil")}><span className="w-12 h-12 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[19px] flex-none bg-[#fbebd0] text-[#6b4000]" aria-hidden="true">P</span><div className={screenStyles.grow}><b>Pedro</b><p className={screenStyles.muted}>Recomendado por 4 vecinos</p></div><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></button>
         <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full"><p className="font-bold!">Lo recomiendan en tu comunidad</p><p className={screenStyles.muted}>«Llegó puntual y explicó el costo antes.» — Rosa</p></div>
         {canRequest && (<><button className={screenStyles.button} onClick={request}>Solicitar servicio</button><button className={screenStyles.buttonSecondary} onClick={request}>Me interesa</button></>)}
@@ -209,7 +211,7 @@ export default function Cachuelos() {
       
       {nav.is("perfil") && (<>
       <div className={screenStyles.content}>
-        <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-center w-full items-center!"><span className="w-12 h-12 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[19px] flex-none bg-[#fbebd0] text-[#6b4000] w-18! h-18! text-[28px]!" aria-hidden="true">P</span><h2 className="text-[24px]!">Pedro</h2><p className={screenStyles.muted}>Campoy Sector 3 · Gasfitería</p><span className={screenStyles.badge}>Identidad validada · DNI privado</span></div>
+        <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-center w-full items-center!"><span className="w-12 h-12 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[19px] flex-none bg-[#fbebd0] text-[#6b4000] w-18! h-18! text-[28px]!" aria-hidden="true">P</span><h2 className="text-[24px]!">Pedro</h2><p className={screenStyles.muted}>{zonaRef} · Gasfitería</p><span className={screenStyles.badge}>Identidad validada · DNI privado</span></div>
         <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full"><p className="font-bold!">Recomendado por 4 vecinos</p><details><summary>Ver comentarios</summary><div className="pt-1.5 flex! flex-col! gap-2.5!"><p className={screenStyles.muted}>«Llegó puntual y explicó el costo antes.» — Rosa · Servicio completado</p><p className={screenStyles.muted}>«Arregló la fuga el mismo día.» — Carlos · Servicio completado</p></div></details><p className={screenStyles.muted}>Sin estrellas: solo recomendaciones tras una coordinación completada.</p></div>
         {actor === "maria" && !yoBloquee && (<button className={screenStyles.buttonSecondary} onClick={() => bloquear("maria", "pedro")}>Reportar o bloquear</button>)}
         {actor === "maria" && yoBloquee && (<><p className={screenStyles.success} role="status">✓ Pedro bloqueado: no habrá mensajes ni solicitudes entre ustedes.</p><button className={screenStyles.buttonOutline} onClick={() => desbloquear("maria", "pedro")}>Desbloquear a Pedro</button></>)}

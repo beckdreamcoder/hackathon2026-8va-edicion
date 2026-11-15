@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { screenStyles } from "./screen-styles";
 import { ScreenShell } from "./screen-shell";
 import { useTextInput } from "@/lib/hooks/use-text-input";
-import { chip, useSesion, VECINOS } from "@/lib/demo/shared";
+import { chip, useSesion, VECINOS, ubicacionCorta } from "@/lib/demo/shared";
 import { useDemoState, setDemo } from "@/lib/demo/store";
 import { useIncidentes, estadoOpDe } from "@/lib/demo/incidentes";
 import { useCampanas, ESTADO_CAMPANA } from "@/lib/demo/campanas";
@@ -104,7 +104,7 @@ export default function Buscar() {
         const cuerpo = (<>
           <div className={screenStyles.row}><span className={badge(r.tipo)}>{r.tipo === "Cachuelo" ? `Cachuelo · ${r.vm?.pago ?? "remunerado"}` : r.tipo === "Emergencia" ? "Emergencia" : r.tipo === "Campaña" ? `Campaña · ${r.campEstado}` : `${r.tipo} · Gratis`}</span>{(r.vm || r.incId) && (<span className={r.estado === "abierto" ? screenStyles.badge : r.estado === "cancelado" ? screenStyles.badgeAlert : screenStyles.badgeSolidarity}>{ESTADOS_CAT[r.estado]}</span>)}<span className="flex-1 min-w-0 text-(--color-muted) text-[15px] text-right">a {km(r.dist)}</span></div>
           <b>{r.titulo}</b>
-          <p className={screenStyles.muted}>{r.cat} · {r.distrito} · {r.zona}{r.vm ? ` · publica ${VECINOS[r.vm.vecino]?.name ?? "un vecino"}` : ""}</p>
+          <p className={screenStyles.muted}>{r.cat} · {r.distrito} · {ubicacionCorta(sesion) || r.zona}{r.vm ? ` · publica ${VECINOS[r.vm.vecino]?.name ?? "un vecino"}` : ""}</p>
           
           {r.hits.length > 0 && (<p className="text-[14px]! font-bold! text-[#2f5a2d]!">Coincide por: {r.hits.join(", ")} · {r.dist <= 500 ? "muy cerca" : "en tu comunidad"}</p>)}
         </>);

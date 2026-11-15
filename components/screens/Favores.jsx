@@ -10,6 +10,7 @@ import { VECINOS, chip, avisar, logEvento, emitirSello, useSesion, ubicacionCort
 import { usePublicaciones } from "@/lib/demo/publicaciones";
 import { useBloqueos, registrarLegado, cambiarUsuarioDemo } from "@/lib/demo/coordinaciones";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PostCard } from "./post-card";
 import { MenuFiltro } from "./menu-filtro";
 
@@ -27,6 +28,7 @@ import { screenStyles } from "./screen-styles";
  * Los valores de demostración sustituyen a la lógica del prototipo (DCLogic), que no se migró.
  */
 export default function Favores() {
+  const router = useRouter();
   const nav = useViewStack("muro");
   const [pubs] = usePublicaciones();
   const draft = useTextInput("");
@@ -180,7 +182,7 @@ export default function Favores() {
       <div className="w-full md:max-w-[46rem] mx-auto h-dvh md:border-x md:border-(--color-line) flex flex-col bg-white overflow-hidden relative!">
       
       {nav.is("muro") && (<>
-      <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Favores</h1><Link className={`${screenStyles.iconButton} relative`} aria-label="Mis coordinaciones" href="/coordinaciones"><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z" /></svg>{hasUnread && (<><span className="min-w-5.5 h-5.5 rounded-[11px] bg-(--color-brand) text-white text-[13px] font-bold grid place-items-center px-1.5 py-0 absolute! top-0.5! right-0.5!">{unreadN}</span></>)}</Link></div>
+      <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={() => (nav.is("lista") || nav.is("muro") ? router.push("/comunidad") : nav.back())}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Favores</h1><Link className={`${screenStyles.iconButton} relative`} aria-label="Mis coordinaciones" href="/coordinaciones"><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z" /></svg>{hasUnread && (<><span className="min-w-5.5 h-5.5 rounded-[11px] bg-(--color-brand) text-white text-[13px] font-bold grid place-items-center px-1.5 py-0 absolute! top-0.5! right-0.5!">{unreadN}</span></>)}</Link></div>
       </>)}
       {nav.is("detalle") && (<>
       <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Detalle del favor</h1></div>
@@ -192,7 +194,7 @@ export default function Favores() {
       <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Mis coordinaciones</h1></div>
       </>)}
       {nav.is("chat") && (<>
-      <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><span className={otherAv} aria-hidden="true">{otherIni}</span><div className={screenStyles.grow}><h1 className="text-[19px]!">{otherName}</h1><p className={screenStyles.muted}>Escalera de 3 metros</p></div><button className={screenStyles.iconButton} aria-label="M\u00e1s opciones" onClick={openRep}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" /></svg></button></div>
+      <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><span className={otherAv} aria-hidden="true">{otherIni}</span><div className={screenStyles.grow}><h1 className="text-[19px]!">{otherName}</h1><p className={screenStyles.muted}>Escalera de 3 metros</p></div><button className={screenStyles.iconButton} aria-label="Más opciones" onClick={openRep}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" /></svg></button></div>
       </>)}
       
       <div className="px-4 pt-1 pb-2 flex-none"><MenuFiltro label="Probando como" valor={actor} opciones={[{ id: "maria", name: "María (solicita)" }, { id: "luis", name: "Luis (ofrece)" }]} onChange={(id) => (id === "maria" ? asM() : asL())} /></div>
@@ -212,7 +214,7 @@ export default function Favores() {
           {mostrarCat("Habilidades") && (<div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span></div><h3 className="text-[19px]!">Ayudo con trámites digitales a adultos mayores</h3><p className={screenStyles.muted}>Habilidades · Rosa · Sábados por la mañana</p></div>)}
           {mostrarCat("Herramientas") && (<div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span></div><h3 className="text-[19px]!">Presto herramientas de jardinería</h3><p className={screenStyles.muted}>Herramientas · Luis · Fines de semana</p></div>)}
         </>)}
-        <a className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" href="/publicar"><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>Publicar un favor</a>
+        <a className="fixed right-5 bottom-24 z-40 w-14 h-14 rounded-full bg-(--color-brand) text-white shadow-[0_6px_16px_rgba(200,16,46,.4)] grid place-items-center" href={`/publicar?vista=datos&tipo=favor&modo=${tabIsOfr ? "ofrezco" : "pido"}&desde=/favores`} aria-label="Publicar un favor"><svg className="w-7 h-7 fill-none stroke-current stroke-[2.5] [stroke-linecap:round]" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></a>
       </div>
       </>)}
       
@@ -231,7 +233,7 @@ export default function Favores() {
       {nav.is("solicitudes") && (<>
       <div className={screenStyles.content}>
         {solPending && (<>
-          <div className={screenStyles.card}><div className={screenStyles.row}><span className="w-11 h-11 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[18px] flex-none bg-[#ddf0f2] text-[#14505a]" aria-hidden="true">L</span><div className={screenStyles.grow}><b>Luis quiere ayudarte</b><p className={screenStyles.muted}>Vecino con 4 referencias · Campoy Sector 3</p></div></div><p className={screenStyles.muted}>Para: «Necesito una escalera de 3 metros prestada»</p>
+          <div className={screenStyles.card}><div className={screenStyles.row}><span className="w-11 h-11 rounded-[50%] grid place-items-center font-extrabold font-[Nunito,system-ui,sans-serif] text-[18px] flex-none bg-[#ddf0f2] text-[#14505a]" aria-hidden="true">L</span><div className={screenStyles.grow}><b>Luis quiere ayudarte</b><p className={screenStyles.muted}>Vecino con 4 referencias · {zonaRef}</p></div></div><p className={screenStyles.muted}>Para: «Necesito una escalera de 3 metros prestada»</p>
             <div className="grid-cols-2 grid! gap-2!"><button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed min-h-12!" onClick={reject}>Rechazar</button><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed min-h-12!" onClick={accept}>Aceptar</button></div>
             <p className={screenStyles.muted}>Al aceptar, ambos aceptan y se abre un chat temporal.</p></div>
           <p className={screenStyles.muted}>Otras personas que se postulen se guardan sin abrir chat privado.</p>

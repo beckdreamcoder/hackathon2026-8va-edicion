@@ -8,7 +8,7 @@ import { useCheckbox } from "@/lib/hooks/use-checkbox";
 
 import { Fragment, useState } from "react";
 import { useDemoState } from "@/lib/demo/store";
-import { useSesion, chip, avisar, logEvento, emitirSello } from "@/lib/demo/shared";
+import { useSesion, chip, avisar, logEvento, emitirSello, ubicacionCorta } from "@/lib/demo/shared";
 import { usePublicaciones } from "@/lib/demo/publicaciones";
 import { useBloqueos, registrarLegado, cambiarUsuarioDemo } from "@/lib/demo/coordinaciones";
 import Link from "next/link";
@@ -26,7 +26,7 @@ import { screenStyles } from "./screen-styles";
  */
 export default function Movilidad() {
   const nav = useViewStack("home");
-  const origen = useTextInput("Campoy \u00b7 Sector 2");
+  const origen = useTextInput("Campoy · Sector 2");
   const destino = useTextInput("Hospital de la zona");
   const [m, setM] = useDemoState("movilidad-hospital", MOV_INICIAL);
   // Enlace directo a una pestaña (`?tab=`), p. ej. al terminar de publicar
@@ -80,7 +80,7 @@ export default function Movilidad() {
   const notAmpl = !m.ampliado;
 
   const sendReq = () => {
-    setM({ stage: "avisada", ampliado: false, conf: [], sellos: [], coordId: "", req: { origen: origen.value.trim() || "Campoy", destino: destino.value.trim() || "Hospital de la zona", cuando, plazas, urgente: urg.checked } });
+    setM({ stage: "avisada", ampliado: false, conf: [], sellos: [], coordId: "", req: { origen: origen.value.trim() || ubicacionCorta(sesion) || "tu zona", destino: destino.value.trim() || "Hospital de la zona", cuando, plazas, urgente: urg.checked } });
     avisar({ categoria: "junta", titulo: "Traslado prioritario en tu junta", texto: `María necesita llegar a ${destino.value.trim() || "Hospital de la zona"} · ${cuando}.`, href: "/movilidad" });
     logEvento(`Traslado pedido: aviso primero a la junta (Carlos, Rosa, Luis)${urg.checked ? " · marcado urgente: se indicó llamar al 106" : ""}`);
     nav.go("detalle");
@@ -134,7 +134,7 @@ export default function Movilidad() {
           {hasReq && (<><button className={screenStyles.card} onClick={() => nav.go("detalle")}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span><span className={screenStyles.badge}>{statusTxt}</span></div><h3 className="text-[19px]!">María necesita llegar al hospital</h3><p className={screenStyles.muted}>Desde {req.origen} (zona aproximada) · {req.cuando} · {String(req.plazas).replace(/plaza/g, "asiento")}</p></button></>)}
           {noReq && (<><div className={screenStyles.card} role="status"><p className="font-bold!">Aún no hay traslados pedidos</p><p className={screenStyles.muted}>Pide uno y tu junta recibirá el aviso primero.</p></div></>)}
         </>)}
-        {tabIsPaso && (<>{pubs.items.filter((p) => p.tipo === "favor" && p.categoria === "Movilidad" && p.modo === "ofrezco").map((p) => (<PostCard key={p.id} p={p} />))}<div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span></div><h3 className="text-[19px]!">Carlos pasa por el hospital mañana</h3><p className={screenStyles.muted}>Sale 8:45 a. m. · 2 asientos · Desde Campoy</p></div></>)}
+        {tabIsPaso && (<>{pubs.items.filter((p) => p.tipo === "favor" && p.categoria === "Movilidad" && p.modo === "ofrezco").map((p) => (<PostCard key={p.id} p={p} />))}<div className={screenStyles.card}><div className={screenStyles.row}><span className={screenStyles.badgeFavor}>Gratis</span></div><h3 className="text-[19px]!">Carlos pasa por el hospital mañana</h3><p className={screenStyles.muted}>Sale 8:45 a. m. · 2 asientos · Desde {ubicacionCorta(sesion) || "tu zona"}</p></div></>)}
         <button className={screenStyles.button} onClick={() => nav.go("nuevo")}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>Pedir un traslado</button>
         <button className={screenStyles.buttonSecondary} onClick={() => nav.go("junta")}>Mi junta vecinal</button>
         <Link className={screenStyles.buttonSecondary} href="/coordinaciones">Mis coordinaciones</Link>
