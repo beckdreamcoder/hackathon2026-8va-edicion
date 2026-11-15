@@ -48,15 +48,11 @@ const PASO_MS = 700;
 /** Mensajes de la simulación de validación facial (paso 2). */
 const FASES_ROSTRO = ["Detectando rostro…", "Analizando puntos faciales…", "Comparando con la foto de tu DNI…", "✓ Rostro validado"];
 
-/** Directorio territorial ficticio: costa, sierra y selva. */
-const TERRITORIOS = [
-  { id: "lima", name: "Lima", zona: "Costa", prov: "Lima", dist: "San Juan de Lurigancho", locs: ["Campoy", "Mariátegui", "Canto Grande"], juntas: [{ id: "campoy", name: "Junta Vecinal Campoy Unido", zona: "Campoy · Sector 2" }, { id: "olivos", name: "Junta del Pasaje Los Olivos", zona: "Campoy · Sector 4" }] },
-  { id: "piura", name: "Piura", zona: "Costa", prov: "Piura", dist: "Castilla", locs: ["Miraflores", "El Indio", "Tacalá"], juntas: [{ id: "tacala", name: "Junta Vecinal Tacalá Solidario", zona: "Tacalá · Manzana B" }] },
-  { id: "cusco", name: "Cusco", zona: "Sierra", prov: "Cusco", dist: "San Sebastián", locs: ["Tupac Amaru", "Kari Grande", "Santa Rosa"], juntas: [{ id: "kari", name: "Junta Vecinal Kari Grande", zona: "Kari Grande · Sector 1" }] },
-  { id: "puno", name: "Puno", zona: "Sierra", prov: "Puno", dist: "Puno", locs: ["Chanu Chanu", "Huáscar", "Alto Puno"], juntas: [] },
-  { id: "loreto", name: "Loreto", zona: "Selva", prov: "Maynas", dist: "Belén", locs: ["Pueblo Libre", "Bajo Belén", "San Pedro"], juntas: [{ id: "belen", name: "Junta Vecinal Bajo Belén", zona: "Bajo Belén · Calle 3" }] },
-  { id: "sanmartin", name: "San Martín", zona: "Selva", prov: "San Martín", dist: "Tarapoto", locs: ["Partido Alto", "Nueve de Abril", "Atumpampa"], juntas: [{ id: "atum", name: "Junta Vecinal Atumpampa", zona: "Atumpampa · Jr. Lima" }] },
-];
+/** Domicilio ficticio que devolvería RENIEC para el DNI de prueba (demostración). */
+const DOMICILIO_RENIEC = "Jr. Los Pinos 245, Campoy, San Juan de Lurigancho, Lima";
+const DOMICILIO_RENIEC_UBIC = { label: DOMICILIO_RENIEC, loc: "Campoy", dep: "Lima" };
+
+import { juntasDeLocalidad, localidadesAledanasFicticias } from "@/lib/demo/juntas";
 import { animateMotion } from "./animate-motion";
 import CamaraRostro from "./CamaraRostro";
 import "./transiciones.css";
@@ -65,6 +61,23 @@ const animateScan = animateMotion(
   [{ top: "12%" }, { top: "86%" }],
   { duration: 1200, easing: "ease-in-out", iterations: Infinity, direction: "alternate" },
 );
+
+/** Tarjeta de un dato de la revisión final; el lápiz abre/cierra su edición ahí mismo. */
+function TarjetaDato({ titulo, abierta, onToggle, children }) {
+  return (
+    <section className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <p className="font-bold! text-[15px]!">{titulo}</p>
+        {onToggle && (
+          <button type="button" aria-label={abierta ? `Terminar de editar ${titulo}` : `Editar ${titulo}`} onClick={onToggle} className="w-10 h-10 shrink-0 rounded-full border border-(--color-line) bg-white grid place-items-center text-(--color-brand)">
+            {abierta ? <span className="font-bold">✓</span> : (<svg viewBox="0 0 24 24" className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z" /></svg>)}
+          </button>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
 
 /**
  * Pantalla Acceso del prototipo BarrioConecta.
@@ -84,11 +97,17 @@ export default function Acceso() {
       // Sin almacenamiento: se queda en la pantalla de acceso.
     }
   }, [sesion.registrada, router]);
-  const busqueda = useTextInput("");
   const dni = useTextInput("");
   const dni2 = useTextInput("");
   const dataOk = useCheckbox(false);
-  const locOk = useCheckbox(false);
+  // Paso 3: dirección (buscador con predicciones) y domicilio de RENIEC (sin GPS)
+  const [direccion, setDireccion] = useState("");
+  const [dirElegida, setDirElegida] = useState(null); // dirección seleccionada de la lista
+  const [sugerencias, setSugerencias] = useState([]);
+  const [buscando, setBuscando] = useState(false);
+  const [editando, setEditando] = useState(null); // tarjeta abierta en la revisión: direccion | zona | junta | null
+  const toggleEdit = (id) => setEditando((v) => (v === id ? null : id));
+  const [usoReniec, setUsoReniec] = useState(false);
 
   // Paso 1: consulta RENIEC/PNP
   const [query, setQuery] = useState("idle"); // idle | loading | ok | err | dup | den
@@ -100,13 +119,13 @@ export default function Acceso() {
   const [camaraLista, setCamaraLista] = useState(false); // true cuando la persona permitió o denegó la cámara
   // Paso 3: consentimientos
   const [showDetail, setShowDetail] = useState(false);
-  const [locNote, setLocNote] = useState("");
-  // Territorio y juntas
-  const [depId, setDepId] = useState("lima");
-  const [loc, setLoc] = useState("Campoy");
-  const [openJunta, setOpenJunta] = useState(null);
+  // Localidad y departamento salen de la dirección elegida (o del domicilio de RENIEC); no se eligen a mano
+  const ubicacion = dirElegida ?? (usoReniec ? DOMICILIO_RENIEC_UBIC : null);
+  const locRev = ubicacion?.loc ?? "";
+  const depRev = ubicacion?.dep ?? "";
+  // Localidades aledañas ficticias, derivadas de la localidad elegida (sin servicios externos)
+  const vecinasRev = localidadesAledanasFicticias(locRev);
   const [joined, setJoined] = useState(null);
-  const [tuNum, setTuNum] = useState(1);
   const [showErr, setShowErr] = useState(false);
 
   const dni2Ok = /^\d{8}$/.test(dni2.value);
@@ -152,63 +171,96 @@ export default function Acceso() {
   useEffect(() => {
     if (!enRostro || !camaraLista) return;
     const ts = [
-      setTimeout(() => setFase(1), 4000),
-      setTimeout(() => setFase(2), 9000),
-      setTimeout(() => { setFase(3); setFace("done"); }, 13000),
-      setTimeout(() => goView("permisos"), 15000),
+      setTimeout(() => setFase(1), 1250),
+      setTimeout(() => setFase(2), 2500),
+      setTimeout(() => { setFase(3); setFace("done"); }, 3750),
+      setTimeout(() => goView("permisos"), 5000),
     ];
     return () => ts.forEach(clearTimeout);
   }, [enRostro, camaraLista, goView]);
 
-  const pedirUbicacion = (e) => {
-    locOk.props.onChange(e);
-    if (!e.target.checked) return;
-    if (!navigator.geolocation) {
-      locOk.setChecked(false);
-      setLocNote("Tu navegador no permite ubicación. Elige tu zona a mano.");
+  // Predicciones de dirección (OpenStreetMap/Nominatim, solo Perú). Espera 350 ms tras la última tecla.
+  useEffect(() => {
+    const q = direccion.trim();
+    if (q.length < 3 || dirElegida?.label === q) {
+      setSugerencias([]);
+      setBuscando(false);
       return;
     }
-    navigator.geolocation.getCurrentPosition(
-      () => setLocNote("Ubicación autorizada. Solo se usa una zona aproximada."),
-      () => {
-        locOk.setChecked(false);
-        setLocNote("Ubicación denegada. Podrás elegir tu zona a mano en el siguiente paso.");
-      },
-      { timeout: 8000 },
-    );
-  };
+    const ctrl = new AbortController();
+    setBuscando(true);
+    const t = setTimeout(async () => {
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=pe&accept-language=es&q=${encodeURIComponent(q)}`;
+        const res = await fetch(url, { signal: ctrl.signal });
+        const data = await res.json();
+        if (ctrl.signal.aborted) return;
+        // Localidad: el barrio o distrito más cercano que trae OpenStreetMap; departamento: la región
+        setSugerencias(data.map((d) => {
+          const a = d.address ?? {};
+          return {
+            id: d.place_id,
+            label: d.display_name,
+            loc: a.suburb || a.neighbourhood || a.quarter || a.city_district || a.town || a.village || a.city || "",
+            dep: a.state || a.region || "",
+          };
+        }));
+      } catch {
+        if (!ctrl.signal.aborted) setSugerencias([]);
+      } finally {
+        if (!ctrl.signal.aborted) setBuscando(false);
+      }
+    }, 350);
+    return () => {
+      clearTimeout(t);
+      ctrl.abort();
+    };
+  }, [direccion, dirElegida]);
 
-  const filtro = busqueda.value.trim().toLowerCase();
-  const cur = TERRITORIOS.find((t) => t.id === depId);
-  const deps = TERRITORIOS.filter(
-    (t) => !filtro || t.name.toLowerCase().includes(filtro) || t.dist.toLowerCase().includes(filtro) || t.locs.some((l) => l.toLowerCase().includes(filtro)),
-  ).map((t) => ({ name: t.name, zona: t.zona, cls: chip(t.id === depId), pick: () => { setDepId(t.id); setLoc(t.locs[0]); setJoined(null); } }));
-  const locs = cur.locs.map((l) => ({ name: l, cls: chip(l === loc), pick: () => setLoc(l) }));
-  const juntasZona = cur.juntas;
-  const hayJuntas = juntasZona.length > 0;
+  // Juntas de la localidad de la dirección (ficticias si no hay en la demo) y de las aledañas reales
+  const juntasLoc = juntasDeLocalidad(locRev, depRev);
+  const juntasAle = vecinasRev.flatMap((v) => juntasDeLocalidad(v, depRev));
+  const hayJuntas = juntasLoc.length + juntasAle.length > 0;
   const sinJuntas = !hayJuntas;
-  const juntas = juntasZona.map((j) => ({
+  const juntas = [...juntasLoc, ...juntasAle].map((j) => ({
+    id: j.id,
     name: j.name,
     zona: j.zona,
-    open: openJunta === j.id,
-    verLbl: openJunta === j.id ? "Ocultar ficha" : "Ver ficha",
-    toggle: () => setOpenJunta(openJunta === j.id ? null : j.id),
     joinLbl: joined === j.id ? "✓ Te uniste" : "Unirme",
-    joinCls: joined === j.id ? screenStyles.buttonOutline : screenStyles.button,
-    join: () => { setJoined(joined === j.id ? null : j.id); setOpenJunta(j.id); },
+    // Botón neutro para "Unirme": el rojo queda reservado para la acción principal de cada pantalla
+    joinCls: joined === j.id ? screenStyles.buttonOutline : "min-h-12 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full",
+    join: () => setJoined(joined === j.id ? null : j.id),
   }));
 
-  const TUTORIAL = [
-    ["Explora lo que hay cerca", "Busca favores, cachuelos y avisos de tu barrio en el mapa o en Mi comunidad."],
-    ["Publica en tres pasos", "Elige el tipo, cuéntalo en pocas palabras y revisa antes de publicar."],
-    ["Coordina con confianza", "Cuando ambos aceptan se abre un chat temporal. Al terminar, agradece con un sello."],
-  ];
-  const [tuTitle, tuText] = TUTORIAL[tuNum - 1];
-  const tu1 = tuNum === 1, tu2 = tuNum === 2, tu3 = tuNum === 3;
-  const d1 = tuNum >= 1 ? "on" : "", d2 = tuNum >= 2 ? "on" : "", d3 = tuNum >= 3 ? "on" : "";
-  const tuNext = tuNum < 3;
-  const tuLast = tuNum === 3;
-  const tuAdv = () => setTuNum((n) => Math.min(3, n + 1));
+  /** Bloque de dirección: buscador con predicciones + domicilio de RENIEC (se usa en permisos y en la revisión). */
+  const bloqueDireccion = (
+    <>
+      <div className={`${screenStyles.field} relative`}>
+        <label htmlFor="direccion">Buscar tu dirección</label>
+        <input id="direccion" className="min-h-13 border-[1.5px] border-[#cfc7bf] rounded-[16px] px-3.5 py-0 bg-white w-full focus-visible:border-(--color-brand)" placeholder="Calle, jirón o avenida" autoComplete="off" value={direccion} onChange={(e) => { setDireccion(e.target.value); setDirElegida(null); }} />
+        {direccion.trim().length >= 3 && !dirElegida && (
+          <div className="absolute left-0 right-0 top-full mt-1 z-20 bg-white border border-(--color-line) rounded-[16px] shadow-[0_8px_20px_rgba(32,33,36,.18)] overflow-hidden">
+            {buscando && <p className={`${screenStyles.muted} px-4 py-3`}>Buscando direcciones…</p>}
+            {!buscando && sugerencias.length === 0 && <p className={`${screenStyles.muted} px-4 py-3`}>Sin resultados. Escribe más detalles.</p>}
+            {!buscando && sugerencias.length > 0 && (
+              <ul role="listbox" aria-label="Sugerencias de dirección">
+                {sugerencias.map((s) => (
+                  <li key={s.id} role="option" aria-selected={false}>
+                    <button type="button" className="w-full text-left px-4 py-3 text-[14px] border-b border-(--color-line) last:border-b-0 hover:bg-(--color-line)" onClick={() => { setDireccion(s.label); setDirElegida({ label: s.label, loc: s.loc, dep: s.dep }); setSugerencias([]); }}>{s.label}</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+      {dirElegida && (<p className={screenStyles.muted} role="status">Dirección seleccionada: {dirElegida.label}</p>)}
+      <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2">
+        <div className={screenStyles.checkboxRow}><input id="c-reniec" type="checkbox" checked={usoReniec} onChange={(e) => setUsoReniec(e.target.checked)} /><label htmlFor="c-reniec"><b>Usar mi ubicación de RENIEC</b><br /><span className={screenStyles.muted}>Usa el domicilio registrado en tu DNI. No usa el GPS.</span></label></div>
+        {usoReniec && (<p className={screenStyles.muted} role="status">Domicilio: {DOMICILIO_RENIEC}</p>)}
+      </div>
+    </>
+  );
 
   const toggleDetail = () => setShowDetail((v) => !v);
 
@@ -221,8 +273,8 @@ export default function Acceso() {
   const finishRegistro = () => {
     registrarDni(dni2.value);
     guardarDni(dni2.value);
-    setSesion({ registrada: true, dni: dni2.value, userId: "maria", departamento: cur.name, localidad: loc, juntaId: joined, ubicacionPermitida: locOk.checked });
-    logEvento(`Registro demo completado · ${loc}, ${cur.name}${joined ? " · se unió a una junta" : ""}`);
+    setSesion({ registrada: true, dni: dni2.value, userId: "maria", departamento: depRev, localidad: locRev, localidadesAledanas: vecinasRev, juntaId: joined, ubicacionPermitida: usoReniec, direccion: ubicacion?.label ?? "" });
+    logEvento(`Registro demo completado · ${locRev}, ${depRev}${joined ? " · se unió a una junta" : ""}`);
   };
   const loginDemo = (dniUsado = DNI_DEMO) => {
     guardarDni(dniUsado);
@@ -379,79 +431,72 @@ export default function Acceso() {
       
       {nav.is("permisos") && (<>
       <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Crear cuenta</h1></div>
-      <div className="flex gap-1.5 pt-0 px-4 pb-2 [&_i]:flex-1 [&_i]:h-1.5 [&_i]:rounded-[3px] [&_i]:bg-(--color-line) [&_i.on]:bg-(--color-brand)" aria-hidden="true"><i className="on"></i><i className="on"></i><i className="on"></i></div>
+      <div className="flex gap-1.5 pt-0 px-4 pb-2 [&_i]:flex-1 [&_i]:h-1.5 [&_i]:rounded-[3px] [&_i]:bg-(--color-line) [&_i.on]:bg-(--color-brand)" aria-hidden="true"><i className="on"></i><i className="on"></i><i className="on"></i><i></i></div>
       <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-4">
-        <p className={`${screenStyles.muted} font-bold!`}>Paso 3 de 3 · Tus permisos</p>
-        <p className={screenStyles.muted}>Se usará la ubicación de su domicilio en la app. Además, puede activar su ubicación en tiempo real:</p>
-        <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2">
-          <div className={screenStyles.checkboxRow}><input id="c1" type="checkbox" checked={locOk.checked} onChange={pedirUbicacion} /><label htmlFor="c1"><b>Usar mi ubicación</b><br /><span className={screenStyles.muted}>Para mostrarte vecinos y alertas cerca. Puedes elegir tu zona a mano.</span></label></div>
-          {locNote && (<p className={screenStyles.muted} role="status">{locNote}</p>)}
-        </div>
-        <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("territorio")}>Finalizar registro</button>
-      </div>
-      </>)}
-      
-      {nav.is("territorio") && (<>
-      <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>¿Dónde vives?</h1></div>
-      <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-4">
-        <div className={screenStyles.field}><label htmlFor="busq">Buscar tu localidad</label><input id="busq" className="min-h-13 border-[1.5px] border-[#cfc7bf] rounded-[16px] px-3.5 py-0 bg-white w-full focus-visible:border-(--color-brand)" placeholder="Distrito o barrio" {...busqueda.props} /></div>
-        <p className="font-bold! text-[15px]!">Departamento</p>
-        <div className={screenStyles.wrap}>
-          {(deps ?? []).map((d, __i1) => (<Fragment key={__i1}><button className={d.cls} onClick={d.pick}>{d.name} · {d.zona}</button></Fragment>))}
-        </div>
-        <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2">
-          <p className={screenStyles.muted}>Provincia</p><p className="font-bold!">{cur.prov}</p>
-          <p className={screenStyles.muted}>Distrito</p><p className="font-bold!">{cur.dist}</p>
-          <p className={screenStyles.muted}>Localidad o comunidad</p>
-          <div className={screenStyles.wrap}>{(locs ?? []).map((l, __i1) => (<Fragment key={__i1}><button className={l.cls} onClick={l.pick}>{l.name}</button></Fragment>))}</div>
-        </div>
-        <div className="relative h-23! rounded-[20px]! bg-[#efe8dd]! border! border-(--color-line)! overflow-hidden!">
-          <svg viewBox="0 0 358 92" width="100%" height="92" aria-hidden="true"><path d="M0 60 70 40l60 16 80-30 70 26 78-14" fill="none" stroke="#CFC4B3" strokeWidth="2" /><path d="M0 80 90 62l80 10 90-24 98 20" fill="none" stroke="#CFC4B3" strokeWidth="2" /><path d="M179 24s-9-8-9-14a9 9 0 0 1 18 0c0 6-9 14-9 14z" transform="translate(0 20)" fill="#C8102E" /></svg>
-          <span className={`${screenStyles.badgeDemo} absolute! left-2! bottom-2!`}>Mapa de tu zona</span>
-        </div>
-        <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("juntas")}>Confirmar zona</button>
-        <p className={`${screenStyles.muted} text-center!`}>Lima es solo un ejemplo: BarrioConecta sirve en costa, sierra y selva.</p>
+        <p className={`${screenStyles.muted} font-bold!`}>Paso 3 de 4 · Tus permisos</p>
+        <p className={screenStyles.muted}>Indica tu dirección o usa el domicilio registrado en RENIEC:</p>
+        {bloqueDireccion}
+        <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("juntas")}>Continuar</button>
       </div>
       </>)}
       
       {nav.is("juntas") && (<>
-      <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Juntas cerca de ti</h1></div>
+      <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Tu junta vecinal</h1></div>
+      <div className="flex gap-1.5 pt-0 px-4 pb-2 [&_i]:flex-1 [&_i]:h-1.5 [&_i]:rounded-[3px] [&_i]:bg-(--color-line) [&_i.on]:bg-(--color-brand)" aria-hidden="true"><i className="on"></i><i className="on"></i><i className="on"></i><i className="on"></i></div>
       <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-4">
-        <p className={screenStyles.muted}>Sumarte es voluntario. Puedes usar toda la app sin junta.</p>
-        {hayJuntas && (<>
-          {(juntas ?? []).map((j, __i1) => (<Fragment key={__i1}>
-            <div className="border border-(--color-line) rounded-[20px] bg-white p-4 flex flex-col gap-2.5">
-              <div className={screenStyles.row}><svg className={`${screenStyles.icon} text-(--color-brand)!`} viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3" /><circle cx="5" cy="10" r="2.2" /><circle cx="19" cy="10" r="2.2" /><path d="M6 20a6 6 0 0 1 12 0M1.5 18a4 4 0 0 1 4-4M22.5 18a4 4 0 0 0-4-4" /></svg><div className={screenStyles.grow}><h3 className="text-[19px]!">{j.name}</h3><p className={screenStyles.muted}>{j.zona}</p></div></div>
-              {j.open && (<><p className={screenStyles.muted}>Avisos del barrio, pedidos de ayuda y traslados solidarios entre miembros. Sin reconocimiento oficial; no verifica a nadie.</p></>)}
-              <div className="grid grid-cols-2! gap-2!">
-                <button className="min-h-12 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={j.toggle}>{j.verLbl}</button>
-                <button className={`${j.joinCls} min-h-12!`} onClick={j.join}>{j.joinLbl}</button>
-              </div>
-            </div>
-          </Fragment>))}
-        </>)}
-        {sinJuntas && (<><div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2" role="status"><p className="font-bold!">Aún no hay juntas en esta zona</p><p className={screenStyles.muted}>Puedes usar BarrioConecta con normalidad. Más adelante podrás sumarte si se registra una.</p></div></>)}
-        <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("tutorial")}>Continuar</button>
-        <button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("tutorial")}>Ahora no</button>
-      </div>
-      </>)}
-      
-      {nav.is("tutorial") && (<>
-      <div className={screenStyles.header}><h1 className="pl-2">Así funciona</h1><a className="min-h-11 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed w-auto! text-[15px]!" href="/inicio" onClick={(e) => { e.preventDefault(); irAInicio(finishRegistro); }}>Omitir</a></div>
-      <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-5 justify-center!">
-        <div className="bg-white border border-(--color-line) rounded-[20px] px-5 py-7 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 items-center! text-center!">
-          <span className={screenStyles.badgeAlert}>Paso {tuNum} de 3</span>
-          <svg className="w-6 h-6 fill-none stroke-current stroke-[1.5] [stroke-linecap:round] [stroke-linejoin:round] flex-none text-(--color-brand)! w-18! h-18!" viewBox="0 0 24 24" aria-hidden="true">{tu1 && (<><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></>)}{tu2 && (<><path d="M12 5v14M5 12h14" /></>)}{tu3 && (<><path d="M4 5h16v11H9l-5 4z" /></>)}</svg>
-          <h2 className="text-[26px]!">{tuTitle}</h2>
-          <p className={`${screenStyles.muted} text-[17px]!`}>{tuText}</p>
-        </div>
-        <div className="flex gap-1.5 pt-0 px-4 pb-2 [&_i]:flex-1 [&_i]:h-1.5 [&_i]:rounded-[3px] [&_i]:bg-(--color-line) [&_i.on]:bg-(--color-brand) justify-center!" aria-hidden="true"><i className={`${d1} max-w-9!`}></i><i className={`${d2} max-w-9!`}></i><i className={`${d3} max-w-9!`}></i></div>
-        {tuNext && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={tuAdv}>Siguiente</button></>)}
-        {tuLast && (<><a className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" href="/inicio" onClick={(e) => { e.preventDefault(); irAInicio(finishRegistro); }}>Ir a mi inicio</a></>)}
-        <p className={`${screenStyles.muted} text-center!`}>¿Es una emergencia? Llama al 106 o al 116 desde tu teléfono en cualquier momento.</p>
+        <p className={`${screenStyles.muted} font-bold!`}>Paso 4 de 4 · Tu junta vecinal</p>
+        <p className={screenStyles.muted}>Sumarte es voluntario. Elige una junta de tu localidad o de las aledañas, o continúa sin junta.</p>
+        {juntas.length === 0 && (<div className="bg-white border border-(--color-line) rounded-[20px] p-4 flex flex-col gap-1"><p className="font-bold!">Aún no hay juntas para tu zona</p><p className={screenStyles.muted}>Indica una dirección con localidad para ver las juntas cercanas.</p></div>)}
+        {juntas.map((j) => (
+          <div key={j.id} className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2">
+            <p className="font-bold!">{j.name}</p>
+            <p className={screenStyles.muted}>{j.zona}</p>
+            <button className={`${j.joinCls} min-h-11! w-full`} onClick={j.join}>{j.joinLbl}</button>
+          </div>
+        ))}
+        <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full" onClick={() => nav.go("territorio")}>Continuar</button>
+        <button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full" onClick={() => { setJoined(null); nav.go("territorio"); }}>Ahora no</button>
       </div>
       </>)}
 
+      {nav.is("territorio") && (<>
+      <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Revisa tus datos</h1></div>
+      <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-4">
+        <p className={screenStyles.muted}>Revisa que todo esté bien. Toca el lápiz para cambiar un dato ahí mismo.</p>
+
+        <TarjetaDato titulo="Identidad">
+          <p className="font-bold!">DNI {dni2.value.slice(0, 2)}••••{dni2.value.slice(-2)}</p>
+          <p className={screenStyles.muted}>Verificado con RENIEC y PNP.</p>
+        </TarjetaDato>
+
+        <TarjetaDato titulo="Dirección" abierta={editando === "direccion"} onToggle={() => toggleEdit("direccion")}>
+          {editando === "direccion" ? bloqueDireccion : (<>
+            <p className="font-bold!">{ubicacion?.label ?? "Sin dirección. Toca el lápiz para agregarla."}</p>
+            {locRev && (<p className={screenStyles.muted}>Localidad: {locRev}{depRev ? ` · ${depRev}` : ""}</p>)}
+          </>)}
+        </TarjetaDato>
+
+        <TarjetaDato titulo="Junta vecinal" abierta={editando === "junta"} onToggle={hayJuntas ? () => toggleEdit("junta") : undefined}>
+          {editando === "junta" ? (
+            (juntas ?? []).map((j) => (
+              <div key={j.id} className="border border-(--color-line) rounded-[16px] p-3 flex flex-col gap-2">
+                <p className="font-bold!">{j.name}</p>
+                <p className={screenStyles.muted}>{j.zona}</p>
+                <button className={`${j.joinCls} min-h-11! w-full`} onClick={j.join}>{j.joinLbl}</button>
+              </div>
+            ))
+          ) : (
+            <p className="font-bold!">{joined ? juntas.find((j) => j.id === joined)?.name : "Sin junta"}</p>
+          )}
+          {sinJuntas && <p className={screenStyles.muted}>Indica una dirección con localidad para ver juntas cerca de ti. Puedes usar BarrioConecta sin junta.</p>}
+          {!sinJuntas && <p className={screenStyles.muted}>Sumarte es voluntario. Puedes usar toda la app sin junta.</p>}
+        </TarjetaDato>
+
+        <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => irAInicio(finishRegistro)}>Confirmar y continuar</button>
+        <p className={`${screenStyles.muted} text-center!`}>Lima es solo un ejemplo: BarrioConecta sirve en costa, sierra y selva.</p>
+      </div>
+      </>)}
+      
       </div>
       </div>
     </div>

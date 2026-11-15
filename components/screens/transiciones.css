@@ -80,7 +80,7 @@
 }
 
 .rostro-progreso {
-  animation: progreso-rostro 13s linear both;
+  animation: progreso-rostro 5s linear both;
 }
 
 @media (prefers-reduced-motion: reduce) {
