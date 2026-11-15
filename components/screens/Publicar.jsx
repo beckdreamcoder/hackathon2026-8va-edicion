@@ -1,11 +1,12 @@
 "use client";
 
 import { useViewStack } from "@/lib/hooks/use-view-stack";
+import { useRouter } from "next/navigation";
 
 import { useCheckbox } from "@/lib/hooks/use-checkbox";
 import { useTextInput } from "@/lib/hooks/use-text-input";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useSesion, chip, logEvento, ubicacionCorta } from "@/lib/demo/shared";
 import { usePublicaciones, LIMITE_CACHUELOS } from "@/lib/demo/publicaciones";
 
@@ -13,19 +14,8 @@ const TIPOS = [{id: "favor", name: "Favor gratuito", sub: "Préstamos, habilidad
 const TIPO_ON = "flex items-center gap-3.5 min-h-19 rounded-[20px] border-2 border-(--color-brand) bg-[#fff5f6] px-3.5 py-3 text-left w-full [&_.ic]:w-8.5 [&_.ic]:h-8.5 [&_.ic]:text-(--color-brand) [&_b]:block [&_b]:text-[18px] on";
 const TIPO_OFF = "flex items-center gap-3.5 min-h-19 rounded-[20px] border-2 border-(--color-line) bg-white px-3.5 py-3 text-left w-full [&_.ic]:w-8.5 [&_.ic]:h-8.5 [&_.ic]:text-(--color-brand) [&_b]:block [&_b]:text-[18px]";
 const CATS = ["Herramientas", "Habilidades", "Ayuda temporal", "Movilidad"];
-const DISTRITOS = ["San Juan de Lurigancho", "Jicamarca Anexo 22", "El Agustino", "Cercado de Lima", "San Borja", "Ate", "Santa Anita", "La Victoria", "Rímac", "Otro distrito de Lima"];
-const CACH_CATS = ["Reparación de computadoras", "Pintura de viviendas", "Instalación eléctrica", "Gasfitería", "Mudanzas pequeñas", "Limpieza", "Reparación de electrodomésticos", "Apoyo con entregas", "Otros"];
 const FORMAS = ["Bienes", "Dinero", "Compra solidaria", "Tiempo", "Logística"];
-/** Reglas de la sugerencia automática (sin modelo de IA). */
-const SUGERENCIAS = [
-  [["escalera", "taladro", "herramienta", "martillo", "carretilla", "prest"], "Herramientas"],
-  [["enseñ", "clase", "whatsapp", "trámite", "tramite", "celular"], "Habilidades"],
-  [["llevar", "traslado", "hospital", "carro", "movilidad"], "Movilidad"],
-  [["cuidar", "acompañ", "ayuda", "recoger", "compras"], "Ayuda temporal"],
-  [["fuga", "gasfit", "caño", "grifo"], "Gasfitería"],
-  [["pintar", "pintura"], "Pintura"],
-  [["abrigo", "colecta", "víveres", "alimentos", "pollada"], "Campaña solidaria"],
-];
+import { PALABRAS_CACHUELO, PALABRAS_FAVOR, clasificar, revisarTexto } from "@/lib/demo/moderacion";
 import { screenStyles } from "./screen-styles";
 
 /**
@@ -33,7 +23,8 @@ import { screenStyles } from "./screen-styles";
  * Los valores de demostración sustituyen a la lógica del prototipo (DCLogic), que no se migró.
  */
 export default function Publicar() {
-  const nav = useViewStack("tipo");
+  const nav = useViewStack("tipo", ["datos"]);
+  const router = useRouter();
   const responsable = useTextInput("");
   const plazo = useTextInput("");
   const desc = useTextInput("");
@@ -42,12 +33,25 @@ export default function Publicar() {
   const benef = useCheckbox(false);
   const sinRed = useCheckbox(false);
   const [sesion] = useSesion();
+  const [aConvenir, setAConvenir] = useState(false);
+  const distrito = sesion.localidad || "Tu zona";
   const [pubs, setPubs] = usePublicaciones();
   const [tipo, setTipo] = useState("favor");
   const [modo, setModo] = useState("pido");
+  // Acceso directo desde el botón «+» de Favores o Cachuelos: va al formulario de esa sección, sin elegir tipo
+  // «Volver» desde el formulario regresa a la sección de origen (solo rutas conocidas)
+  const [volverA, setVolverA] = useState("");
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const t = p.get("tipo");
+    if (t !== "favor" && t !== "cachuelo") return;
+    setTipo(t);
+    setModo(p.get("modo") === "ofrezco" ? "ofrezco" : "pido");
+    const origen = p.get("desde");
+    if (origen === "/favores" || origen === "/cachuelos") setVolverA(origen);
+  }, []);
   const [cat, setCat] = useState("Herramientas");
   const [catCach, setCatCach] = useState("Otros");
-  const [distrito, setDistrito] = useState("San Juan de Lurigancho");
   const meta = useTextInput("100");
   const [inicio, setInicio] = useState("");
   const [imagen, setImagen] = useState("");
@@ -69,7 +73,6 @@ export default function Publicar() {
     img.onerror = () => { setImgMsg("No se pudo leer la imagen."); URL.revokeObjectURL(url); };
     img.src = url;
   };
-  const [disp, setDisp] = useState("Hoy");
   const [forma, setForma] = useState(["Bienes"]);
   const [alcance, setAlcance] = useState("junta");
   const [catSug, setCatSug] = useState("Otros");
@@ -90,12 +93,7 @@ export default function Publicar() {
   const chipOfrezco = chip(modo === "ofrezco");
   const setPido = () => setModo("pido");
   const setOfrezco = () => setModo("ofrezco");
-  const cats = CATS.map((c) => ({ name: c, cls: chip(c === cat), pick: () => setCat(c) }));
   const formas = FORMAS.map((f) => ({ name: f, cls: chip(forma.includes(f)), pick: () => setForma((x) => (x.includes(f) ? x.filter((y) => y !== f) : [...x, f])) }));
-  const alJunta = chip(alcance === "junta");
-  const alCom = chip(alcance === "comunidad");
-  const setJunta = () => setAlcance("junta");
-  const setCom = () => setAlcance("comunidad");
 
   const tipoNombre = esMov ? `Movilidad solidaria · ${modo === "pido" ? "Necesito un traslado" : "Puedo llevar a alguien"}` : esFavor ? `Favor gratuito · ${modo === "pido" ? "Necesito ayuda" : "Ofrezco ayuda"}` : esCach ? `Cachuelo · ${modo === "pido" ? "Necesito un servicio" : "Ofrezco mi servicio"}` : "Campaña de apoyo";
   const placeholder = esFavor ? "Ejemplo: necesito una escalera prestada para el sábado" : esCach ? "Ejemplo: necesito arreglar una fuga en el baño" : "Ejemplo: colecta de abrigo para familias de la parte alta";
@@ -103,19 +101,25 @@ export default function Publicar() {
   const suggest = () => {
     const text = desc.value.trim();
     if (!text) { setFalta(true); setFaltaMsg("Escribe primero una descripción para sugerirte un título."); return; }
-    const low = text.toLowerCase();
-    const hit = SUGERENCIAS.find(([words]) => words.some((w) => low.includes(w)));
-    const c = hit ? hit[1] : "Otros";
+    const motivo = revisarTexto(`${text} ${title.value}`);
+    if (motivo) { setFalta(true); setFaltaMsg(motivo); return; }
+    const c = clasificar(text, esCach ? PALABRAS_CACHUELO : PALABRAS_FAVOR);
     setCatSug(c);
-    if (esFavor && CATS.includes(c)) setCat(c);
-    const words = text.replace(/\s+/g, " ").split(" ").slice(0, 8).join(" ");
-    title.setValue(words.charAt(0).toUpperCase() + words.slice(1));
+    if (esFavor && c !== "Otros") setCat(c);
+    if (esCach && c !== "Otros") setCatCach(c);
     setHasSug(true);
     setFalta(false);
   };
 
   const next = () => {
     if (desc.value.trim().length < 8) { setFalta(true); setFaltaMsg("Cuéntanos en pocas palabras qué necesitas u ofreces."); return; }
+    const motivo = revisarTexto(`${desc.value} ${title.value}`);
+    if (motivo) { setFalta(true); setFaltaMsg(motivo); return; }
+    if (!hasSug) {
+      const c = clasificar(desc.value, esCach ? PALABRAS_CACHUELO : PALABRAS_FAVOR);
+      if (esFavor && c !== "Otros") setCat(c);
+      if (esCach && c !== "Otros") setCatCach(c);
+    }
     if (esCamp && (!responsable.value.trim() || !plazo.value.trim() || forma.length === 0)) { setFalta(true); setFaltaMsg("Completa responsable, plazo y al menos una forma de apoyo."); return; }
     if (esCach && !precio.value.trim()) { setFalta(true); setFaltaMsg("Indica el pago referencial en soles o «A convenir»."); return; }
     if (esCamp && !(Number(meta.value) >= 1)) { setFalta(true); setFaltaMsg("Indica la meta de la campaña (al menos 1 unidad)."); return; }
@@ -138,7 +142,7 @@ export default function Publicar() {
       tipo, modo, autor: sesion.userId, fecha: hoy,
       titulo: title.value.trim(), descripcion: desc.value.trim(),
       categoria: esFavor ? cat : esCach ? catCach : "Campaña",
-      disponibilidad: disp, precio: esCach ? precio.value.trim() || "A convenir" : null,
+      precio: esCach ? precio.value.trim() || "A convenir" : null,
       responsable: responsable.value.trim(), plazo: plazo.value.trim(), formas: forma,
       alcance, zona: `${ubicacionCorta(sesion)} · zona aproximada`, distrito,
       ...(esCamp ? { meta: Math.floor(Number(meta.value)), inicio: inicio || hoy, imagen: imagen || undefined } : {}),
@@ -155,9 +159,9 @@ export default function Publicar() {
   const listoTitle = listo === "pendiente" ? "Guardado sin conexión" : "¡Listo!";
   const listoText = listo === "pendiente" ? "Se enviará cuando vuelvas a tener conexión. Aún no está visible." : alcance === "junta" ? "Tu publicación ya está visible para tu junta." : "Tu publicación ya está visible para tu comunidad.";
   const pubLabel = sinRed.checked ? "Guardar como pendiente" : "Publicar";
-  const resTag = esFavor ? "Gratis" : esCach ? precio.value.trim() || "A convenir" : "Solidaridad";
+  const precioTxt = (v) => (/^[0-9]/.test(v) ? "S/ " + v : v);
+  const resTag = esFavor ? "Gratis" : esCach ? precioTxt(precio.value.trim()) || "A convenir" : "Solidaridad";
   const resTagCls = esFavor ? screenStyles.badgeFavor : esCach ? screenStyles.badgeCachuelo : screenStyles.badgeSolidarity;
-  const resTitle = title.value.trim() || "Mi publicación";
   const muroHref = listo === "pendiente" ? "/offline?vista=pend" : esMov ? `/movilidad?tab=${modo === "pido" ? "nec" : "paso"}` : esCach ? `/cachuelos?tab=${modo === "pido" ? "trab" : "serv"}` : esCamp ? "/campanas" : `/favores?tab=${modo === "pido" ? "nec" : "ofr"}`;
   const reset = () => window.location.reload();
   return (
@@ -165,7 +169,7 @@ export default function Publicar() {
       <div className="w-full md:max-w-[46rem] mx-auto h-dvh md:border-x md:border-(--color-line) flex flex-col bg-white overflow-hidden">
       
       {nav.is("tipo") && (<>
-      <div className={screenStyles.header}><a className={screenStyles.iconButton} href="/inicio" aria-label="Cerrar"><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></a><h1>¿Qué quieres publicar?</h1></div>
+      <div className={screenStyles.header}><a className={screenStyles.iconButton} href="/comunidad" aria-label="Cerrar"><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></a><h1>¿Qué quieres publicar?</h1></div>
       <div className="flex gap-1.5 pt-0 px-4 pb-2 [&_i]:flex-1 [&_i]:h-1.5 [&_i]:rounded-[3px] [&_i]:bg-(--color-line) [&_i.on]:bg-(--color-brand)" aria-hidden="true"><i className="on"></i><i></i><i></i></div>
       <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-4">
         <p className={`${screenStyles.muted} font-bold!`}>Paso 1 de 3 · Elige el tipo</p>
@@ -184,24 +188,21 @@ export default function Publicar() {
       </>)}
       
       {nav.is("datos") && (<>
-      <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Cuéntalo en pocas palabras</h1></div>
+      <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={volverA ? () => router.push(volverA) : nav.back}><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Cuéntalo en pocas palabras</h1></div>
       <div className="flex gap-1.5 pt-0 px-4 pb-2 [&_i]:flex-1 [&_i]:h-1.5 [&_i]:rounded-[3px] [&_i]:bg-(--color-line) [&_i.on]:bg-(--color-brand)" aria-hidden="true"><i className="on"></i><i className="on"></i><i></i></div>
       <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-4">
         <p className={`${screenStyles.muted} font-bold!`}>Paso 2 de 3 · {tipoNombre}</p>
         <div className={screenStyles.field}><label htmlFor="desc">Descripción</label><textarea id="desc" className="min-h-26 border-[1.5px] border-[#cfc7bf] rounded-[16px] px-3.5 py-3 bg-white w-full resize-none" placeholder={`${placeholder ?? ""}`} {...desc.props}></textarea></div>
-        <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={suggest}><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" /></svg>Sugerencia automática</button>
-        <span className={`${screenStyles.badge} mt-[-8px]!`}>Sugerencia automática · revísala antes de publicar</span>
+        <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={suggest}><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" /></svg>Analizar publicación</button>
+        <span className={`${screenStyles.badge} mt-[-8px]!`}>Simulación de IA (demo) · revísalo antes de publicar</span>
         {hasSug && (<>
-          <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 border-(--color-brand)!"><p className={screenStyles.label}>Propuesta (puedes editarla)</p><label htmlFor="tit" className="absolute left-[-9999px]!">Título</label><input id="tit" className={screenStyles.input} {...title.props} /><p className={screenStyles.muted}>Categoría sugerida: {catSug}</p></div>
+          <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-1 border-(--color-brand)!"><p className={screenStyles.label}>Categoría sugerida: {catSug}</p></div>
         </>)}
         {esFavor && (<>
-          <div className={screenStyles.field}><p className={screenStyles.label}>Categoría</p><div className={screenStyles.wrap}>{(cats ?? []).map((c, __i1) => (<Fragment key={__i1}><button className={c.cls} onClick={c.pick}>{c.name}</button></Fragment>))}</div></div>
           {esMov && (<><div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2" role="note"><p className={screenStyles.muted}>Movilidad solidaria avisa primero a tu junta. Si es una urgencia médica, llama al 106; no esperes respuestas de vecinos.</p><a className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" href="/movilidad">Ir al flujo de movilidad</a></div></>)}
-          <div className={screenStyles.field}><p className={screenStyles.label}>Disponibilidad</p><div className={screenStyles.wrap}><button className={chip(disp === "Hoy")} onClick={() => setDisp("Hoy")}>Hoy</button><button className={chip(disp === "Esta semana")} onClick={() => setDisp("Esta semana")}>Esta semana</button><button className={chip(disp === "Fines de semana")} onClick={() => setDisp("Fines de semana")}>Fines de semana</button></div></div>
         </>)}
         {esCach && (<>
-          <div className={screenStyles.field}><p className={screenStyles.label}>Categoría del trabajo</p><div className={screenStyles.wrap}>{CACH_CATS.map((k) => (<button key={k} className={chip(catCach === k)} onClick={() => setCatCach(k)}>{k}</button>))}</div></div>
-          <div className={screenStyles.field}><label htmlFor="precio">Precio referencial</label><input id="precio" className={screenStyles.input} placeholder="S/ o \u00abA convenir\u00bb" {...precio.props} /><p className={screenStyles.muted}>Los pagos no se hacen en la app: el precio se acuerda entre ustedes.</p></div>
+          <div className={screenStyles.field}><label htmlFor="precio">Precio referencial</label><input id="precio" className={screenStyles.input} placeholder="Ej.: 50 soles o «A convenir»" disabled={aConvenir} {...precio.props} /><div className={screenStyles.wrap}><button type="button" className={chip(aConvenir)} aria-pressed={aConvenir} onClick={() => { const n = !aConvenir; setAConvenir(n); precio.setValue(n ? "A convenir" : ""); }}>A convenir</button></div><p className={screenStyles.muted}>Los pagos no se hacen en la app: el precio se acuerda entre ustedes.</p></div>
         </>)}
         {esCamp && (<>
           <div className={screenStyles.field}><label htmlFor="meta">Meta de la campaña (unidades)</label><input id="meta" className={screenStyles.input} inputMode="numeric" {...meta.props} /><p className={screenStyles.muted}>1 unidad = 1 bien, 1 turno, 1 artículo o S/ 10.</p></div>
@@ -210,8 +211,8 @@ export default function Publicar() {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={imagen} alt="Vista previa de la imagen de la campaña" className="w-full max-h-40 object-cover rounded-[14px]" />
           )}</div>
-          <div className={screenStyles.field}><label htmlFor="resp">Responsable</label><input id="resp" className={screenStyles.input} placeholder="Nombre de la persona u organizaci\u00f3n" {...responsable.props} /></div>
-          <div className={screenStyles.field}><label htmlFor="plazo">Plazo</label><input id="plazo" className={screenStyles.input} placeholder="Fecha l\u00edmite" {...plazo.props} /></div>
+          <div className={screenStyles.field}><label htmlFor="resp">Responsable</label><input id="resp" className={screenStyles.input} placeholder="Nombre de la persona u organización" {...responsable.props} /></div>
+          <div className={screenStyles.field}><label htmlFor="plazo">Plazo</label><input id="plazo" className={screenStyles.input} placeholder="Fecha límite" {...plazo.props} /></div>
           <div className={screenStyles.field}><p className={screenStyles.label}>Formas de apoyo</p><div className={screenStyles.wrap}>{(formas ?? []).map((f, __i1) => (<Fragment key={__i1}><button className={f.cls} onClick={f.pick}>{f.name}</button></Fragment>))}</div></div>
           <div className={screenStyles.checkboxRow}><input id="benef" type="checkbox" {...benef.props} /><label htmlFor="benef"><b>La persona beneficiaria autorizó esta campaña</b><br /><span className={screenStyles.muted}>Obligatorio si la campaña es sobre otra persona.</span></label></div>
         </>)}
@@ -225,10 +226,8 @@ export default function Publicar() {
       <div className="flex gap-1.5 pt-0 px-4 pb-2 [&_i]:flex-1 [&_i]:h-1.5 [&_i]:rounded-[3px] [&_i]:bg-(--color-line) [&_i.on]:bg-(--color-brand)" aria-hidden="true"><i className="on"></i><i className="on"></i><i className="on"></i></div>
       <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-4">
         <p className={`${screenStyles.muted} font-bold!`}>Paso 3 de 3 · Confirmación</p>
-        <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2"><span className={resTagCls}>{resTag}</span><h2 className="text-[22px]!">{resTitle}</h2><p className={screenStyles.muted}>{desc.value}</p></div>
+        <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2"><span className={resTagCls}>{resTag}</span><h2 className="text-[22px]! break-words">{desc.value}</h2><p className={screenStyles.muted}>Categoría: {esFavor ? cat : esCach ? catCach : "Campaña"}</p></div>
         <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2"><p className={screenStyles.label}>Zona aproximada</p><div className={screenStyles.row}><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic text-(--color-brand)!" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></svg><p>{sesion.localidad} · zona aproximada <span className={screenStyles.muted}>(no se muestra tu dirección exacta)</span></p></div></div>
-        <div className={screenStyles.field}><p className={screenStyles.label}>Distrito</p><div className="flex gap-2 overflow-x-auto pb-0.5 [&>*]:shrink-0" role="group" aria-label="Distrito">{DISTRITOS.map((d) => (<button key={d} className={chip(distrito === d)} aria-pressed={distrito === d} onClick={() => setDistrito(d)}>{d}</button>))}</div></div>
-        <div className={screenStyles.field}><p className={screenStyles.label}>¿Quién lo verá?</p><div className={screenStyles.wrap}><button className={alJunta} onClick={setJunta}>Mi junta primero</button><button className={alCom} onClick={setCom}>Mi comunidad</button></div></div>
         <div className={screenStyles.checkboxRow}><input id="off" type="checkbox" {...sinRed.props} /><label htmlFor="off"><b>Publicar cuando tenga conexión</b><br /><span className={screenStyles.muted}>Se guarda como pendiente y se envía al reconectar.</span></label></div>
         {limite && (<><p className={screenStyles.error} role="alert">Llegaste al límite de 3 solicitudes de cachuelos por día. Puedes seguir respondiendo mensajes. Vuelve mañana para publicar otra.</p></>)}
         <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={publish}>{pubLabel}</button>

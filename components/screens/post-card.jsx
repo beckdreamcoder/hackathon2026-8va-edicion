@@ -46,7 +46,7 @@ export function PostCard({ p }) {
         <span className="flex-1 min-w-0 text-(--color-muted) text-[15px] text-right">{p.alcance === "junta" ? "Mi junta" : "Mi comunidad"}</span>
       </div>
       <h3 className="text-[19px]!">{p.titulo}</h3>
-      <p className={screenStyles.muted}>{p.categoria} · {p.zona} · {p.disponibilidad}</p>
+      <p className={screenStyles.muted}>{p.categoria} · {p.zona}</p>
       <p className={screenStyles.muted}>Publicado por {autor}{esMia ? " (tú)" : ""}</p>
 
       {p.estado !== "pendiente" && p.tipo !== "campana" && (<button className={`${screenStyles.buttonSecondary} min-h-11!`} onClick={verDetalle}>Ver detalle y solicitudes</button>)}
@@ -80,9 +80,6 @@ export function PostCard({ p }) {
           {abiertas.length > 0 && (<Link className={screenStyles.buttonOutline} href="/coordinaciones">Abrir coordinación ({abiertas.length})</Link>)}
           {err && (<p className={screenStyles.error} role="alert">{err}</p>)}
         </div>
-      )}
-      {coordinable && esMia && pendientes.length === 0 && abiertas.length === 0 && (
-        <p className={screenStyles.muted}>Aún sin solicitudes. Cambia de usuario con «Probar como» (arriba o en Mis coordinaciones) para solicitarla como otro vecino.</p>
       )}
     </div>
   );

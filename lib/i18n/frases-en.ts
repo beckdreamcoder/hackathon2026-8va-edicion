@@ -92,7 +92,7 @@ export const FRASES_EN: Record<string, string> = {
   "¿Qué quieres publicar?": "What do you want to post?", "Paso 1 de 3 · Elige el tipo": "Step 1 of 3 · Choose the type", "¿Pides o ofreces?": "Are you asking or offering?",
   "Necesito ayuda": "I need help", "Ofrezco ayuda": "I offer help", "Movilidad solidaria es un tipo de favor: la eliges en el siguiente paso.": "Solidarity mobility is a type of favor: you choose it in the next step.",
   "Para una emergencia, primero llama": "For an emergency, call first", "Policía 105 · Bomberos 116 · SAMU 106. La evidencia nueva se toma con la cámara, no desde la galería.": "Police 105 · Fire 116 · SAMU 106. New evidence is taken with the camera, not from the gallery.",
-  "Cuéntalo en pocas palabras": "Tell it in a few words", "Sugerencia automática": "Automatic suggestion", "Simulada · no se envía sola": "Simulated · not sent automatically",
+  "Cuéntalo en pocas palabras": "Tell it in a few words", "Analizar publicación": "Analyze post", "Sugerencia automática": "Automatic suggestion", "Simulada · no se envía sola": "Simulated · not sent automatically",
   "Propuesta (puedes editarla)": "Suggestion (you can edit it)", "Ir al flujo de movilidad": "Go to the mobility flow", "Categoría del trabajo": "Job category", "Precio referencial": "Reference price",
   "Los pagos no se hacen en la app: el precio se acuerda entre ustedes.": "Payments aren't made in the app: you agree on the price between you.",
   "Meta de la campaña (unidades)": "Campaign goal (units)", "Fecha de inicio (opcional)": "Start date (optional)", "Si es posterior a hoy, la campaña aparece como «Próxima».": "If it's after today, the campaign appears as “Upcoming”.",
