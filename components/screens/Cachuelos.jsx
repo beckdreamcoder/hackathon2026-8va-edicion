@@ -6,7 +6,8 @@ import { useTextInput } from "@/lib/hooks/use-text-input";
 
 import { Fragment, useState } from "react";
 import { useDemoState } from "@/lib/demo/store";
-import { VECINOS, chip, avisar, logEvento, emitirSello } from "@/lib/demo/shared";
+import { VECINOS, chip, avisar, logEvento, emitirSello, useSesion, ubicacionCorta } from "@/lib/demo/shared";
+import { MenuFiltro } from "./menu-filtro";
 import { useBloqueos, registrarLegado, cambiarUsuarioDemo, bloquear, desbloquear } from "@/lib/demo/coordinaciones";
 import Link from "next/link";
 import { useEffect } from "react";
@@ -45,15 +46,17 @@ export default function Cachuelos() {
   const [bl] = useBloqueos();
   const bloq = bl.items.some((x) => (x.by === "maria" && x.target === "pedro") || (x.by === "pedro" && x.target === "maria"));
   const yoBloquee = bl.items.some((x) => x.by === "maria" && x.target === "pedro");
-  const asM = () => cambiarUsuarioDemo("maria");
-  const asP = () => cambiarUsuarioDemo("pedro");
+  // María pide servicios; Pedro los ofrece. setC se aplica siempre (cambiarUsuarioDemo solo actualiza lo guardado)
+  const asM = () => { cambiarUsuarioDemo("maria"); setC({ actor: "maria", tab: "trab" }); };
+  const asP = () => { cambiarUsuarioDemo("pedro"); setC({ actor: "pedro", tab: "serv" }); };
+  const [sesion] = useSesion();
+  // Zona de referencia de las tarjetas: la dirección elegida en el registro
+  const zonaRef = ubicacionCorta(sesion) || "Tu zona";
   useEffect(() => {
     if (!c.coordId) return;
     registrarLegado({ id: c.coordId, tipo: "cachuelo", titulo: "Gasfitería · Pedro", solicitante: "maria", receptor: "pedro", href: "/cachuelos",
       estado: c.stage === "completed" ? "completada" : c.stage === "agreed" ? "acordada" : "aceptada" });
   }, [c.coordId, c.stage]);
-  const chipM = chip(actor === "maria");
-  const chipP = chip(actor === "pedro");
   const tabIsServ = c.tab === "serv";
   const tabIsTrab = c.tab === "trab";
   const tabServ = chip(tabIsServ);
@@ -141,14 +144,14 @@ export default function Cachuelos() {
   const selVm = lista.find((vm) => vm.id === selId);
   const abrirPub = (vm) => { setSelId(vm.id); nav.go("pub"); };
   const filtrosJsx = (
-    <div className="flex flex-col gap-2">
-      <div className="flex gap-2 overflow-x-auto pb-0.5 [&>*]:shrink-0" role="group" aria-label="Categoría">{cats.map((k) => (<button key={k} className={chip(catAct === k)} aria-pressed={catAct === k} onClick={() => setFCat(k)}>{k}</button>))}</div>
-      <div className="flex gap-2 overflow-x-auto pb-0.5 [&>*]:shrink-0" role="group" aria-label="Estado">{[["todos", "Todos"], ...Object.entries(ESTADO_CACH)].map(([k, n]) => (<button key={k} className={chip(fEst === k)} aria-pressed={fEst === k} onClick={() => setFEst(k)}>{n}</button>))}</div>
+    <div className="grid grid-cols-2 gap-2">
+      <MenuFiltro label="Categoría" valor={catAct} opciones={cats.map((k) => ({ id: k, name: k }))} onChange={setFCat} />
+      <MenuFiltro label="Estado" valor={fEst} opciones={[{ id: "todos", name: "Todos" }, ...Object.entries(ESTADO_CACH).map(([k, n]) => ({ id: k, name: n }))]} onChange={setFEst} derecha />
     </div>
   );
   const listaJsx = (<>
     {filtrosJsx}
-    {visibles.map((vm) => (<CachueloTarjeta key={vm.id} vm={vm} onAbrir={abrirPub} />))}
+    {visibles.map((vm) => (<CachueloTarjeta key={vm.id} vm={{ ...vm, ubicacion: zonaRef }} onAbrir={abrirPub} />))}
     {visibles.length === 0 && (<div className={screenStyles.card} role="status"><p className="font-bold!">No hay cachuelos con estos filtros</p><p className={screenStyles.muted}>Prueba otra categoría o estado, o publica uno nuevo.</p></div>)}
   </>);
   const s1 = inCoord ? "on" : "";
@@ -164,7 +167,7 @@ export default function Cachuelos() {
       {nav.is("acuerdo") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Ficha de acuerdo</h1></div></>)}
       {nav.is("pub") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Detalle del cachuelo</h1></div></>)}
       
-      {!nav.is("pub") && (<div className="flex gap-2 pt-0 px-4 pb-2 items-center flex-wrap flex-none [&_span]:text-[14px] [&_span]:text-(--color-muted) [&_span]:font-bold [&_span]:whitespace-nowrap [&_.chip]:min-h-10 [&_.chip]:px-3 [&_.chip]:py-0" role="group" aria-label="Probar como"><span>Probar como:</span><button className={chipM} onClick={asM}>María (pide)</button><button className={chipP} onClick={asP}>Pedro (ofrece)</button></div>)}
+      {!nav.is("pub") && (<div className="px-4 pt-1 pb-2 flex-none"><MenuFiltro label="Probando como" valor={actor} opciones={[{ id: "maria", name: "María (pide)" }, { id: "pedro", name: "Pedro (ofrece)" }]} onChange={(id) => (id === "maria" ? asM() : asP())} /></div>)}
       {bloq && !nav.is("pub") && (<p className="px-4 pb-2 text-[#9e0c24] font-bold text-[14px]" role="alert">Hay un bloqueo entre María y Pedro: no pueden enviarse solicitudes ni propuestas.</p>)}
       
       {nav.is("lista") && (<>
@@ -172,8 +175,8 @@ export default function Cachuelos() {
         <div className={screenStyles.wrap}><button className={tabServ} onClick={setServ}>Ofrecen servicios</button><button className={tabTrab} onClick={setTrab}>Piden un servicio</button></div>
         {tabIsServ && (<>
           {listaJsx}
-          {sinFiltro && (<><button className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full border-l-0 border-t-[5px] border-t-[#8a5300]" onClick={() => nav.go("detalle")}><div className={screenStyles.row}><span className={screenStyles.badgeCachuelo}>A convenir</span><span className={screenStyles.badge}>{statusTxt}</span></div><h3 className="text-[19px]!">Gasfitería · Pedro arregla fugas</h3><p className={screenStyles.muted}>Campoy Sector 3 · Disponible esta semana</p><p className="font-bold! text-[15px]!">Lo recomiendan 4 vecinos de tu comunidad</p></button></>)}
-          {sinFiltro && (<><div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full border-l-0 border-t-[5px] border-t-[#8a5300]"><div className={screenStyles.row}><span className={screenStyles.badgeCachuelo}>S/ 25 por hora</span></div><h3 className="text-[19px]!">Clases de matemática de secundaria</h3><p className={screenStyles.muted}>Campoy Sector 1 · Tardes · Vecina nueva</p></div></>)}
+          {sinFiltro && (<><button className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full border-l-0 border-t-[5px] border-t-[#8a5300]" onClick={() => nav.go("detalle")}><div className={screenStyles.row}><span className={screenStyles.badgeCachuelo}>A convenir</span><span className={screenStyles.badge}>{statusTxt}</span></div><h3 className="text-[19px]!">Gasfitería · Pedro arregla fugas</h3><p className={screenStyles.muted}>{zonaRef} · Disponible esta semana</p><p className="font-bold! text-[15px]!">Lo recomiendan 4 vecinos de tu comunidad</p></button></>)}
+          {sinFiltro && (<><div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_1px_3px_rgba(0,0,0,.1),0_1px_2px_-1px_rgba(0,0,0,.1)] flex flex-col gap-2 text-left w-full border-l-0 border-t-[5px] border-t-[#8a5300]"><div className={screenStyles.row}><span className={screenStyles.badgeCachuelo}>S/ 25 por hora</span></div><h3 className="text-[19px]!">Clases de matemática de secundaria</h3><p className={screenStyles.muted}>{zonaRef} · Tardes · Vecina nueva</p></div></>)}
         </>)}
         {tabIsTrab && (<>
           {listaJsx}

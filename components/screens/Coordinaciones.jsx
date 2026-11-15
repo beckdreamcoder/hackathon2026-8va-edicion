@@ -16,6 +16,7 @@ import {
 import { sinConexionAhora } from "@/lib/demo/conexion";
 import { useCola, encolarMensaje } from "@/lib/demo/cola";
 import { screenStyles } from "./screen-styles";
+import { MenuFiltro } from "./menu-filtro";
 
 const USUARIOS = ["maria", "luis", "pedro", "carlos"];
 const AVATAR = "w-11 h-11 rounded-[50%] grid place-items-center font-extrabold text-[18px] flex-none bg-[#ddf0f2] text-[#14505a]";
@@ -162,18 +163,17 @@ export default function Coordinaciones() {
             <button className={screenStyles.iconButton} aria-label="Reportar o bloquear" onClick={() => { setRepHecho(false); setSheet(true); }}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" /></svg></button>
           </>, nav.back)}
 
-        <div className="flex gap-2 pt-0 px-4 pb-2 items-center flex-none overflow-x-auto [&_span]:text-[14px] [&_span]:text-(--color-muted) [&_span]:font-bold [&_span]:whitespace-nowrap [&_.chip]:min-h-10 [&_.chip]:px-3 [&_.chip]:py-0" role="group" aria-label="Probar como">
-          <span>Probar como:</span>{usuarios.map((u) => (<button key={u} className={`${chip(uid === u)} chip`} onClick={() => cambiarUsuario(u)}>{VECINOS[u].name}</button>))}
+        <div className="px-4 pt-1 pb-2 flex-none">
+          <MenuFiltro label="Probando como" valor={uid} opciones={usuarios.map((u) => ({ id: u, name: VECINOS[u].name }))} onChange={cambiarUsuario} />
         </div>
 
         {nav.is("lista") && (
           <div className={screenStyles.content}>
-            <div className="flex gap-2 overflow-x-auto pb-0.5 shrink-0 [&>*]:shrink-0" role="group" aria-label="Estado">
-              {FILTROS.map((x) => (<button key={x.id} className={chip(filtro === x.id)} aria-pressed={filtro === x.id} onClick={() => setFiltro(x.id)}>{x.name} ({base.filter(x.test).length})</button>))}
-            </div>
-            <div className="flex gap-2 overflow-x-auto pb-0.5 shrink-0 [&>*]:shrink-0" role="group" aria-label="Rol">
-              {ROLES.map((x) => (<button key={x.id} className={chip(rol === x.id)} aria-pressed={rol === x.id} onClick={() => setRol(x.id)}>{x.name}</button>))}
-              {TIPOS.map((x) => (<button key={x.id} className={chip(tipo === x.id)} aria-pressed={tipo === x.id} onClick={() => setTipo(x.id)}>{x.name}</button>))}
+            {/* Tres filtros en un mismo renglón: estado, rol y tipo. Cada uno es un menú, así no ocupan varias filas */}
+            <div className="grid grid-cols-3 gap-2 flex-none">
+              <MenuFiltro label="Estado" valor={filtro} opciones={FILTROS.map((x) => ({ id: x.id, name: `${x.name} (${base.filter(x.test).length})` }))} onChange={setFiltro} />
+              <MenuFiltro label="Rol" valor={rol} opciones={ROLES} onChange={setRol} />
+              <MenuFiltro label="Tipo" valor={tipo} opciones={TIPOS} onChange={setTipo} derecha />
             </div>
             {visibles.map((c) => {
               const o = otroDe(c, uid); const n = noLeidos(c, uid);
