@@ -13,7 +13,7 @@ import { useSesion, useAvisos, useSellos, sellosDe, logEvento, VECINOS, ubicacio
 import { usePublicaciones } from "@/lib/demo/publicaciones";
 import { useCatalogo, ESTADOS_CAT, TIPOS_CAT } from "@/lib/demo/catalogo";
 import { useCampanas, ESTADO_CAMPANA, APORTES_INICIAL } from "@/lib/demo/campanas";
-import { JUNTAS, AVISOS_INICIAL } from "@/lib/demo/juntas";
+import { juntaDe, AVISOS_INICIAL } from "@/lib/demo/juntas";
 import { usePerfilDatos, guardarPerfil, nombreDe, distritoDe, enmascarar, estadisticas, registrarReporteVecino, useReportesVecinos, COLORES_AVATAR, DISTRITOS_PERFIL, TIPO_SELLO } from "@/lib/demo/perfiles";
 import { participa, otroDe, fase, esAbierta } from "@/lib/demo/coordinaciones";
 import PublicacionDetalle from "@/components/publicaciones/PublicacionDetalle";
@@ -158,7 +158,7 @@ export default function Perfil() {
   const nombreVec = (id) => nombreDe(id, datos.items, pf.nombres);
   const miNombre = nombreVec(uid);
   const miDatos = datos.items[uid] ?? {};
-  const junta = sesion.juntaId ? JUNTAS[sesion.juntaId] ?? JUNTAS.campoy : null;
+  const junta = juntaDe(sesion.juntaId);
   const miDistrito = distritoDe(uid, datos.items, sesion.departamento);
   const statsDe = (id) => estadisticas(id, co.items, aportes.items.filter((a) => a.vecino === id && a.estado === "confirmado").length, avJunta.items.filter((a) => a.autor === id).length);
   const refsDe = (id) => sellos.items.filter((x) => x.valido && x.to === id).sort((a, b) => b.mes.localeCompare(a.mes));
@@ -224,13 +224,11 @@ export default function Perfil() {
         {msg && (<p className={screenStyles.success} role="status">{msg}</p>)}
         <div className={`${screenStyles.card} flex-row! items-center!`}>
           <Avatar datos={datos.items} id={uid} nombre={miNombre} />
-          <div className={screenStyles.grow}><h2 className="text-[24px]!">{miNombre}</h2><p className={screenStyles.muted}>{miDistrito} · {ubicacionCorta(sesion)}</p><p className={screenStyles.muted}>{junta ? junta.name : "Sin junta vecinal"}</p>
-            {sesion.direccion && (<p className={screenStyles.muted}>Dirección de referencia: {sesion.direccion}</p>)}
+          <div className={screenStyles.grow}><h2 className="text-[24px]!">{miNombre}</h2><p className={screenStyles.muted}>{ubicacionCorta(sesion) || "Tu zona"}</p><p className={screenStyles.muted}>{junta ? junta.name : "Sin junta vecinal"}</p>
             <div className="flex flex-wrap gap-1.5"><span className={screenStyles.badge}>{refLbl}</span><span className={screenStyles.badgeDemo}>{sesion.registrada && sesion.dni ? "Identidad validada con RENIEC" : "Sin validar"}</span></div></div>
         </div>
         {miDatos.bio && (<p>{miDatos.bio}</p>)}
         <div className="grid grid-cols-4 gap-2" role="group" aria-label="Actividad">{(() => { const st = statsDe(uid); return (<><Stat n={refs} t="referencias" /><Stat n={st.favores} t="favores" /><Stat n={st.cachuelos} t="cachuelos" /><Stat n={st.participacion} t="participación" /></>); })()}</div>
-        <p className={screenStyles.muted}>Privado (solo tú lo ves): DNI {enmascarar(sesion.dni ?? "") || "sin registrar"} · Celular {pf.phone === "ok" ? enmascarar(pf.numero) : "sin vincular"}. Los sellos son reconocimientos entre vecinos, no una certificación de identidad.</p>
         <Fila icono="edit" titulo="Editar perfil" onClick={abrirEditar} />
 
         <div className={screenStyles.card}>
@@ -365,7 +363,7 @@ export default function Perfil() {
       <div className={screenStyles.content}>
         <div className={screenStyles.field}><label htmlFor="nm">Nombre público</label><input id="nm" className={screenStyles.input} {...user.props} onBlur={guardarNombre} /></div>
         <div className={screenStyles.card}><p className={screenStyles.label}>Celular para SMS</p>
-          {phoneIdle && (<><label htmlFor="ph" className="absolute left-[-9999px]!">Celular</label><input id="ph" className={screenStyles.input} inputMode="numeric" placeholder="9 d\u00edgitos" {...phone.props} />{phoneErr && (<p className={screenStyles.error} role="alert">Escribe un celular de 9 dígitos que empiece con 9.</p>)}<button className={screenStyles.button} onClick={sendCode}>Enviar código por SMS</button></>)}
+          {phoneIdle && (<><label htmlFor="ph" className="absolute left-[-9999px]!">Celular</label><input id="ph" className={screenStyles.input} inputMode="numeric" placeholder="9 dígitos" {...phone.props} />{phoneErr && (<p className={screenStyles.error} role="alert">Escribe un celular de 9 dígitos que empiece con 9.</p>)}<button className={screenStyles.button} onClick={sendCode}>Enviar código por SMS</button></>)}
           {phoneCode && (<><p className={screenStyles.muted}>Te enviamos un código por SMS (000000). Escríbelo abajo.</p><label htmlFor="cd" className="absolute left-[-9999px]!">Código</label><input id="cd" className={screenStyles.input} inputMode="numeric" maxLength="6" {...code.props} /><button className={screenStyles.button} onClick={verify}>Verificar</button>{codeErr && (<><p className={screenStyles.error} role="alert">Código incorrecto. Prueba con 000000.</p></>)}</>)}
           {phoneOk && (<><p className={screenStyles.success} role="status">✓ Celular vinculado solo para el canal SMS</p><p className={screenStyles.muted}>No reemplaza el acceso por DNI ni verifica tu identidad.</p><button className={screenStyles.buttonSecondary} onClick={unlink}>Desvincular</button></>)}</div>
         <div className={screenStyles.card}><p className={screenStyles.label}>Sesiones activas</p>{(sessions ?? []).map((s, __i1) => (<Fragment key={__i1}><div className={screenStyles.row}><span className={screenStyles.grow}><b>{s.name}</b><br /><span className={screenStyles.muted}>{s.role}</span></span><button className={s.cls} onClick={s.pick}>{s.lbl}</button></div></Fragment>))}<p className={screenStyles.muted}>Cambiar de sesión no mezcla datos privados de otros perfiles.</p></div>
