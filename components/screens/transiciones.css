@@ -1,0 +1,105 @@
+/* Transiciones entre vistas de una pantalla (estilo app nativa).
+ * `fwd`: la vista nueva entra desde la derecha. `back`: entra desde la izquierda. */
+
+@keyframes vista-entra-der {
+  from { transform: translateX(32px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+@keyframes vista-entra-izq {
+  from { transform: translateX(-32px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+.vista-fwd {
+  animation: vista-entra-der 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.vista-back {
+  animation: vista-entra-izq 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Pasos de la consulta RENIEC/PNP: cada paso aparece deslizándose y su check hace un pequeño rebote. */
+@keyframes paso-entra {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+@keyframes paso-check {
+  0% { transform: scale(0.4); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.paso-entra {
+  animation: paso-entra 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.paso-check {
+  animation: paso-check 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Componentes del registro (dentro de .registro-vista):
+ * - Avisos y resultados (role status/alert/alertdialog) aparecen deslizándose.
+ * - Botones: retorno visual al pulsar y cambio de color suave (chips, seleccionados). */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.vista-fade {
+  animation: fade-in 200ms ease-out both;
+}
+
+.registro-vista [role="status"],
+.registro-vista [role="alert"],
+.registro-vista [role="alertdialog"] {
+  animation: paso-entra 320ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+.registro-vista button {
+  transition: transform 120ms ease-out, background-color 200ms ease, border-color 200ms ease, color 200ms ease, opacity 200ms ease;
+}
+
+.registro-vista button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Validación facial simulada: el marco punteado "marcha" alrededor del rostro y la barra avanza en 13 s. */
+@keyframes marcha-marco {
+  to { stroke-dashoffset: -28; }
+}
+
+@keyframes progreso-rostro {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+.rostro-marco {
+  animation: marcha-marco 900ms linear infinite;
+}
+
+.rostro-progreso {
+  animation: progreso-rostro 13s linear both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rostro-marco {
+    animation: none;
+  }
+
+  .vista-fwd,
+  .vista-back,
+  .paso-entra,
+  .paso-check,
+  .vista-fade,
+  .registro-vista [role="status"],
+  .registro-vista [role="alert"],
+  .registro-vista [role="alertdialog"] {
+    animation: none;
+  }
+
+  .registro-vista button {
+    transition: none;
+  }
+}

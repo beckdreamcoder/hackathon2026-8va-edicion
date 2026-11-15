@@ -13,6 +13,8 @@ import { useRouter } from "next/navigation";
 export function useViewStack<T extends string>(initial: T, enlazables: readonly T[] = []) {
   const router = useRouter();
   const [stack, setStack] = useState<T[]>([initial]);
+  /** Sentido del último cambio de vista: sirve para animar la entrada (hacia delante o hacia atrás). */
+  const [dir, setDir] = useState<"fwd" | "back">("fwd");
 
   // Enlace directo a una vista interna (`?vista=sms`): solo vistas declaradas como enlazables.
   // Se aplica después del montaje para no alterar el HTML prerenderizado; «Volver» regresa a la vista inicial.
@@ -27,11 +29,13 @@ export function useViewStack<T extends string>(initial: T, enlazables: readonly 
   const current = stack[stack.length - 1];
 
   const go = useCallback((view: T) => {
+    setDir("fwd");
     setStack((prev) => [...prev, view]);
   }, []);
 
   const back = useCallback(() => {
     if (stack.length > 1) {
+      setDir("back");
       setStack((prev) => prev.slice(0, -1));
       return;
     }
@@ -44,5 +48,11 @@ export function useViewStack<T extends string>(initial: T, enlazables: readonly 
 
   const is = useCallback((view: T) => current === view, [current]);
 
-  return { current, go, back, is };
+  /** Vuelve a la vista inicial de la pantalla, borrando el resto de la pila. */
+  const reiniciar = useCallback(() => {
+    setDir("back");
+    setStack([initial]);
+  }, [initial]);
+
+  return { current, go, back, is, reiniciar, dir };
 }
