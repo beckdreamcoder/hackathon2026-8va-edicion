@@ -265,6 +265,7 @@ export async function resetDemo() {
   cache.clear();
   crudo.clear();
   await idb.limpiarKv();
+  try { window.localStorage.removeItem("bc-dni"); window.localStorage.removeItem("bc-dnis"); } catch { /* sin almacenamiento */ }
   for (const f of conservadas) { await idb.guardar(f); crudo.set(f.key, f.value); }
   try {
     const borrar: string[] = [];

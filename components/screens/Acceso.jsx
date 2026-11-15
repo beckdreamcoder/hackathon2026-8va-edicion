@@ -5,12 +5,48 @@ import { useViewStack } from "@/lib/hooks/use-view-stack";
 import { useTextInput } from "@/lib/hooks/use-text-input";
 import { useCheckbox } from "@/lib/hooks/use-checkbox";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { screenStyles } from "./screen-styles";
 import { useSesion, logEvento, chip } from "@/lib/demo/shared";
+import { volcarPendientes } from "@/lib/demo/store";
 
 const DNI_DEMO = "12345678";
+/** DNI recordado en este navegador: si ya pasó la autenticación, la app no vuelve a la pantalla de inicio. */
+const DNI_GUARDADO = "bc-dni";
+const guardarDni = (dni) => {
+  try {
+    window.localStorage.setItem(DNI_GUARDADO, dni);
+  } catch {
+    // Sin almacenamiento disponible (modo privado, bloqueado): la app sigue funcionando sin recordar el DNI.
+  }
+};
+/** DNIs con cuenta creada en este navegador: sirven para iniciar sesión con el campo DNI. */
+const DNIS_REGISTRADOS = "bc-dnis";
+const leerDnis = () => {
+  try {
+    const lista = JSON.parse(window.localStorage.getItem(DNIS_REGISTRADOS) ?? "[]");
+    return Array.isArray(lista) ? lista : [];
+  } catch {
+    return [];
+  }
+};
+const registrarDni = (dni) => {
+  try {
+    const lista = leerDnis();
+    if (!lista.includes(dni)) window.localStorage.setItem(DNIS_REGISTRADOS, JSON.stringify([...lista, dni]));
+  } catch {
+    // Sin almacenamiento: el DNI queda solo en la sesión actual.
+  }
+};
+/** DNI de prueba para la consulta RENIEC/PNP simulada. */
+const DNI_VALIDO = "71234567";
+const DNI_DENUNCIAS = "87654321";
+/** Pasos que se muestran mientras se consulta RENIEC y PNP (cada uno dura PASO_MS). */
+const PASOS_CONSULTA = ["Recuperando datos de RENIEC", "Recuperando datos de PNP", "Verificando información"];
+const PASO_MS = 700;
+/** Mensajes de la simulación de validación facial (paso 2). */
+const FASES_ROSTRO = ["Detectando rostro…", "Analizando puntos faciales…", "Comparando con la foto de tu DNI…", "✓ Rostro validado"];
 
 /** Directorio territorial ficticio: costa, sierra y selva. */
 const TERRITORIOS = [
@@ -22,6 +58,8 @@ const TERRITORIOS = [
   { id: "sanmartin", name: "San Martín", zona: "Selva", prov: "San Martín", dist: "Tarapoto", locs: ["Partido Alto", "Nueve de Abril", "Atumpampa"], juntas: [{ id: "atum", name: "Junta Vecinal Atumpampa", zona: "Atumpampa · Jr. Lima" }] },
 ];
 import { animateMotion } from "./animate-motion";
+import CamaraRostro from "./CamaraRostro";
+import "./transiciones.css";
 
 const animateScan = animateMotion(
   [{ top: "12%" }, { top: "86%" }],
@@ -36,6 +74,16 @@ export default function Acceso() {
   const nav = useViewStack("acceso");
   const router = useRouter();
   const [sesion, setSesion] = useSesion();
+
+  // Si ya pasó la autenticación en este navegador, pasar directo a la app.
+  useEffect(() => {
+    if (!sesion.registrada) return;
+    try {
+      if (window.localStorage.getItem(DNI_GUARDADO)) router.replace("/inicio");
+    } catch {
+      // Sin almacenamiento: se queda en la pantalla de acceso.
+    }
+  }, [sesion.registrada, router]);
   const busqueda = useTextInput("");
   const dni = useTextInput("");
   const dni2 = useTextInput("");
@@ -43,13 +91,14 @@ export default function Acceso() {
   const locOk = useCheckbox(false);
 
   // Paso 1: consulta RENIEC/PNP
-  const [escenario, setEscenario] = useState("ok");
-  const [query, setQuery] = useState("idle"); // idle | loading | ok | err | dup
+  const [query, setQuery] = useState("idle"); // idle | loading | ok | err | dup | den
+  const [paso, setPaso] = useState(0); // paso de la consulta en curso (índice de PASOS_CONSULTA)
+  const [tipDni, setTipDni] = useState(false); // tooltip informativo del campo DNI
   // Paso 2: comparación facial
   const [face, setFace] = useState("idle"); // idle | run | done
-  const [camNote, setCamNote] = useState("");
+  const [fase, setFase] = useState(0); // fase de la simulación facial (índice de FASES_ROSTRO)
+  const [camaraLista, setCamaraLista] = useState(false); // true cuando la persona permitió o denegó la cámara
   // Paso 3: consentimientos
-  const [triedFinish, setTriedFinish] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [locNote, setLocNote] = useState("");
   // Territorio y juntas
@@ -60,43 +109,56 @@ export default function Acceso() {
   const [tuNum, setTuNum] = useState(1);
   const [showErr, setShowErr] = useState(false);
 
-  const chipErr = chip(escenario === "err");
-  const chipOk = chip(escenario === "ok");
   const dni2Ok = /^\d{8}$/.test(dni2.value);
-  const canQuery = dni2Ok && query !== "loading";
-  const cantQuery = !dni2Ok;
+  const canQuery = dataOk.checked && dni2Ok && query !== "loading";
+  const cantQuery = !dni2Ok || !dataOk.checked;
   const qLoading = query === "loading";
   const qOk = query === "ok";
   const qErr = query === "err" || query === "dup";
-  const scenOk = () => { setEscenario("ok"); setQuery("idle"); };
-  const scenErr = () => { setEscenario("err"); setQuery("idle"); };
-  const faceIdle = face === "idle";
   const faceRun = face === "run";
   const faceDone = face === "done";
-  const faceReset = () => { setFace("idle"); setCamNote(""); };
+
+  // Identidad verificada: se muestra el resultado 2 s y luego pasa al paso 2 (si la persona no sale antes).
+  const goView = nav.go;
+  const enDni = nav.is("dni");
+  useEffect(() => {
+    if (!qOk || !enDni) return;
+    const t = setTimeout(() => {
+      setQuery("idle");
+      setFace("run");
+      setFase(0);
+      setCamaraLista(false);
+      goView("rostro");
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [qOk, enDni, goView]);
 
   const runQuery = () => {
     setQuery("loading");
+    setPaso(0);
+    setTimeout(() => setPaso(1), PASO_MS);
+    setTimeout(() => setPaso(2), PASO_MS * 2);
     setTimeout(() => {
       if (dni2.value === DNI_DEMO) setQuery("dup");
-      else setQuery(escenario === "ok" ? "ok" : "err");
-    }, 1200);
+      else if (dni2.value === DNI_VALIDO) setQuery("ok");
+      else if (dni2.value === DNI_DENUNCIAS) setQuery("den");
+      else setQuery("err");
+    }, PASO_MS * 3);
   };
 
-  const faceStart = async (useCamera) => {
-    setCamNote("");
-    if (useCamera && navigator.mediaDevices?.getUserMedia) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        stream.getTracks().forEach((t) => t.stop());
-        setCamNote("Cámara autorizada. La imagen no se guarda.");
-      } catch {
-        setCamNote("Permiso de cámara denegado o no disponible. Puedes continuar sin cámara.");
-      }
-    }
-    setFace("run");
-    setTimeout(() => setFace("done"), 1800);
-  };
+  // Paso 2 simulado: al entrar a la pantalla del rostro corre sola (15 s) y luego pasa al paso 3.
+  const enRostro = nav.is("rostro");
+  // La simulación empieza solo cuando la persona responde al permiso de la cámara.
+  useEffect(() => {
+    if (!enRostro || !camaraLista) return;
+    const ts = [
+      setTimeout(() => setFase(1), 4000),
+      setTimeout(() => setFase(2), 9000),
+      setTimeout(() => { setFase(3); setFace("done"); }, 13000),
+      setTimeout(() => goView("permisos"), 15000),
+    ];
+    return () => ts.forEach(clearTimeout);
+  }, [enRostro, camaraLista, goView]);
 
   const pedirUbicacion = (e) => {
     locOk.props.onChange(e);
@@ -148,31 +210,37 @@ export default function Acceso() {
   const tuLast = tuNum === 3;
   const tuAdv = () => setTuNum((n) => Math.min(3, n + 1));
 
-  const noDataBtn = !dataOk.checked;
-  const noData = triedFinish && !dataOk.checked;
-  const tryFinish = () => setTriedFinish(true);
   const toggleDetail = () => setShowDetail((v) => !v);
-  const locManual = () => { locOk.setChecked(false); setLocNote("Elegirás tu zona a mano en el siguiente paso."); };
 
+  /** Cierra el registro o el ingreso, guarda la sesión antes de cambiar de pantalla y entra a la app sin recargar la página. */
+  const irAInicio = async (cerrar) => {
+    cerrar();
+    await volcarPendientes();
+    router.push("/inicio");
+  };
   const finishRegistro = () => {
+    registrarDni(dni2.value);
+    guardarDni(dni2.value);
     setSesion({ registrada: true, dni: dni2.value, userId: "maria", departamento: cur.name, localidad: loc, juntaId: joined, ubicacionPermitida: locOk.checked });
     logEvento(`Registro demo completado · ${loc}, ${cur.name}${joined ? " · se unió a una junta" : ""}`);
   };
-  const loginDemo = () => {
-    setSesion({ registrada: true, userId: "maria", juntaId: sesion.juntaId ?? "campoy" });
+  const loginDemo = (dniUsado = DNI_DEMO) => {
+    guardarDni(dniUsado);
+    setSesion({ registrada: true, dni: dniUsado, userId: "maria", juntaId: sesion.juntaId ?? "campoy" });
     logEvento("Ingreso demo como María");
   };
   const ingresar = (e) => {
     e.preventDefault();
-    if (dni.value === DNI_DEMO || (sesion.registrada && dni.value === sesion.dni)) {
-      loginDemo();
-      router.push("/inicio");
-    } else setShowErr(true);
+    const dniIngresado = dni.value;
+    const registrado = dniIngresado === DNI_DEMO || dniIngresado === DNI_VALIDO || leerDnis().includes(dniIngresado) || (sesion.registrada && dniIngresado === sesion.dni);
+    if (registrado) irAInicio(() => loginDemo(dniIngresado));
+    else setShowErr(true);
   };
   return (
     <div className={screenStyles.screen}>
       <div className="w-full md:max-w-[46rem] mx-auto h-dvh md:border-x md:border-(--color-line) flex flex-col bg-white overflow-hidden">
       
+      <div key={nav.current} className={`${nav.dir === "back" ? "vista-back" : "vista-fwd"} registro-vista flex-1 min-h-0 flex flex-col`}>
       {nav.is("acceso") && (<>
       <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-3.5 pt-7! items-stretch!">
         <div className="flex flex-col! items-center! gap-1!">
@@ -206,7 +274,7 @@ export default function Acceso() {
         <svg className="w-6 h-6 fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round] flex-none text-(--color-brand)! w-30! h-30!" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 11v4a6 6 0 0 1-1 3M8 11a4 4 0 0 1 8 0v2a9 9 0 0 1-1 4M5 12a7 7 0 0 1 14 0v1M6 17a12 12 0 0 0 1 2" /></svg>
         <h2 className="text-[24px]!">Apoya tu dedo en el lector</h2>
         <p className={screenStyles.muted}>Apoya tu dedo y espera la confirmación.</p>
-        <a className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" href="/inicio" onClick={loginDemo}>Ingresar</a>
+        <a className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" href="/inicio" onClick={(e) => { e.preventDefault(); irAInicio(loginDemo); }}>Ingresar</a>
         <button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("acceso")}>Cancelar</button>
       </div>
       </>)}
@@ -218,7 +286,7 @@ export default function Acceso() {
         <svg className="w-6 h-6 fill-none stroke-current stroke-[1.4] [stroke-linecap:round] [stroke-linejoin:round] flex-none text-(--color-brand)! w-30! h-30!" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M9 10v1M15 10v1M9 15c1.5 1.5 4.5 1.5 6 0" /></svg>
         <h2 className="text-[24px]!">Mira al frente</h2>
         <p className={screenStyles.muted}>Ubica tu rostro frente a la pantalla, con buena luz.</p>
-        <a className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" href="/inicio" onClick={loginDemo}>Ingresar</a>
+        <a className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" href="/inicio" onClick={(e) => { e.preventDefault(); irAInicio(loginDemo); }}>Ingresar</a>
         <button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("acceso")}>Cancelar</button>
       </div>
       </>)}
@@ -228,19 +296,56 @@ export default function Acceso() {
       <div className="flex gap-1.5 pt-0 px-4 pb-2 [&_i]:flex-1 [&_i]:h-1.5 [&_i]:rounded-[3px] [&_i]:bg-(--color-line) [&_i.on]:bg-(--color-brand)" aria-hidden="true"><i className="on"></i><i></i><i></i></div>
       <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-4">
         <p className={`${screenStyles.muted} font-bold!`}>Paso 1 de 3 · Tu DNI</p>
-        <span className={screenStyles.badge}>Verificación con RENIEC y PNP</span>
-        <div className={screenStyles.field}><label htmlFor="dni2">Número de DNI (8 dígitos)</label><input id="dni2" className="min-h-13 border-[1.5px] border-[#cfc7bf] rounded-[16px] px-3.5 py-0 bg-white w-full focus-visible:border-(--color-brand)" inputMode="numeric" maxLength="8" {...dni2.props} /></div>
-        <div className={screenStyles.field}><p className="font-bold! text-[15px]!">Resultado que quieres probar</p>
-          <div className={screenStyles.wrap}><button className={chipOk} onClick={scenOk}>Resultado válido</button><button className={chipErr} onClick={scenErr}>Con error</button></div></div>
-        {canQuery && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={runQuery}>Verificar mi DNI</button></>)}
-        {cantQuery && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" disabled>Escribe 8 dígitos</button></>)}
-        {qLoading && (<><div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2" role="status"><p className="font-bold!">Verificando tu identidad…</p><p className={screenStyles.muted}>RENIEC · PNP</p></div></>)}
+        <div className={screenStyles.field}><label htmlFor="dni2">Número de DNI (8 dígitos)</label>
+          <div className="relative">
+            <input id="dni2" className="min-h-13 border-[1.5px] border-[#cfc7bf] rounded-[16px] px-3.5 pr-12! py-0 bg-white w-full focus-visible:border-(--color-brand)" inputMode="numeric" maxLength="8" {...dni2.props} onChange={(e) => dni2.setValue(e.target.value.replace(/\D/g, "").slice(0, 8))} onPaste={(e) => { e.preventDefault(); dni2.setValue(e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 8)); }} />
+            <button type="button" aria-label="Información sobre la verificación" aria-expanded={tipDni} aria-controls="tip-dni" onClick={() => setTipDni((v) => !v)} className="absolute right-2 top-[50%] [transform:translateY(-50%)] z-30 w-8 h-8 grid place-items-center rounded-full text-(--color-muted)">
+            <svg aria-hidden="true" focusable="false" viewBox="0 0 1024 1024" className="w-5.5 h-5.5"><path fill="none" d="M0 0h1024v1024H0z" /><path fill="currentColor" d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448s448-200.6 448-448S759.4 64 512 64m0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372s372 166.6 372 372s-166.6 372-372 372" /><path fill="currentColor" d="M464 336a48 48 0 1 0 96 0a48 48 0 1 0-96 0m72 112h-48c-4.4 0-8 3.6-8 8v272c0 4.4 3.6 8 8 8h48c4.4 0 8-3.6 8-8V456c0-4.4-3.6-8-8-8" /></svg>
+            </button>
+            <div className={`fixed inset-0 z-10 bg-black/50 transition-opacity duration-200 ${tipDni ? "opacity-100" : "opacity-0 pointer-events-none"}`} onClick={() => setTipDni(false)} aria-hidden="true"></div>
+            <div id="tip-dni" role="tooltip" aria-hidden={!tipDni} className={`absolute left-0 right-0 top-full mt-3 z-20 bg-white border-2 border-(--color-brand) rounded-[16px] p-4 text-[15px] font-medium leading-snug text-(--color-ink) shadow-[0_12px_32px_rgba(0,0,0,.45)] transition-all duration-200 ${tipDni ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none invisible"}`}>
+              Realizaremos una verificación de tu identidad consultando con el servicio de la RENIEC y de la PNP para validar si tu perfil cumple con las políticas de la app
+            </div>
+          </div></div>
+        <div className="flex flex-col gap-2 px-1">
+          <div className={screenStyles.checkboxRow}><input id="c2" type="checkbox" aria-label="Tratar mis datos personales" {...dataOk.props} />
+            <div className="flex flex-col gap-0.5">
+              <button type="button" className="font-bold! text-left text-[15px]! self-start" aria-expanded={showDetail} aria-controls="detalle-datos" onClick={toggleDetail}>Tratar mis datos personales</button>
+              <p className={`${screenStyles.muted} text-[13px]!`}>Necesario para verificar tu DNI.</p>
+            </div></div>
+          {showDetail && (<p id="detalle-datos" className={`${screenStyles.muted} text-[13px]!`}>Usamos tu DNI solo para identificar tu cuenta. Muestras un nombre público mínimo y una zona aproximada.</p>)}
+        </div>
+        {canQuery && !qOk && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={runQuery}>Verificar mi DNI</button></>)}
+        {cantQuery && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" disabled>{dni2Ok ? "Acepta el tratamiento de datos" : "Escribe 8 dígitos"}</button></>)}
+        {qLoading && (
+          <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-3" role="status" aria-live="polite">
+            <p className="font-bold!">Verificando tu identidad…</p>
+            {PASOS_CONSULTA.slice(0, paso + 1).map((texto, i) => (
+              <div key={texto} className="paso-entra flex items-center gap-3">
+                {i < paso ? (
+                  <span className="paso-check w-5 h-5 rounded-full bg-(--color-brand) text-white grid place-items-center text-[12px] font-bold flex-none" aria-hidden="true">✓</span>
+                ) : (
+                  <span className="w-5 h-5 rounded-full border-2 border-(--color-line) border-t-(--color-brand) animate-spin flex-none" aria-hidden="true"></span>
+                )}
+                <span className={i < paso ? "text-(--color-muted)" : "font-bold!"}>{texto}</span>
+              </div>
+            ))}
+          </div>
+        )}
         {qOk && (<>
           <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2" role="status"><p className={screenStyles.success}>✓ Identidad verificada</p><p className={screenStyles.muted}>RENIEC: DNI vigente · PNP: sin observaciones. Tus datos personales no se muestran a otros vecinos.</p></div>
-          <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("rostro")}>Continuar</button>
         </>)}
+        {query === "den" && (
+          <div className="vista-fade fixed inset-0 z-50 grid place-items-center bg-black/40 px-4">
+            <div role="alertdialog" aria-modal="true" aria-labelledby="den-title" aria-describedby="den-desc" className="bg-white rounded-[20px] p-5 w-full max-w-[24rem] shadow-[0_8px_28px_rgba(32,33,36,.28)] flex flex-col gap-3">
+              <p id="den-title" className={screenStyles.error}>Acceso denegado · Registro PNP</p>
+              <p id="den-desc" className={screenStyles.muted}>Registra procesos penales vigentes por delitos graves. No podemos habilitar una cuenta mientras la situación esté activa. Acude a la comisaría de tu jurisdicción para regularizarla.</p>
+              <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full" onClick={() => { setQuery("idle"); nav.reiniciar(); }}>Entendido</button>
+            </div>
+          </div>
+        )}
         {qErr && (<>
-          <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2" role="alert"><p className={screenStyles.error}>{query === "dup" ? "Este DNI ya tiene una cuenta" : "No pudimos validar este DNI"}</p><p className={screenStyles.muted}>{query === "dup" ? "Ingresa con él desde la pantalla de acceso o usa otro número." : "Revisa el número o intenta de nuevo."}</p></div>
+          <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2" role="alert"><p className={screenStyles.error}>{query === "dup" ? "Este DNI ya tiene una cuenta" : query === "den" ? "Este DNI tiene denuncias registradas" : "No pudimos validar este DNI"}</p><p className={screenStyles.muted}>{query === "dup" ? "Ingresa con él desde la pantalla de acceso o usa otro número." : query === "den" ? "La PNP registra denuncias asociadas a este DNI. No podemos crear la cuenta." : "Revisa el número o intenta de nuevo."}</p></div>
           <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={runQuery}>Reintentar</button>
         </>)}
       </div>
@@ -252,29 +357,23 @@ export default function Acceso() {
       <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-4">
         <p className={`${screenStyles.muted} font-bold!`}>Paso 2 de 3 · Tu rostro</p>
         <span className={screenStyles.badge}>Validación facial</span>
-        <div className="grid grid-cols-2! gap-3!">
-          <div className="relative h-47.5! rounded-[20px]! bg-white! border-2! border-dashed! border-(--color-brand)! grid! place-items-center! overflow-hidden!">
-            <svg viewBox="0 0 100 130" width="80" aria-hidden="true"><ellipse cx="50" cy="62" rx="36" ry="48" fill="none" stroke="#C8102E" strokeWidth="3" strokeDasharray="6 5" /></svg>
-            {faceRun && (<><span ref={animateScan} className="absolute top-[50%] left-[8%] right-[8%] h-[3px] bg-(--color-brand) opacity-80"></span></>)}
-            <p className={`${screenStyles.muted} absolute! bottom-2! text-[13px]! text-center!`}>Tu cámara</p>
-          </div>
-          <div className="border border-(--color-line) h-47.5! rounded-[20px]! bg-white! p-3! flex! flex-col! gap-2! justify-center! items-center!">
-            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#5E6268" strokeWidth="1.6" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2" /><circle cx="8" cy="11" r="2.5" /><path d="M4.5 16a4 4 0 0 1 7 0M14 10h5M14 14h4" /></svg>
-            <p className={`${screenStyles.muted} text-[14px]! text-center!`}>Foto de tu DNI</p>
-          </div>
+        <div className="relative h-47.5! rounded-[20px]! bg-white! border-2! border-dashed! border-(--color-brand)! grid! place-items-center! overflow-hidden!">
+          <svg viewBox="0 0 100 130" width="80" aria-hidden="true"><ellipse cx="50" cy="62" rx="36" ry="48" fill="none" stroke="#C8102E" strokeWidth="3" strokeDasharray="6 5" /></svg>
+          {faceRun && (<><span ref={animateScan} className="absolute top-[50%] left-[8%] right-[8%] h-[3px] bg-(--color-brand) opacity-80"></span></>)}
+          <p className={`${screenStyles.muted} absolute! bottom-2! text-[13px]! text-center!`}>Tu cámara</p>
         </div>
-        <p className={screenStyles.muted}>Tu navegador te pedirá permiso antes de usar la cámara.</p>
-        {camNote && (<p className={screenStyles.muted} role="status">{camNote}</p>)}
-        {faceIdle && (<>
-          <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => faceStart(true)}>Tomar foto</button>
-          <button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => faceStart(false)}>Continuar sin cámara</button>
-        </>)}
-        {faceRun && (<><div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2" role="status"><p className="font-bold!">Comparando con la foto de tu DNI…</p></div></>)}
-        {faceDone && (<>
-          <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2" role="status"><p className={screenStyles.success}>✓ Rostro validado</p><p className={screenStyles.muted}>Tu imagen no se guarda.</p></div>
-          <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("permisos")}>Continuar</button>
-          <button className="min-h-13 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={faceReset}>Repetir captura</button>
-        </>)}
+        <p className={screenStyles.muted}>Mantén el rostro centrado. La validación empieza sola.</p>
+        {(faceRun || faceDone) && (
+          <div className="vista-fade fixed inset-0 z-50 grid place-items-center bg-black/60 px-4">
+            <div role="alertdialog" aria-modal="true" aria-labelledby="rostro-title" className="paso-entra bg-white rounded-[24px] p-5 w-full max-w-[22rem] shadow-[0_12px_32px_rgba(0,0,0,.45)] flex flex-col items-center gap-3 text-center">
+              <p id="rostro-title" className="font-bold! text-[17px]!">Validación facial</p>
+              <CamaraRostro done={faceDone} onListo={setCamaraLista} />
+              <div className="w-full h-1.5 rounded-full bg-(--color-line) overflow-hidden" aria-hidden="true"><div className={`${camaraLista ? "rostro-progreso" : "w-0"} h-full bg-(--color-brand)`}></div></div>
+              <p className={faceDone ? screenStyles.success : "font-bold!"} role="status">{camaraLista ? FASES_ROSTRO[fase] : "Esperando permiso de la cámara…"}</p>
+              <p className={screenStyles.muted}>Tu imagen no se guarda.</p>
+            </div>
+          </div>
+        )}
       </div>
       </>)}
       
@@ -283,19 +382,12 @@ export default function Acceso() {
       <div className="flex gap-1.5 pt-0 px-4 pb-2 [&_i]:flex-1 [&_i]:h-1.5 [&_i]:rounded-[3px] [&_i]:bg-(--color-line) [&_i.on]:bg-(--color-brand)" aria-hidden="true"><i className="on"></i><i className="on"></i><i className="on"></i></div>
       <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-4">
         <p className={`${screenStyles.muted} font-bold!`}>Paso 3 de 3 · Tus permisos</p>
+        <p className={screenStyles.muted}>Se usará la ubicación de su domicilio en la app. Además, puede activar su ubicación en tiempo real:</p>
         <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2">
           <div className={screenStyles.checkboxRow}><input id="c1" type="checkbox" checked={locOk.checked} onChange={pedirUbicacion} /><label htmlFor="c1"><b>Usar mi ubicación</b><br /><span className={screenStyles.muted}>Para mostrarte vecinos y alertas cerca. Puedes elegir tu zona a mano.</span></label></div>
-          <button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white px-4 py-0 font-bold text-[15px] self-start!" onClick={locManual}>Prefiero elegir mi zona</button>
           {locNote && (<p className={screenStyles.muted} role="status">{locNote}</p>)}
         </div>
-        <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2">
-          <div className={screenStyles.checkboxRow}><input id="c2" type="checkbox" {...dataOk.props} /><label htmlFor="c2"><b>Tratar mis datos personales</b><br /><span className={screenStyles.muted}>Necesario para crear tu cuenta. Tu DNI nunca es público.</span></label></div>
-          <button className="min-h-11 rounded-full border-[1.5px] border-[#cfc7bf] bg-white p-0 font-bold text-[15px] self-start! border-[transparent]! text-(--color-brand)!" onClick={toggleDetail}>Ver detalle</button>
-          {showDetail && (<><p className={screenStyles.muted}>Usamos tu DNI solo para identificar tu cuenta. Muestras un nombre público mínimo y una zona aproximada.</p></>)}
-        </div>
-        {noData && (<><div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2" role="alert"><p className={screenStyles.error}>Sin este consentimiento no creamos tu cuenta.</p><p className={screenStyles.muted}>Puedes seguir viendo el directorio público de juntas y contactos de emergencia.</p></div></>)}
-        {dataOk.checked && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("territorio")}>Finalizar registro</button></>)}
-        {noDataBtn && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={tryFinish}>Finalizar registro</button></>)}
+        <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("territorio")}>Finalizar registro</button>
       </div>
       </>)}
       
@@ -345,7 +437,7 @@ export default function Acceso() {
       </>)}
       
       {nav.is("tutorial") && (<>
-      <div className={screenStyles.header}><h1 className="pl-2">Así funciona</h1><a className="min-h-11 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed w-auto! text-[15px]!" href="/inicio" onClick={finishRegistro}>Omitir</a></div>
+      <div className={screenStyles.header}><h1 className="pl-2">Así funciona</h1><a className="min-h-11 rounded-[18px] border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed w-auto! text-[15px]!" href="/inicio" onClick={(e) => { e.preventDefault(); irAInicio(finishRegistro); }}>Omitir</a></div>
       <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-5 justify-center!">
         <div className="bg-white border border-(--color-line) rounded-[20px] px-5 py-7 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 items-center! text-center!">
           <span className={screenStyles.badgeAlert}>Paso {tuNum} de 3</span>
@@ -355,11 +447,12 @@ export default function Acceso() {
         </div>
         <div className="flex gap-1.5 pt-0 px-4 pb-2 [&_i]:flex-1 [&_i]:h-1.5 [&_i]:rounded-[3px] [&_i]:bg-(--color-line) [&_i.on]:bg-(--color-brand) justify-center!" aria-hidden="true"><i className={`${d1} max-w-9!`}></i><i className={`${d2} max-w-9!`}></i><i className={`${d3} max-w-9!`}></i></div>
         {tuNext && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={tuAdv}>Siguiente</button></>)}
-        {tuLast && (<><a className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" href="/inicio" onClick={finishRegistro}>Ir a mi inicio</a></>)}
+        {tuLast && (<><a className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" href="/inicio" onClick={(e) => { e.preventDefault(); irAInicio(finishRegistro); }}>Ir a mi inicio</a></>)}
         <p className={`${screenStyles.muted} text-center!`}>¿Es una emergencia? Llama al 106 o al 116 desde tu teléfono en cualquier momento.</p>
       </div>
       </>)}
-      
+
+      </div>
       </div>
     </div>
   );
