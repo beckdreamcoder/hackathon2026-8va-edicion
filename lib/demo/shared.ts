@@ -74,8 +74,12 @@ export type Sesion = {
   rol: "Vecino" | "Coordinador" | "Editor";
   departamento: string;
   localidad: string;
+  /** Barrios o distritos vecinos de la dirección (OpenStreetMap). */
+  localidadesAledanas: string[];
   juntaId: string | null;
   ubicacionPermitida: boolean;
+  /** Dirección de referencia del vecino (elegida en el buscador o domicilio de RENIEC). */
+  direccion: string;
   /** Fecha simulada (ISO yyyy-mm-dd) que usa el reconocimiento mensual. */
   fecha: string;
   /** Señal simulada desde la consola demo. */
@@ -90,9 +94,11 @@ export const SESION_INICIAL: Sesion = {
   userId: "maria",
   rol: "Vecino",
   departamento: "Lima",
-  localidad: "Campoy",
+  localidad: "",
+  localidadesAledanas: [],
   juntaId: null,
   ubicacionPermitida: false,
+  direccion: "",
   fecha: "2026-11-08",
   senal: "Normal",
   smsCentral: "Activa",
@@ -101,6 +107,12 @@ export const SESION_INICIAL: Sesion = {
 
 export function useSesion() {
   return useDemoState("sesion", SESION_INICIAL);
+}
+
+/** Ubicación de referencia del vecino: la dirección elegida (sin el resto del país) o, si no hay, la localidad. */
+export function ubicacionCorta(s: Pick<Sesion, "direccion" | "localidad">): string {
+  if (!s.direccion) return s.localidad;
+  return s.direccion.split(",").slice(0, 2).map((p) => p.trim()).join(", ");
 }
 
 /* ---------- Sellos de Visto Bueno Vecinal (F06 / Vecino del mes) ---------- */

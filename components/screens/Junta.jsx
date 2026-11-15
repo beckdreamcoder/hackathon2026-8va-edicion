@@ -8,7 +8,7 @@ import { useTextInput } from "@/lib/hooks/use-text-input";
 import { useCheckbox } from "@/lib/hooks/use-checkbox";
 import { useSesion, logEvento } from "@/lib/demo/shared";
 import { useDemoState, setDemo } from "@/lib/demo/store";
-import { JUNTAS, MIEMBROS, useAvisosJunta, crearAviso, editarAviso, eliminarAviso } from "@/lib/demo/juntas";
+import { MIEMBROS, juntaDe, juntasDeLocalidad, useAvisosJunta, crearAviso, editarAviso, eliminarAviso } from "@/lib/demo/juntas";
 import { usePerfilDatos, nombreDe } from "@/lib/demo/perfiles";
 
 const MOV = { stage: "none", req: { cuando: "" } };
@@ -21,7 +21,7 @@ export default function Junta() {
   const [datos] = usePerfilDatos();
   const avisos = useCheckbox(true);
   const id = sesion.juntaId;
-  const j = id ? JUNTAS[id] ?? JUNTAS.campoy : null;
+  const j = juntaDe(id);
   const lista = useAvisosJunta(id);
   const uid = sesion.userId;
   const puedePublicar = sesion.rol !== "Vecino"; // permisos existentes: coordinación y edición publican avisos
@@ -36,7 +36,7 @@ export default function Junta() {
   const aviso = lista.find((a) => a.id === selId);
   const miembros = j ? [...new Set([...(MIEMBROS[id] ?? []), uid])] : [];
 
-  const unirme = (jid) => { setSesion({ juntaId: jid }); setVista("mi"); setOk(`Te uniste a ${JUNTAS[jid].name}.`); logEvento(`Se unió a la ${JUNTAS[jid].name}`); };
+  const unirme = (jid) => { const nj = juntaDe(jid); setSesion({ juntaId: jid }); setVista("mi"); setOk(`Te uniste a ${nj.name}.`); logEvento(`Se unió a la ${nj.name}`); };
   const salir = () => { setSesion({ juntaId: null }); setVista("mi"); setOk(""); logEvento("Salió de su junta (puede seguir usando toda la app)"); };
   const verPerfil = (v) => { setDemo("perfil-foco", { id: "" }, { id: v }); router.push("/perfil"); };
 
@@ -51,21 +51,29 @@ export default function Junta() {
   const borrar = () => { const r = eliminarAviso(aviso.id, uid); if (!r.ok) { setErr(r.error); return; } setVista("mi"); setConfirmar(false); setOk("Aviso eliminado."); };
 
   if (vista === "explorar" || !j) {
+    // Juntas de la localidad elegida (ficticias si no hay en la demo) y de localidades aledañas
+    const propias = juntasDeLocalidad(sesion.localidad, sesion.departamento);
+    const aledanas = (sesion.localidadesAledanas ?? []).flatMap((v) => juntasDeLocalidad(v, sesion.departamento));
+    const tarjeta = (jj) => (
+      <div key={jj.id} className={screenStyles.card}>
+        <div className={screenStyles.row}><b className="flex-1">{jj.name}</b></div>
+        <p className={screenStyles.muted}>{jj.zona} · {(MIEMBROS[jj.id] ?? []).length} miembros visibles · coordina {jj.coord}</p>
+        {id === jj.id ? (<span className={screenStyles.badgeFavor}>Tu junta actual</span>) : (<button className={screenStyles.button} onClick={() => unirme(jj.id)}>{id ? "Cambiarme a esta junta" : "Unirme"}</button>)}
+      </div>
+    );
     return (
       <ScreenShell title={j ? "Explorar juntas" : "Mi junta vecinal"} onBack={() => (j ? setVista("mi") : router.back())}>
         {!j && (<div className={screenStyles.card} role="status"><p className="font-bold!">Aún no perteneces a una junta</p><p className={screenStyles.muted}>Sumarte es voluntario. Puedes usar toda la app, incluidas las emergencias, sin junta.</p></div>)}
         {ok && (<p className={screenStyles.success} role="status">{ok}</p>)}
-        <p className={screenStyles.muted}>Solo puedes unirte a juntas de tu departamento ({sesion.departamento}).</p>
-        {Object.entries(JUNTAS).map(([jid, jj]) => {
-          const aqui = jj.dep === sesion.departamento;
-          return (
-            <div key={jid} className={screenStyles.card}>
-              <div className={screenStyles.row}><b className="flex-1">{jj.name}</b></div>
-              <p className={screenStyles.muted}>{jj.zona} · {(MIEMBROS[jid] ?? []).length} miembros visibles · coordina {jj.coord}</p>
-              {id === jid ? (<span className={screenStyles.badgeFavor}>Tu junta actual</span>) : aqui ? (<button className={screenStyles.button} onClick={() => unirme(jid)}>{id ? "Cambiarme a esta junta" : "Unirme"}</button>) : (<p className={screenStyles.muted}>Fuera de tu zona ({jj.dep}): no disponible para unirte.</p>)}
-            </div>
-          );
-        })}
+        <p className={screenStyles.muted}>Primero te mostramos las juntas de tu localidad y luego las de localidades aledañas.</p>
+
+        <h3 className="text-[19px]!">En tu localidad{sesion.localidad ? ` · ${sesion.localidad}` : ""}</h3>
+        {propias.length > 0 ? propias.map(tarjeta) : (<div className={screenStyles.card} role="status"><p className="font-bold!">Indica tu dirección para ver las juntas de tu localidad</p></div>)}
+
+        {aledanas.length > 0 && (<>
+          <h3 className="text-[19px]!">En localidades aledañas</h3>
+          {aledanas.map(tarjeta)}
+        </>)}
       </ScreenShell>
     );
   }

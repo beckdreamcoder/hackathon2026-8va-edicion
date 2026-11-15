@@ -7,26 +7,70 @@ import { logEvento, type VecinoId } from "./shared";
  * Juntas vecinales de DEMOSTRACIÓN: no tienen reconocimiento estatal real ni verifican a nadie.
  * Los avisos son comunitarios y nunca se presentan como alertas oficiales.
  */
-export type Junta = { name: string; zona: string; dep: string; coordId: VecinoId; coord: string };
+/** `loc` es la localidad donde funciona la junta (la que se compara con la localidad elegida del vecino). */
+export type Junta = { name: string; zona: string; dep: string; loc: string; coordId: VecinoId; coord: string };
 
 export const JUNTAS: Record<string, Junta> = {
-  campoy: { name: "Junta Vecinal Campoy Unido", zona: "Campoy · San Juan de Lurigancho", dep: "Lima", coordId: "carmen", coord: "Carmen" },
-  olivos: { name: "Junta del Pasaje Los Olivos", zona: "Campoy · Sector 4", dep: "Lima", coordId: "rosa", coord: "Rosa" },
-  tacala: { name: "Junta Vecinal Tacalá Solidario", zona: "Tacalá · Castilla, Piura", dep: "Piura", coordId: "carmen", coord: "Carmen" },
-  kari: { name: "Junta Vecinal Kari Grande", zona: "Kari Grande · San Sebastián, Cusco", dep: "Cusco", coordId: "carmen", coord: "Carmen" },
-  belen: { name: "Junta Vecinal Bajo Belén", zona: "Bajo Belén · Belén, Loreto", dep: "Loreto", coordId: "carmen", coord: "Carmen" },
-  atum: { name: "Junta Vecinal Atumpampa", zona: "Atumpampa · Tarapoto", dep: "San Martín", coordId: "carmen", coord: "Carmen" },
+  campoy: { name: "Junta Vecinal Campoy Unido", zona: "Campoy · San Juan de Lurigancho", dep: "Lima", loc: "Campoy", coordId: "carmen", coord: "Carmen" },
+  olivos: { name: "Junta del Pasaje Los Olivos", zona: "Campoy · Sector 4", dep: "Lima", loc: "Campoy", coordId: "rosa", coord: "Rosa" },
+  mariategui: { name: "Junta Vecinal Mariátegui Unida", zona: "Mariátegui · San Juan de Lurigancho", dep: "Lima", loc: "Mariátegui", coordId: "luis", coord: "Luis" },
+  canto: { name: "Junta Canto Grande Sector 3", zona: "Canto Grande · San Juan de Lurigancho", dep: "Lima", loc: "Canto Grande", coordId: "pedro", coord: "Pedro" },
+  tacala: { name: "Junta Vecinal Tacalá Solidario", zona: "Tacalá · Castilla, Piura", dep: "Piura", loc: "Tacalá", coordId: "carmen", coord: "Carmen" },
+  kari: { name: "Junta Vecinal Kari Grande", zona: "Kari Grande · San Sebastián, Cusco", dep: "Cusco", loc: "Kari Grande", coordId: "carmen", coord: "Carmen" },
+  belen: { name: "Junta Vecinal Bajo Belén", zona: "Bajo Belén · Belén, Loreto", dep: "Loreto", loc: "Bajo Belén", coordId: "carmen", coord: "Carmen" },
+  atum: { name: "Junta Vecinal Atumpampa", zona: "Atumpampa · Tarapoto", dep: "San Martín", loc: "Atumpampa", coordId: "carmen", coord: "Carmen" },
 };
 
 /** Miembros visibles (solo quienes dieron permiso). El usuario actual se suma si pertenece a la junta. */
 export const MIEMBROS: Record<string, VecinoId[]> = {
   campoy: ["carmen", "rosa", "luis", "pedro", "carlos", "maria"],
   olivos: ["rosa", "diego", "valeria"],
+  mariategui: ["luis", "ximena", "bruno"],
+  canto: ["pedro", "zoila", "aurora"],
   tacala: ["carmen", "miguel"],
   kari: ["carmen", "rocio"],
   belen: ["carmen", "hugo"],
   atum: ["carmen", "elena"],
 };
+
+/** Coordinadores ficticios para las juntas generadas (siempre con nombre y perfil de demostración). */
+const COORDINADORES: [VecinoId, string][] = [["carmen", "Carmen"], ["rosa", "Rosa"], ["luis", "Luis"], ["pedro", "Pedro"]];
+
+/**
+ * Junta ficticia creada para una localidad que no tiene junta en la demo.
+ * Su id es "fic:<departamento>|<localidad>", así se reconstruye sin guardar nada más.
+ */
+export const idJuntaFicticia = (dep: string, loc: string) => `fic:${dep}|${loc}`;
+
+function juntaFicticia(dep: string, loc: string): Junta {
+  const suma = [...loc].reduce((a, c) => a + c.charCodeAt(0), 0);
+  const [coordId, coord] = COORDINADORES[suma % COORDINADORES.length];
+  return { name: `Junta Vecinal ${loc} Unida`, zona: `${loc} · ${dep}`, dep, loc, coordId, coord };
+}
+
+/** Busca una junta por id: las de la demo o las ficticias generadas (null si no existe). */
+export function juntaDe(id: string): Junta | null {
+  if (!id) return null;
+  if (id.startsWith("fic:")) {
+    const [dep, loc] = id.slice(4).split("|");
+    return dep && loc ? juntaFicticia(dep, loc) : null;
+  }
+  return JUNTAS[id] ?? null;
+}
+
+/** Dos localidades aledañas ficticias para una localidad elegida (no usa servicios externos). */
+export function localidadesAledanasFicticias(loc: string): string[] {
+  if (!loc) return [];
+  return [`${loc} Alto`, `${loc} Sur`];
+}
+
+/** Juntas de la localidad elegida: las de la demo si existen; si no, se crea una ficticia para esa localidad. */
+export function juntasDeLocalidad(loc: string, dep: string): (Junta & { id: string })[] {
+  if (!loc || !dep) return [];
+  const demo = Object.entries(JUNTAS).filter(([, j]) => j.loc === loc && j.dep === dep).map(([id, j]) => ({ id, ...j }));
+  if (demo.length > 0) return demo;
+  return [{ id: idJuntaFicticia(dep, loc), ...juntaFicticia(dep, loc) }];
+}
 
 export type AvisoJunta = { id: string; juntaId: string; titulo: string; texto: string; autor: VecinoId; fecha: string; semilla?: boolean };
 
