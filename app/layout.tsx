@@ -7,6 +7,7 @@ import { HScroll } from "@/components/h-scroll";
 import { Hidratacion } from "@/components/hidratacion";
 import { Conexion } from "@/components/conexion";
 import { Tutorial } from "@/components/tutorial";
+import { ModoEmergencia } from "@/components/modo-emergencia";
 import { Personalizacion } from "@/components/personalizacion";
 import { SCRIPT_TEMA } from "@/lib/preferencias";
 
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
           <Conexion />
           <Tutorial />
+          <ModoEmergencia />
         </Hidratacion>
         <Personalizacion />
         <SwRegister />

@@ -33,6 +33,8 @@ import { screenStyles } from "./screen-styles";
 export default function Emergencias() {
   const nav = useViewStack("centro", ["reportar", "detalle", "contactos", "canal"]);
   const [sesion] = useSesion();
+  // Los incidentes de ejemplo se muestran en la localidad elegida
+  const aqui = (t) => t.replace(/Campoy/g, ubicacionCorta(sesion) || "tu zona");
   const [incs, setIncs] = useIncidentes();
   const [ui, setUi] = useDemoState("emergencias-ui", EME_UI);
   // Enlace directo a una incidencia (`?inc=INC-0007`): misma ficha desde Noticias, Red solidaria y el mapa
@@ -187,8 +189,8 @@ export default function Emergencias() {
         <div className={screenStyles.wrap}><button className={tN} onClick={setN}>Necesito ayuda</button><button className={tP} onClick={setP}>Puedo apoyar</button></div>
         {tabN && (<>
           <h2 className="text-[20px]!">Cerca de mí</h2>
-          <button className="bg-[#fff1e6] border border-[#f0c8a8] rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 text-left w-full" onClick={() => abrir("INC-0007")}><div className={screenStyles.row}><span className={screenStyles.badgeEmergency}><svg className={`${screenStyles.icon} w-4! h-4!`} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2z" /><path d="M12 10v5M12 18v.5" /></svg>Eventualidad</span></div><h3 className="text-[19px]!">Calles anegadas en Campoy</h3><p className={screenStyles.muted}>{estadoCorroboracion(incs.items.find((i) => i.id === "INC-0007") ?? inc)} · {autoresDistintos(incs.items.find((i) => i.id === "INC-0007") ?? inc)} vecinos distintos · {(incs.items.find((i) => i.id === "INC-0007") ?? inc).actualizado}</p></button>
-          {otros.map((o) => (<button key={o.id} className={screenStyles.card} onClick={() => abrir(o.id)}><div className={screenStyles.row}><span className={screenStyles.badgeEmergency}>{estadoCorroboracion(o)}</span><span className={screenStyles.badge}>{estadoOpDe(o)}</span></div><h3 className="text-[19px]!">{o.titulo}</h3><p className={screenStyles.muted}>{o.actualizado === "ahora" ? "Actualizado ahora" : `Sin actualización reciente · ${o.actualizado}`} · {autoresDistintos(o)} {autoresDistintos(o) === 1 ? "vecino" : "vecinos"}</p></button>))}
+          <button className="bg-[#fff1e6] border border-[#f0c8a8] rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 text-left w-full" onClick={() => abrir("INC-0007")}><div className={screenStyles.row}><span className={screenStyles.badgeEmergency}><svg className={`${screenStyles.icon} w-4! h-4!`} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2z" /><path d="M12 10v5M12 18v.5" /></svg>Eventualidad</span></div><h3 className="text-[19px]!">{aqui("Calles anegadas en Campoy")}</h3><p className={screenStyles.muted}>{estadoCorroboracion(incs.items.find((i) => i.id === "INC-0007") ?? inc)} · {autoresDistintos(incs.items.find((i) => i.id === "INC-0007") ?? inc)} vecinos distintos · {(incs.items.find((i) => i.id === "INC-0007") ?? inc).actualizado}</p></button>
+          {otros.map((o) => (<button key={o.id} className={screenStyles.card} onClick={() => abrir(o.id)}><div className={screenStyles.row}><span className={screenStyles.badgeEmergency}>{estadoCorroboracion(o)}</span><span className={screenStyles.badge}>{estadoOpDe(o)}</span></div><h3 className="text-[19px]!">{aqui(o.titulo)}</h3><p className={screenStyles.muted}>{o.actualizado === "ahora" ? "Actualizado ahora" : `Sin actualización reciente · ${o.actualizado}`} · {autoresDistintos(o)} {autoresDistintos(o) === 1 ? "vecino" : "vecinos"}</p></button>))}
           <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => nav.go("reportar")}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>Reportar con cámara</button>
         </>)}
         {tabP && (<>
@@ -201,7 +203,7 @@ export default function Emergencias() {
           <button className={`${screenStyles.card} min-h-19! justify-center!`} onClick={() => nav.go("contactos")}><b>Contactos oficiales</b><span className={screenStyles.muted}>Sin conexión: disponible</span></button>
           <button className={`${screenStyles.card} min-h-19! justify-center!`} onClick={() => nav.go("canal")}><b>Canal de ayuda</b><span className={screenStyles.muted}>Alertas y recursos</span></button>
         </div>
-        <a className={`${screenStyles.card} flex-row! items-center!`} href="/offline?vista=sms"><div className={screenStyles.grow}><b>Mis consultas por SMS</b><p className={screenStyles.muted}>Pregunta sin datos móviles</p></div><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></a>
+        
       </div>
       </>)}
       

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useSinConexion } from "@/lib/demo/conexion";
 import { useCola, procesarCola, pendientesCola } from "@/lib/demo/cola";
@@ -13,6 +14,7 @@ import { usePwa, aplicarActualizacion } from "@/lib/pwa";
  * (no hay servidor: nunca se dice que algo se sincronizó con uno).
  */
 export function Conexion() {
+  const pathname = usePathname();
   const sinConexion = useSinConexion();
   const [cola] = useCola();
   const [pubs] = usePublicaciones();
@@ -52,6 +54,8 @@ export function Conexion() {
     ? `Sin conexión · tus datos guardados siguen disponibles${pendientes ? ` · ${pendientes} pendiente${pendientes === 1 ? "" : "s"}` : ""}`
     : pendientes ? `${pendientes} pendiente${pendientes === 1 ? "" : "s"} de enviar` : "";
 
+  // En la pantalla de SMS no hay avisos de conexión
+  if (pathname.startsWith("/offline")) return null;
   return (
     <div className="fixed top-1.5 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1 max-w-[92vw] pointer-events-none" aria-live="polite">
       {etiqueta && (

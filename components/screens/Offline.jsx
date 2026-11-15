@@ -7,7 +7,7 @@ import { useTextInput } from "@/lib/hooks/use-text-input";
 
 import { Fragment, useEffect, useState } from "react";
 import { useDemoState } from "@/lib/demo/store";
-import { useSesion, logEvento, CHIP_ON } from "@/lib/demo/shared";
+import { useSesion, logEvento, CHIP_ON, ubicacionCorta } from "@/lib/demo/shared";
 import { usePublicaciones } from "@/lib/demo/publicaciones";
 import { useIncidentes } from "@/lib/demo/incidentes";
 import { precacheZona, estimarEspacio } from "@/lib/demo/offline-cache";
@@ -43,6 +43,8 @@ export default function Offline() {
   const [incs, setIncs] = useIncidentes();
   const question = useTextInput("");
   const zone = useTextInput("");
+  // La localidad elegida en el registro se precarga en la consulta por SMS
+  useEffect(() => { if (sesion.localidad && !zone.value) zone.setValue(sesion.localidad); }, [sesion.localidad]); // eslint-disable-line react-hooks/exhaustive-deps
   const reply = useTextInput("");
   const failMode = useCheckbox(false);
   const [cola] = useCola();
@@ -151,6 +153,7 @@ export default function Offline() {
   const cid = cons?.id ?? "";
   const cstatus = cons?.estado ?? "";
   const needZone = cons?.estado === "Esperando tu localidad";
+  useEffect(() => { if (needZone && sesion.localidad && !reply.value) reply.setValue(sesion.localidad); }, [needZone, sesion.localidad]); // eslint-disable-line react-hooks/exhaustive-deps
   const synced = !!cons?.sincronizada;
   const hora = () => new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
   const msgs = (cons?.msgs ?? []).map((m) => ({ ...m, cls: m.who === "Tú" ? SMS_ME : SMS_CENTRAL }));
@@ -191,15 +194,13 @@ export default function Offline() {
       
       {nav.is("zonas") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Mis zonas sin conexión</h1></div></>)}
       {nav.is("pend") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Pendientes de envío</h1></div></>)}
-      {nav.is("sms") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Consulta por SMS</h1></div></>)}
+      {nav.is("sms") && (<><div className={screenStyles.header}><a href="/inicio" className={screenStyles.iconButton} aria-label="Volver a emergencia"><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></a><h1>Consulta por SMS</h1></div></>)}
       {nav.is("consulta") && (<><div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Consulta {cid}</h1></div></>)}
       
-      <div className="flex gap-2 pt-0 px-4 pb-2 items-center flex-none [&_span]:text-[14px] [&_span]:text-(--color-muted) [&_span]:font-bold [&_span]:whitespace-nowrap [&_.chip]:min-h-10 [&_.chip]:px-3 [&_.chip]:py-0" role="group" aria-label="Conexi\u00f3n del dispositivo"><span>Conexión:</span><button className={cOn} onClick={goOnline}>En línea</button><button className={cOff} onClick={goOffline}>Sin conexión</button></div>
-      {offline && (<><div className="mt-0 mx-4 mb-2 bg-[#fff4d6] text-[#5c3d00] border border-[#e6c77a] rounded-[14px] px-3 py-2 text-[14px] font-bold flex-none" role="status">Sin conexión. Verás lo descargado con su hora. No hay mensajes ni noticias nuevas.</div></>)}
       
       {nav.is("zonas") && (<>
       <div className={screenStyles.content}>
-        <div className={screenStyles.card}><div className={screenStyles.row}><b className={screenStyles.grow}>Campoy · San Juan de Lurigancho</b><span className={screenStyles.badgeFavor}>{zoneTag}</span></div>
+        <div className={screenStyles.card}><div className={screenStyles.row}><b className={screenStyles.grow}>{ubicacionCorta(sesion) || "Tu zona"}</b><span className={screenStyles.badgeFavor}>{zoneTag}</span></div>
           <p className={screenStyles.muted}>{zoneInfo}</p>
           {dlRun && (<><div className="h-3 rounded-[6px] bg-(--color-line) overflow-hidden [&_i]:block [&_i]:h-full [&_i]:bg-[#2f5a2d]" role="progressbar" aria-valuenow={`${pct ?? ""}`} aria-valuemin="0" aria-valuemax="100" aria-label="Descarga"><i style={{ width: `${pct}%` }}></i></div><p className={screenStyles.muted} role="status">Descargando… {pct} %</p></>)}
           {dlFail && (<><p className={screenStyles.error} role="alert">{offline ? "Sin conexión no se puede descargar. Conservamos tu versión anterior." : "No se pudo completar la descarga. Conservamos tu versión anterior."}</p></>)}
@@ -210,7 +211,6 @@ export default function Offline() {
         <div className={screenStyles.card}><p className={screenStyles.label}>Espacio</p><div className="h-3 rounded-[6px] bg-(--color-line) overflow-hidden [&_i]:block [&_i]:h-full [&_i]:bg-[#2f5a2d]" aria-hidden="true"><i className="w-[18%]!"></i></div><p className={screenStyles.muted}>{espacio ? `Usado por BarrioConecta: ${espacio.usadoMb} MB · Libre aprox.: ${espacio.libreMb} MB` : "El navegador no informa el espacio usado."}</p><p className={screenStyles.muted}>Almacén de datos: {almacen.motor === "indexeddb" ? "IndexedDB" : almacen.motor === "localstorage" ? "localStorage (IndexedDB no disponible)" : "iniciando…"}{almacen.migrados ? ` · ${almacen.migrados} dato(s) migrados desde la versión anterior` : ""}{almacen.error ? ` · ${almacen.error}` : ""}</p></div>
         <div className={screenStyles.card}><p className={screenStyles.label}>Instalar como app</p><p className={screenStyles.muted}>{pwa.instalada ? "BarrioConecta ya está instalada en este dispositivo." : pwa.sw === "desarrollo" ? "El modo sin conexión de la interfaz solo se activa en la versión de producción." : pwa.puedeInstalar ? "Puedes instalarla para abrirla como una app." : "Si tu navegador lo permite, usa «Instalar» del menú. En iPhone: Compartir › Añadir a pantalla de inicio."}</p>{pwa.puedeInstalar && !pwa.instalada && (<button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full min-h-11!" onClick={instalarApp}>Instalar BarrioConecta</button>)}</div>
         <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => nav.go("pend")}>Pendientes de envío ({pendCount})</button>
-        <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => nav.go("sms")}>Consulta por SMS</button>
       </div>
       </>)}
       
@@ -233,8 +233,8 @@ export default function Offline() {
       <div className={screenStyles.content}>
         <div className={screenStyles.card} role="note"><p className={screenStyles.muted}>¿Te quedaste <b>sin datos móviles</b>? Escribe por SMS a la central de BarrioConecta y te respondemos con orientación, suministros y el estado de tu solicitud. La respuesta llega a tu app de mensajes y aquí, cuando vuelvas a tener conexión.</p></div>
         <div className={screenStyles.field}><p className={screenStyles.label}>¿Qué necesitas?</p><div className={screenStyles.wrap}>{(kinds ?? []).map((k, __i1) => (<Fragment key={__i1}><button className={k.cls} onClick={k.pick}>{k.name}</button></Fragment>))}</div></div>
-        <div className={screenStyles.field}><label htmlFor="q">Tu pregunta</label><textarea id="q" className="min-h-21 border-[1.5px] border-[#cfc7bf] rounded-[16px] px-3.5 py-3 bg-white w-full resize-none" placeholder="Ejemplo: \u00bfd\u00f3nde recojo agua?" {...question.props}></textarea></div>
-        <div className={screenStyles.field}><label htmlFor="z">Localidad (opcional)</label><input id="z" className={screenStyles.input} placeholder="Ejemplo: Campoy" {...zone.props} /></div>
+        <div className={screenStyles.field}><label htmlFor="q">Tu pregunta</label><textarea id="q" className="min-h-21 border-[1.5px] border-[#cfc7bf] rounded-[16px] px-3.5 py-3 bg-white w-full resize-none" placeholder="Ejemplo: ¿dónde recojo agua?" {...question.props}></textarea></div>
+        <div className={screenStyles.field}><label htmlFor="z">Localidad (opcional)</label><input id="z" className={screenStyles.input} placeholder="Tu barrio o comunidad" {...zone.props} /></div>
         <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={sendSms}>Enviar SMS</button>
         {hasConsulta && (<><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={() => nav.go("consulta")}>Ver mi consulta {cid}</button></>)}
       </div>
@@ -245,7 +245,7 @@ export default function Offline() {
         <div className={screenStyles.row}><span className={screenStyles.badgeSolidarity}>SMS</span><span className={screenStyles.badge}>{cstatus}</span></div>
         <span className={screenStyles.badgeAlert}>Consulta privada · no se publica</span>
         {(msgs ?? []).map((m, __i1) => (<Fragment key={__i1}><div className={m.cls}><b>{m.who} · {m.time}</b>{m.t}</div></Fragment>))}
-        {needZone && (<><div className={screenStyles.field}><label htmlFor="rz">Tu respuesta</label><input id="rz" className={screenStyles.input} placeholder="Ejemplo: Campoy" {...reply.props} /></div><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={sendReply}>Responder por SMS</button></>)}
+        {needZone && (<><div className={screenStyles.field}><label htmlFor="rz">Tu respuesta</label><input id="rz" className={screenStyles.input} placeholder="Tu barrio o comunidad" {...reply.props} /></div><button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={sendReply}>Responder por SMS</button></>)}
         <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-white text-(--color-brand) font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50" onClick={reconnect}>Sincronizar con la app</button>
         {synced && (<><p className={screenStyles.success} role="status">✓ Esta consulta ya aparece en Emergencias › Mis consultas con el mismo ID y tu celular vinculado.</p></>)}
         <p className={screenStyles.muted}>Las respuestas se basan en guías oficiales y en recursos registrados por la comunidad.</p>
