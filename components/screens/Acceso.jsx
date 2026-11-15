@@ -108,6 +108,7 @@ export default function Acceso() {
   const [editando, setEditando] = useState(null); // tarjeta abierta en la revisión: direccion | zona | junta | null
   const toggleEdit = (id) => setEditando((v) => (v === id ? null : id));
   const [usoReniec, setUsoReniec] = useState(false);
+  const [zonaAbierta, setZonaAbierta] = useState(false); // «Prefiero elegir mi zona»
 
   // Paso 1: consulta RENIEC/PNP
   const [query, setQuery] = useState("idle"); // idle | loading | ok | err | dup | den
@@ -147,6 +148,7 @@ export default function Acceso() {
       setFace("run");
       setFase(0);
       setCamaraLista(false);
+      dataOk.setChecked(false); // el consentimiento de la pantalla de permisos empieza sin marcar
       goView("rostro");
     }, 2000);
     return () => clearTimeout(t);
@@ -232,12 +234,31 @@ export default function Acceso() {
     join: () => setJoined(joined === j.id ? null : j.id),
   }));
 
-  /** Bloque de dirección: buscador con predicciones + domicilio de RENIEC (se usa en permisos y en la revisión). */
-  const bloqueDireccion = (
+  /** Solo una opción activa a la vez: «Usar mi ubicación», una dirección elegida o el consentimiento. */
+  const cambiarReniec = (on) => {
+    setUsoReniec(on);
+    if (on) { setDirElegida(null); setDireccion(""); dataOk.setChecked(false); }
+  };
+  const elegirDireccion = (d) => {
+    setDirElegida(d);
+    setUsoReniec(false);
+    dataOk.setChecked(false);
+  };
+  const cambiarConsentimiento = (on) => {
+    dataOk.setChecked(on);
+    if (on) { setUsoReniec(false); setDirElegida(null); setDireccion(""); setZonaAbierta(false); }
+  };
+  const unaOpcion = [usoReniec, !!dirElegida, dataOk.checked].filter(Boolean).length === 1;
+  // Las opciones que no están elegidas quedan bloqueadas mientras otra esté activa
+  const consentimientoBloqueado = usoReniec || !!dirElegida;
+  const ubicacionBloqueada = !!dirElegida || dataOk.checked;
+
+  /** Buscador de dirección con predicciones (se usa en la elección de zona y en la revisión). */
+  const buscadorDireccion = (
     <>
       <div className={`${screenStyles.field} relative`}>
         <label htmlFor="direccion">Buscar tu dirección</label>
-        <input id="direccion" className="min-h-13 border-[1.5px] border-[#cfc7bf] rounded-[16px] px-3.5 py-0 bg-white w-full focus-visible:border-(--color-brand)" placeholder="Calle, jirón o avenida" autoComplete="off" value={direccion} onChange={(e) => { setDireccion(e.target.value); setDirElegida(null); }} />
+        <input id="direccion" disabled={usoReniec} aria-disabled={usoReniec} className="min-h-13 border-[1.5px] border-[#cfc7bf] rounded-[16px] px-3.5 py-0 bg-white w-full focus-visible:border-(--color-brand) disabled:opacity-50 disabled:bg-[#f7f3ee] disabled:cursor-not-allowed" placeholder="Calle, jirón o avenida" autoComplete="off" value={direccion} onChange={(e) => { setDireccion(e.target.value); setDirElegida(null); }} />
         {direccion.trim().length >= 3 && !dirElegida && (
           <div className="absolute left-0 right-0 top-full mt-1 z-20 bg-white border border-(--color-line) rounded-[16px] shadow-[0_8px_20px_rgba(32,33,36,.18)] overflow-hidden">
             {buscando && <p className={`${screenStyles.muted} px-4 py-3`}>Buscando direcciones…</p>}
@@ -246,7 +267,7 @@ export default function Acceso() {
               <ul role="listbox" aria-label="Sugerencias de dirección">
                 {sugerencias.map((s) => (
                   <li key={s.id} role="option" aria-selected={false}>
-                    <button type="button" className="w-full text-left px-4 py-3 text-[14px] border-b border-(--color-line) last:border-b-0 hover:bg-(--color-line)" onClick={() => { setDireccion(s.label); setDirElegida({ label: s.label, loc: s.loc, dep: s.dep }); setSugerencias([]); }}>{s.label}</button>
+                    <button type="button" className="w-full text-left px-4 py-3 text-[14px] border-b border-(--color-line) last:border-b-0 hover:bg-(--color-line)" onClick={() => { setDireccion(s.label); elegirDireccion({ label: s.label, loc: s.loc, dep: s.dep }); setSugerencias([]); }}>{s.label}</button>
                   </li>
                 ))}
               </ul>
@@ -254,13 +275,15 @@ export default function Acceso() {
           </div>
         )}
       </div>
-      {dirElegida && (<p className={screenStyles.muted} role="status">Dirección seleccionada: {dirElegida.label}</p>)}
-      <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2">
-        <div className={screenStyles.checkboxRow}><input id="c-reniec" type="checkbox" checked={usoReniec} onChange={(e) => setUsoReniec(e.target.checked)} /><label htmlFor="c-reniec"><b>Usar mi ubicación de RENIEC</b><br /><span className={screenStyles.muted}>Usa el domicilio registrado en tu DNI. No usa el GPS.</span></label></div>
-        {usoReniec && (<p className={screenStyles.muted} role="status">Domicilio: {DOMICILIO_RENIEC}</p>)}
-      </div>
+      {dirElegida && (
+        <div className="flex items-start gap-2">
+          <p className={`${screenStyles.muted} flex-1`} role="status">Dirección seleccionada: {dirElegida.label}</p>
+          <button type="button" className="font-bold text-(--color-brand) min-h-11 px-2 flex-none" onClick={() => { setDirElegida(null); setDireccion(""); }}>Quitar</button>
+        </div>
+      )}
     </>
   );
+
 
   const toggleDetail = () => setShowDetail((v) => !v);
 
@@ -273,7 +296,7 @@ export default function Acceso() {
   const finishRegistro = () => {
     registrarDni(dni2.value);
     guardarDni(dni2.value);
-    setSesion({ registrada: true, dni: dni2.value, userId: "maria", departamento: depRev, localidad: locRev, localidadesAledanas: vecinasRev, juntaId: joined, ubicacionPermitida: usoReniec, direccion: ubicacion?.label ?? "" });
+    setSesion({ registrada: true, dni: dni2.value, userId: "maria", departamento: depRev, localidad: locRev, localidadesAledanas: vecinasRev, juntaId: joined, ubicacionPermitida: usoReniec,direccion: ubicacion?.label ?? "" });
     logEvento(`Registro demo completado · ${locRev}, ${depRev}${joined ? " · se unió a una junta" : ""}`);
   };
   const loginDemo = (dniUsado = DNI_DEMO) => {
@@ -345,9 +368,9 @@ export default function Acceso() {
       
       {nav.is("dni") && (<>
       <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Crear cuenta</h1></div>
-      <div className="flex gap-1.5 pt-0 px-4 pb-2 [&_i]:flex-1 [&_i]:h-1.5 [&_i]:rounded-[3px] [&_i]:bg-(--color-line) [&_i.on]:bg-(--color-brand)" aria-hidden="true"><i className="on"></i><i></i><i></i></div>
+      <div className="flex gap-1.5 pt-0 px-4 pb-2 [&_i]:flex-1 [&_i]:h-1.5 [&_i]:rounded-[3px] [&_i]:bg-(--color-line) [&_i.on]:bg-(--color-brand)" aria-hidden="true"><i className="on"></i><i></i><i></i><i></i></div>
       <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-4">
-        <p className={`${screenStyles.muted} font-bold!`}>Paso 1 de 3 · Tu DNI</p>
+        <p className={`${screenStyles.muted} font-bold!`}>Paso 1 de 4 · Tu DNI</p>
         <div className={screenStyles.field}><label htmlFor="dni2">Número de DNI (8 dígitos)</label>
           <div className="relative">
             <input id="dni2" className="min-h-13 border-[1.5px] border-[#cfc7bf] rounded-[16px] px-3.5 pr-12! py-0 bg-white w-full focus-visible:border-(--color-brand)" inputMode="numeric" maxLength="8" {...dni2.props} onChange={(e) => dni2.setValue(e.target.value.replace(/\D/g, "").slice(0, 8))} onPaste={(e) => { e.preventDefault(); dni2.setValue(e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 8)); }} />
@@ -405,9 +428,9 @@ export default function Acceso() {
       
       {nav.is("rostro") && (<>
       <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className={screenStyles.icon} viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Crear cuenta</h1></div>
-      <div className="flex gap-1.5 pt-0 px-4 pb-2 [&_i]:flex-1 [&_i]:h-1.5 [&_i]:rounded-[3px] [&_i]:bg-(--color-line) [&_i.on]:bg-(--color-brand)" aria-hidden="true"><i className="on"></i><i className="on"></i><i></i></div>
+      <div className="flex gap-1.5 pt-0 px-4 pb-2 [&_i]:flex-1 [&_i]:h-1.5 [&_i]:rounded-[3px] [&_i]:bg-(--color-line) [&_i.on]:bg-(--color-brand)" aria-hidden="true"><i className="on"></i><i className="on"></i><i></i><i></i></div>
       <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-4">
-        <p className={`${screenStyles.muted} font-bold!`}>Paso 2 de 3 · Tu rostro</p>
+        <p className={`${screenStyles.muted} font-bold!`}>Paso 2 de 4 · Tu rostro</p>
         <span className={screenStyles.badge}>Validación facial</span>
         <div className="relative h-47.5! rounded-[20px]! bg-white! border-2! border-dashed! border-(--color-brand)! grid! place-items-center! overflow-hidden!">
           <svg viewBox="0 0 100 130" width="80" aria-hidden="true"><ellipse cx="50" cy="62" rx="36" ry="48" fill="none" stroke="#C8102E" strokeWidth="3" strokeDasharray="6 5" /></svg>
@@ -434,9 +457,19 @@ export default function Acceso() {
       <div className="flex gap-1.5 pt-0 px-4 pb-2 [&_i]:flex-1 [&_i]:h-1.5 [&_i]:rounded-[3px] [&_i]:bg-(--color-line) [&_i.on]:bg-(--color-brand)" aria-hidden="true"><i className="on"></i><i className="on"></i><i className="on"></i><i></i></div>
       <div className="flex-1 min-h-0 overflow-y-auto pt-1 px-4 pb-6 flex flex-col gap-4">
         <p className={`${screenStyles.muted} font-bold!`}>Paso 3 de 4 · Tus permisos</p>
-        <p className={screenStyles.muted}>Indica tu dirección o usa el domicilio registrado en RENIEC:</p>
-        {bloqueDireccion}
-        <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => nav.go("juntas")}>Continuar</button>
+        <div className="bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-3">
+          <div className={screenStyles.checkboxRow}><input id="c-ubi" type="checkbox" checked={usoReniec} disabled={ubicacionBloqueada} onChange={(e) => cambiarReniec(e.target.checked)} /><label htmlFor="c-ubi" className={ubicacionBloqueada ? "opacity-50" : ""}><b>Usar mi ubicación</b><br /><span className={screenStyles.muted}>Para mostrarte vecinos y alertas cerca. Puedes elegir tu zona a mano.</span></label></div>
+          <button type="button" disabled={usoReniec} aria-expanded={zonaAbierta} disabled={usoReniec || dataOk.checked} aria-controls="elegir-zona" onClick={() => { if (!zonaAbierta) { setUsoReniec(false); dataOk.setChecked(false); } setZonaAbierta((v) => !v); }} className="min-h-11 rounded-full border-2 border-(--color-line) bg-white text-(--color-ink) font-bold px-5 self-start disabled:opacity-50 disabled:cursor-not-allowed">Prefiero elegir mi zona</button>
+          {usoReniec ? (<p className={screenStyles.muted} role="status">Ya usas tu domicilio de RENIEC. Desmarca «Usar mi ubicación» para elegir tu zona.</p>) : !zonaAbierta && (<p className={screenStyles.muted}>Elegirás tu zona a mano en el siguiente paso.</p>)}
+          {zonaAbierta && !usoReniec && (<div id="elegir-zona" className="flex flex-col gap-3">{buscadorDireccion}</div>)}
+        </div>
+        <div className={`bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 ${consentimientoBloqueado ? "opacity-50" : ""}`}>
+          <div className={screenStyles.checkboxRow}><input id="c-datos" type="checkbox" aria-label="Tratar mis datos personales" checked={dataOk.checked} disabled={consentimientoBloqueado} onChange={(e) => cambiarConsentimiento(e.target.checked)} /><div className="flex flex-col gap-0.5"><b>Tratar mis datos personales</b><p className={screenStyles.muted}>Necesario para crear tu cuenta. Tu DNI nunca es público.</p></div></div>
+          <button type="button" aria-expanded={showDetail} aria-controls="detalle-datos-p" onClick={toggleDetail} className="font-bold text-(--color-brand) text-left self-start min-h-11">Ver detalle</button>
+          {showDetail && (<p id="detalle-datos-p" className={`${screenStyles.muted} text-[13px]!`}>Usamos tu DNI solo para identificar tu cuenta. Mostramos un nombre público mínimo y una zona aproximada.</p>)}
+        </div>
+        <p className={screenStyles.muted} role="status">{unaOpcion ? "" : "Elige una sola opción para continuar."}</p>
+        <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" disabled={!unaOpcion} onClick={() => nav.go("juntas")}>Continuar</button>
       </div>
       </>)}
       
@@ -470,7 +503,7 @@ export default function Acceso() {
         </TarjetaDato>
 
         <TarjetaDato titulo="Dirección" abierta={editando === "direccion"} onToggle={() => toggleEdit("direccion")}>
-          {editando === "direccion" ? bloqueDireccion : (<>
+          {editando === "direccion" ? buscadorDireccion : (<>
             <p className="font-bold!">{ubicacion?.label ?? "Sin dirección. Toca el lápiz para agregarla."}</p>
             {locRev && (<p className={screenStyles.muted}>Localidad: {locRev}{depRev ? ` · ${depRev}` : ""}</p>)}
           </>)}
