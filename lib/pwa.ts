@@ -9,7 +9,9 @@ import { useSyncExternalStore } from "react";
 type EventoInstalar = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
 export type EstadoPwa = { sw: "pendiente" | "activo" | "desarrollo" | "no_soportado" | "error"; puedeInstalar: boolean; instalada: boolean; actualizacionLista: boolean };
 
-let estado: EstadoPwa = { sw: "pendiente", puedeInstalar: false, instalada: false, actualizacionLista: false };
+// Lo que se dibuja en el servidor y en la primera carga del navegador: así no hay diferencias al hidratar
+const ESTADO_INICIAL: EstadoPwa = { sw: "pendiente", puedeInstalar: false, instalada: false, actualizacionLista: false };
+let estado: EstadoPwa = ESTADO_INICIAL;
 const escuchas = new Set<() => void>();
 const cambiar = (p: Partial<EstadoPwa>) => { estado = { ...estado, ...p }; escuchas.forEach((l) => l()); };
 let eventoInstalar: EventoInstalar | null = null;
@@ -59,5 +61,5 @@ export async function instalarApp(): Promise<"aceptada" | "rechazada" | "no_disp
 }
 
 export function usePwa() {
-  return useSyncExternalStore((l) => { escuchas.add(l); return () => { escuchas.delete(l); }; }, () => estado, () => estado);
+  return useSyncExternalStore((l) => { escuchas.add(l); return () => { escuchas.delete(l); }; }, () => estado, () => ESTADO_INICIAL);
 }
