@@ -121,7 +121,7 @@ export default function Acceso() {
   // Paso 3: consentimientos
   const [showDetail, setShowDetail] = useState(false);
   // Localidad y departamento salen de la dirección elegida (o del domicilio de RENIEC); no se eligen a mano
-  const ubicacion = dirElegida ?? (usoReniec ? DOMICILIO_RENIEC_UBIC : null);
+  const ubicacion = dirElegida ?? (usoReniec || dataOk.checked ? DOMICILIO_RENIEC_UBIC : null);
   const locRev = ubicacion?.loc ?? "";
   const depRev = ubicacion?.dep ?? "";
   // Localidades aledañas ficticias, derivadas de la localidad elegida (sin servicios externos)
@@ -464,9 +464,9 @@ export default function Acceso() {
           {zonaAbierta && !usoReniec && (<div id="elegir-zona" className="flex flex-col gap-3">{buscadorDireccion}</div>)}
         </div>
         <div className={`bg-white border border-(--color-line) rounded-[20px] p-4 shadow-[0_2px_8px_rgba(32,33,36,.05)] flex flex-col gap-2 ${consentimientoBloqueado ? "opacity-50" : ""}`}>
-          <div className={screenStyles.checkboxRow}><input id="c-datos" type="checkbox" aria-label="Tratar mis datos personales" checked={dataOk.checked} disabled={consentimientoBloqueado} onChange={(e) => cambiarConsentimiento(e.target.checked)} /><div className="flex flex-col gap-0.5"><b>Tratar mis datos personales</b><p className={screenStyles.muted}>Necesario para crear tu cuenta. Tu DNI nunca es público.</p></div></div>
+          <div className={screenStyles.checkboxRow}><input id="c-datos" type="checkbox" aria-label="Usar mi dirección registrada en RENIEC" checked={dataOk.checked} disabled={consentimientoBloqueado} onChange={(e) => cambiarConsentimiento(e.target.checked)} /><div className="flex flex-col gap-0.5"><b>Usar mi dirección registrada en RENIEC</b><p className={screenStyles.muted}>Tomamos la dirección de tu DNI para ubicarte en tu zona. Nunca se muestra a otros vecinos.</p></div></div>
           <button type="button" aria-expanded={showDetail} aria-controls="detalle-datos-p" onClick={toggleDetail} className="font-bold text-(--color-brand) text-left self-start min-h-11">Ver detalle</button>
-          {showDetail && (<p id="detalle-datos-p" className={`${screenStyles.muted} text-[13px]!`}>Usamos tu DNI solo para identificar tu cuenta. Mostramos un nombre público mínimo y una zona aproximada.</p>)}
+          {showDetail && (<p id="detalle-datos-p" className={`${screenStyles.muted} text-[13px]!`}>Usamos solo la dirección que figura en tu DNI según RENIEC para ubicar tu zona y tu junta vecinal. Los demás vecinos ven solo una zona aproximada, nunca tu dirección exacta.</p>)}
         </div>
         <p className={screenStyles.muted} role="status">{unaOpcion ? "" : "Elige una sola opción para continuar."}</p>
         <button className="min-h-13 rounded-[18px] border-2 border-(--color-brand) bg-(--color-brand) text-white font-bold px-5 py-0 flex items-center justify-center gap-2 text-center w-full disabled:opacity-50 disabled:cursor-not-allowed" disabled={!unaOpcion} onClick={() => nav.go("juntas")}>Continuar</button>
