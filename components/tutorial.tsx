@@ -1,59 +1,190 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n";
-import { useTutorial, terminarTutorial } from "@/lib/demo/tutorial";
+import { useTutorial, TUTORIAL_INICIAL, iniciarTutorial } from "@/lib/demo/tutorial";
 import { hidratar } from "@/lib/demo/store";
 
-/** Pasos de la guía de bienvenida (máximo 5). Los textos están en lib/i18n (guia.pN.t / guia.pN.d). */
-const PASOS = ["guia.p1", "guia.p2", "guia.p3", "guia.p4", "guia.p5"];
+type Paso = { id: number; ruta: string; sel?: string; texto?: RegExp };
 
+/**
+ * Guía de bienvenida en 5 pasos: cada paso abre su pantalla real y resalta el elemento del que habla.
+ * Los textos están en lib/i18n (guia.pN.t / guia.pN.d). Un paso sin `sel` solo muestra la tarjeta.
+ */
+const PASOS: Paso[] = [
+  { id: 1, ruta: "/inicio" },
+  { id: 2, ruta: "/junta", sel: "h2:not(#tour-t), h3" }, // «En tu localidad» o, si ya se unió, el nombre de su junta
+  { id: 3, ruta: "/comunidad", sel: 'a[href="/favores"]' },
+  { id: 4, ruta: "/mapa", sel: ".maplibregl-map" },
+  { id: 5, ruta: "/emergencias", sel: 'a[href="tel:106"]' },
+];
+
+const MARCA_INGRESO = "bc:ingreso-tutorial";
 const BTN = "min-h-11 rounded-[14px] px-4 font-bold text-[15px] border-2";
+const reducir = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-/** Guía de bienvenida: aparece una vez, en el primer ingreso a inicio, en un solo popup por pasos. */
+function buscar(p: Paso): HTMLElement | null {
+  if (!p.sel) return null;
+  const els = Array.from(document.querySelectorAll<HTMLElement>(p.sel));
+  const el = p.texto ? els.find((e) => p.texto!.test((e.textContent ?? "").trim())) : els[0];
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return r.width > 0 && r.height > 0 ? el : null;
+}
+
+/**
+ * Invitación inicial y guía paso a paso. Resalta el elemento real de cada pantalla sin bloquear la interacción
+ * (el velo no captura clics). No pulsa botones ni crea nada: solo explica.
+ */
 export function Tutorial() {
   const { t } = useT();
+  const router = useRouter();
   const pathname = usePathname();
-  const [tut] = useTutorial();
-  const [listo, setListo] = useState(false);
-  const [abierto, setAbierto] = useState(false);
-  const [paso, setPaso] = useState(0);
+  const [tut, setTut] = useTutorial();
+  const [rect, setRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [buscando, setBuscando] = useState(true);
+  const objetivo = useRef<HTMLElement | null>(null);
+  const tarjeta = useRef<HTMLDivElement>(null);
+  const ultimoPaso = useRef(-1);
 
-  // Espera a cargar los datos guardados para saber si la guía ya se vio
-  useEffect(() => {
-    let vivo = true;
-    hidratar().then(() => { if (vivo) setListo(true); });
-    return () => { vivo = false; };
-  }, []);
+  const paso = PASOS[Math.min(tut.paso, PASOS.length - 1)];
+  const enRuta = pathname === paso.ruta;
+  const ultimo = tut.paso >= PASOS.length - 1;
 
+  const cerrar = useCallback((estado: "completado" | "omitido") => setTut({ ...TUTORIAL_INICIAL, estado }), [setTut]);
+
+  // Cada ingreso a una cuenta (pasar por Acceso «/» y llegar a Inicio) abre el tutorial desde el primer paso,
+  // sin importar si ya se completó u omitió antes. La marca vive en sessionStorage para sobrevivir a la recarga
+  // que hace el enlace de ingreso.
   useEffect(() => {
-    if (listo && pathname === "/inicio" && tut.estado === "pendiente") {
-      setPaso(0);
-      setAbierto(true);
+    try {
+      if (pathname === "/") { window.sessionStorage.setItem(MARCA_INGRESO, "1"); return undefined; }
+      if (pathname !== "/inicio" || window.sessionStorage.getItem(MARCA_INGRESO) !== "1") return undefined;
+    } catch {
+      return undefined; // sin sessionStorage (modo privado estricto): no se fuerza el tutorial
     }
-  }, [listo, pathname, tut.estado]);
+    // Se espera a que carguen los datos guardados: antes de eso cualquier escritura se descarta
+    let vivo = true;
+    hidratar().then(() => {
+      if (!vivo) return;
+      try { window.sessionStorage.removeItem(MARCA_INGRESO); } catch { /* nada */ }
+      iniciarTutorial();
+    });
+    return () => { vivo = false; };
+  }, [pathname]);
 
-  if (!abierto) return null;
-  const ultimo = paso === PASOS.length - 1;
-  const cerrar = (estado: "completado" | "omitido") => { setAbierto(false); terminarTutorial(estado); };
+  // Al cambiar de paso se abre su pantalla (si la persona navega a mano, el progreso se conserva).
+  // Si el paso cambia mientras una navegación anterior sigue en curso (p. ej. un paso guardado de una visita
+  // anterior y el reinicio al ingresar), al llegar a esa pantalla se corrige hacia la del paso actual.
+  const enCamino = useRef<string | null>(null);
+  useEffect(() => {
+    if (!tut.activo) { ultimoPaso.current = -1; enCamino.current = null; return; }
+    if (ultimoPaso.current !== tut.paso) {
+      ultimoPaso.current = tut.paso;
+      if (pathname !== paso.ruta) { enCamino.current = paso.ruta; router.push(paso.ruta); }
+      return;
+    }
+    if (enCamino.current && pathname === enCamino.current) {
+      enCamino.current = null;
+      if (pathname !== paso.ruta) { enCamino.current = paso.ruta; router.push(paso.ruta); }
+    }
+  }, [tut.activo, tut.paso, paso.ruta, pathname, router]);
 
-  return (
-    <div className="fixed inset-0 z-[70] bg-black/50 grid place-items-center px-4">
-      <div role="dialog" aria-modal="true" aria-labelledby="guia-t" aria-describedby="guia-d" className="w-full max-w-[22rem] rounded-[24px] bg-white p-5 flex flex-col gap-3 shadow-[0_12px_32px_rgba(0,0,0,.35)]">
-        <div className="flex gap-1.5" aria-hidden="true">
-          {PASOS.map((_, i) => (<i key={i} className={`block h-1.5 flex-1 rounded-full ${i <= paso ? "bg-(--color-brand)" : "bg-(--color-line)"}`} />))}
-        </div>
-        <p className="text-[13px] font-bold text-(--color-muted)" aria-live="polite">{t("guia.progreso", { n: paso + 1, total: PASOS.length })}</p>
-        <h2 id="guia-t" className="text-[20px] font-extrabold leading-tight">{t(`${PASOS[paso]}.t`)}</h2>
-        <p id="guia-d" className="text-[15px]">{t(`${PASOS[paso]}.d`)}</p>
-        <div className="flex items-center gap-2 pt-1">
-          <button type="button" className="min-h-11 px-2 text-[15px] font-bold text-(--color-muted) underline" onClick={() => cerrar("omitido")}>{t("guia.omitir")}</button>
-          <span className="flex-1" />
-          {paso > 0 && (<button type="button" className={`${BTN} border-(--color-line) bg-white text-(--color-ink)`} onClick={() => setPaso((p) => p - 1)}>{t("tour.anterior")}</button>)}
-          <button type="button" className={`${BTN} border-(--color-brand) bg-(--color-brand) text-white`} onClick={() => (ultimo ? cerrar("completado") : setPaso((p) => p + 1))}>{ultimo ? t("guia.empezar") : t("tour.siguiente")}</button>
+  // Localiza el elemento (con reintentos mientras carga) y sigue su posición
+  useEffect(() => {
+    if (!tut.activo || !enRuta) return undefined;
+    if (!paso.sel) return undefined; // paso sin elemento: solo la tarjeta (el paso anterior ya limpió el resaltado)
+    let vivo = true;
+    let intentos = 0;
+    let primera = true;
+    const medir = () => {
+      if (!vivo) return;
+      let el = objetivo.current;
+      if (!el || !el.isConnected) { el = buscar(paso); objetivo.current = el; }
+      if (el) {
+        if (primera) { primera = false; el.scrollIntoView({ block: "center", behavior: reducir() ? "auto" : "smooth" }); }
+        const r = el.getBoundingClientRect();
+        setRect((a) => (a && Math.abs(a.x - r.left) < 1 && Math.abs(a.y - r.top) < 1 && Math.abs(a.w - r.width) < 1 && Math.abs(a.h - r.height) < 1 ? a : { x: r.left, y: r.top, w: r.width, h: r.height }));
+        setBuscando(false);
+      } else if (++intentos > 14) { setRect(null); setBuscando(false); }
+    };
+    const id = setInterval(medir, 220);
+    const primero = setTimeout(medir, 60);
+    return () => { vivo = false; clearInterval(id); clearTimeout(primero); objetivo.current = null; setRect(null); setBuscando(true); };
+  }, [tut.activo, tut.paso, enRuta, paso]);
+
+  // Foco en la tarjeta al cambiar de paso, para teclado y lectores de pantalla
+  useEffect(() => { if (tut.activo) tarjeta.current?.focus({ preventScroll: true }); }, [tut.activo, tut.paso]);
+
+  const mover = useCallback((d: number) => setTut({ paso: Math.max(0, Math.min(PASOS.length - 1, tut.paso + d)) }), [setTut, tut.paso]);
+  useEffect(() => {
+    if (!tut.activo) return undefined;
+    const tecla = (e: KeyboardEvent) => {
+      const escribiendo = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target as HTMLElement)?.tagName ?? "");
+      if (e.key === "Escape") cerrar("omitido");
+      else if (!escribiendo && e.key === "ArrowRight" && !ultimo) mover(1);
+      else if (!escribiendo && e.key === "ArrowLeft" && tut.paso > 0) mover(-1);
+    };
+    window.addEventListener("keydown", tecla);
+    return () => window.removeEventListener("keydown", tecla);
+  }, [tut.activo, tut.paso, ultimo, mover, cerrar]);
+
+  // Invitación a quien entra por primera vez (solo en Inicio, una vez)
+  if (!tut.activo) {
+    if (tut.estado !== "pendiente" || pathname !== "/inicio") return null;
+    return (
+      <div className="fixed inset-x-3 bottom-24 z-60 mx-auto max-w-[26rem] rounded-[20px] border border-(--color-line) bg-white p-4 shadow-[0_8px_28px_rgba(32,33,36,.28)] flex flex-col gap-3" role="dialog" aria-labelledby="tour-inv" aria-modal="false">
+        <h2 id="tour-inv" className="text-[19px] font-extrabold">{t("tour.invitacion.titulo")}</h2>
+        <p className="text-[15px] text-(--color-muted)">{t("tour.invitacion.texto")}</p>
+        <div className="grid grid-cols-2 gap-2">
+          <button className={`${BTN} border-(--color-line) bg-white text-(--color-ink)`} onClick={() => cerrar("omitido")}>{t("tour.ahoraNo")}</button>
+          <button className={`${BTN} border-(--color-brand) bg-(--color-brand) text-white`} onClick={iniciarTutorial}>{t("tour.comenzar")}</button>
         </div>
       </div>
-    </div>
+    );
+  }
+
+  const abajo = rect ? rect.y + rect.h / 2 > (typeof window !== "undefined" ? window.innerHeight : 800) / 2 : false;
+  return (
+    <>
+      {rect && (
+        <div
+          aria-hidden="true"
+          className="bc-tour-aro fixed z-55 pointer-events-none rounded-[16px] transition-[left,top,width,height] duration-200"
+          style={{ left: rect.x - 6, top: rect.y - 6, width: rect.w + 12, height: rect.h + 12, animation: "bc-pulso 1.8s ease-in-out infinite" }}
+        />
+      )}
+      <div
+        ref={tarjeta}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="false"
+        aria-label={t("tour.region")}
+        aria-labelledby="tour-t"
+        aria-describedby="tour-d"
+        className={`fixed inset-x-3 z-60 mx-auto max-w-[26rem] rounded-[20px] border border-(--color-line) bg-white p-4 shadow-[0_8px_28px_rgba(32,33,36,.3)] flex flex-col gap-2.5 outline-none ${abajo ? "top-14" : "bottom-24"}`}
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-[13px] font-bold text-(--color-muted) flex-1" aria-live="polite">{t("guia.progreso", { n: tut.paso + 1, total: PASOS.length })}</span>
+          <div className="flex gap-1" aria-hidden="true">
+            {PASOS.map((p, i) => (<i key={p.id} className={`block h-1.5 rounded-full ${i === tut.paso ? "w-4 bg-(--color-brand)" : i < tut.paso ? "w-1.5 bg-(--color-brand) opacity-50" : "w-1.5 bg-(--color-line)"}`} />))}
+          </div>
+        </div>
+        <h2 id="tour-t" className="text-[19px] font-extrabold leading-tight">{t(`guia.p${paso.id}.t`)}</h2>
+        <p id="tour-d" className="text-[15px]">{t(`guia.p${paso.id}.d`)}</p>
+        {enRuta && paso.sel && !buscando && !rect && (<p className="text-[13px] text-(--color-muted)" role="status">{t("tour.sinElemento")}</p>)}
+        <p className="text-[12px] text-(--color-muted)">{t("tour.demo")}</p>
+        {!enRuta && (<button className="text-left text-[14px] font-bold text-(--color-brand) underline" onClick={() => router.push(paso.ruta)}>{paso.ruta}</button>)}
+        <div className="flex items-center gap-2">
+          <button className="min-h-11 px-2 text-[15px] font-bold text-(--color-muted) underline" onClick={() => cerrar("omitido")}>{t("guia.omitir")}</button>
+          <span className="flex-1" />
+          <button className={`${BTN} border-(--color-line) bg-white text-(--color-ink) disabled:opacity-40`} disabled={tut.paso === 0} onClick={() => mover(-1)}>{t("tour.anterior")}</button>
+          {ultimo
+            ? (<button className={`${BTN} border-(--color-brand) bg-(--color-brand) text-white`} onClick={() => cerrar("completado")}>{t("guia.empezar")}</button>)
+            : (<button className={`${BTN} border-(--color-brand) bg-(--color-brand) text-white`} onClick={() => mover(1)}>{t("tour.siguiente")}</button>)}
+        </div>
+      </div>
+    </>
   );
 }
