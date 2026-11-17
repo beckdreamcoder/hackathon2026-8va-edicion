@@ -28,7 +28,16 @@ const KIND = { favor: "Mensaje", cachuelo: "Solicitud", junta: "Solicitud", soli
 import { screenStyles } from "./screen-styles";
 
 const FILA = "flex items-center gap-3.5 min-h-14 px-3.5 py-2 bg-white border border-(--color-line) rounded-[18px] w-full text-left [&_.ic]:text-(--color-brand)";
-const ICONOS = { config: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.2 3h-4l-.4 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5a7 7 0 0 0 0 2.4l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2l.4 2.7h4l.4-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z", junta: "M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 20a6 6 0 0 1 12 0", coord: "M4 5h16v11H9l-5 4z", pub: "M12 5v14M5 12h14", apoyo: "M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z", aviso: "M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4", lock: "M5 11h14v9H5zM8 11V8a4 4 0 0 1 8 0v3", cuenta: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0", flag: "M5 21V4h11l-1 4 1 4H5", star: "M12 3l2.7 5.5 6 .9-4.4 4.2 1 6L12 16.8 6.7 19.6l1-6L3.3 9.4l6-.9z", block: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM5.6 5.6l12.8 12.8", edit: "M4 20h4L19 9l-4-4L4 16z" };
+const ICONOS = { config: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.2 3h-4l-.4 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5a7 7 0 0 0 0 2.4l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2l.4 2.7h4l.4-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z", junta: "M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 20a6 6 0 0 1 12 0", coord: "M4 5h16v11H9l-5 4z", pub: "M12 5v14M5 12h14", apoyo: "M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z", aviso: "M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4", lock: "M5 11h14v9H5zM8 11V8a4 4 0 0 1 8 0v3", cuenta: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0", flag: "M5 21V4h11l-1 4 1 4H5", star: "M12 3l2.7 5.5 6 .9-4.4 4.2 1 6L12 16.8 6.7 19.6l1-6L3.3 9.4l6-.9z", block: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM5.6 5.6l12.8 12.8", edit: "M4 20h4L19 9l-4-4L4 16z", libro: "M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 21V5M8 7h7M8 11h5" };
+/** Resumen breve de normas que importan en la convivencia vecinal (Perú). */
+const CODIGO_CIVIL = [
+  { titulo: "Respeto y buen trato", texto: "Todos los vecinos tienen los mismos derechos. No se permiten insultos, amenazas ni discriminación por origen, sexo, religión, opinión o condición económica.", norma: "Constitución, art. 2 inc. 2" },
+  { titulo: "Ruidos y molestias", texto: "Puedes usar tu casa con libertad, pero sin perjudicar la seguridad, el descanso ni la salud de tus vecinos: ruidos, humos u olores que pasen lo tolerable están prohibidos.", norma: "Código Civil, art. 961" },
+  { titulo: "Si causas un daño, lo reparas", texto: "Quien causa un daño a otra persona, por descuido o a propósito, debe repararlo. Vale para objetos prestados en un favor o trabajos de un cachuelo.", norma: "Código Civil, art. 1969" },
+  { titulo: "Los acuerdos se cumplen", texto: "Cuando acuerdas un cachuelo, un préstamo o un precio con un vecino, ese acuerdo los obliga a ambos. Déjalo claro por escrito en el chat.", norma: "Código Civil, art. 1351" },
+  { titulo: "Datos y fotos de otras personas", texto: "No publiques el DNI, la dirección, el teléfono ni fotos de un vecino sin su permiso. Tus datos solo se usan para lo que aceptaste.", norma: "Ley 29733, Protección de Datos Personales" },
+  { titulo: "Reportes con la verdad", texto: "Reporta solo lo que viste o te consta. Acusar falsamente a alguien ante la autoridad es un delito.", norma: "Código Penal, art. 402" },
+];
 const Fila = ({ icono, titulo, extra, onClick, href }) => {
   const cuerpo = (<><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic" viewBox="0 0 24 24" aria-hidden="true"><path d={ICONOS[icono]} /></svg><b className={screenStyles.grow}>{titulo}</b>{extra}<svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none text-(--color-ink)" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></>);
   return href ? (<a className={FILA} href={href}>{cuerpo}</a>) : (<button className={FILA} onClick={onClick}>{cuerpo}</button>);
@@ -253,6 +262,7 @@ export default function Perfil() {
         <Fila icono="aviso" titulo="Avisos" extra={hasUnread && (<span className={screenStyles.badgeAlert}>{unreadN} nuevos</span>)} onClick={() => nav.go("avisos")} />
         <Fila icono="config" titulo="Configuración" href="/configuracion" />
         <Fila icono="lock" titulo="Privacidad y permisos" onClick={() => nav.go("privacidad")} />
+        <Fila icono="libro" titulo="Código civil y convivencia" onClick={() => nav.go("codigo")} />
         <Fila icono="cuenta" titulo="Mi cuenta" onClick={() => nav.go("cuenta")} />
         <Fila icono="block" titulo="Vecinos bloqueados y reportes" extra={misBloqueos.length > 0 && (<span className={screenStyles.badge}>{misBloqueos.length}</span>)} onClick={() => nav.go("bloqueos")} />
         <Fila icono="flag" titulo="Reportar o bloquear a un vecino" onClick={() => openRep()} />
@@ -349,6 +359,16 @@ export default function Perfil() {
       </div>
       </>)}
 
+      {nav.is("codigo") && (<>
+      <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Código civil y convivencia</h1></div>
+      <div className={screenStyles.content}>
+        <p className={screenStyles.muted}>Lo esencial para convivir bien en tu barrio y usar BarrioConecta con responsabilidad.</p>
+        {CODIGO_CIVIL.map((c) => (<div key={c.titulo} className={screenStyles.card}><p className="font-bold!">{c.titulo}</p><p className={screenStyles.muted}>{c.texto}</p><span className={`${screenStyles.badge} self-start!`}>{c.norma}</span></div>))}
+        <div className={screenStyles.card} role="note"><p className={screenStyles.label}>Emergencias</p><p className={screenStyles.muted}>Ante un peligro real llama primero: Policía 105 · Bomberos 116 · SAMU 106. La app no reemplaza a las autoridades.</p></div>
+        <p className={screenStyles.muted}>Resumen informativo. No reemplaza la asesoría de un abogado ni el texto oficial de las normas.</p>
+      </div>
+      </>)}
+      
       {nav.is("privacidad") && (<>
       <div className={screenStyles.header}><button className={screenStyles.iconButton} aria-label="Volver" onClick={nav.back}><svg className="w-6 h-6 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round] flex-none ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button><h1>Privacidad y permisos</h1></div>
       <div className={screenStyles.content}>
