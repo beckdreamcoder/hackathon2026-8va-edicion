@@ -15,7 +15,7 @@ export type Prefs = { tema: Tema; idioma: IdiomaId };
 export const CLAVE_PREFS = "bc-prefs";
 const POR_DEFECTO: Prefs = { tema: "auto", idioma: "es" };
 /** Idiomas con traducción revisada. Quechua (qu) está preparado en la arquitectura, pero aún no se ofrece. */
-export const IDIOMAS_DISPONIBLES: IdiomaId[] = ["es", "en"];
+export const IDIOMAS_DISPONIBLES: IdiomaId[] = ["es", "en", "qu"];
 
 let prefs: Prefs = POR_DEFECTO;
 let leidas = false;

@@ -16,7 +16,8 @@ export type InfoIdioma = { id: IdiomaId; nombre: string; disponible: boolean };
 export const IDIOMAS: InfoIdioma[] = [
   { id: "es", nombre: "Español (Perú)", disponible: true },
   { id: "en", nombre: "English", disponible: true },
-  { id: "qu", nombre: "Runasimi (quechua)", disponible: false },
+  // Botón visible; sin traducciones aún, la interfaz se muestra en español
+  { id: "qu", nombre: "Runasimi (quechua)", disponible: true },
 ];
 
 export function traducir(clave: string, idioma: IdiomaId, vars?: Record<string, string | number>): string {
